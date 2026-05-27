@@ -203,10 +203,11 @@ async function corpusDiagnostics() {
     }
   }
 
-  const [tables, health, ragflow, semanticFull, vocabSample] = await Promise.all([
+  const [tables, health, ragflow, litStats, semanticFull, vocabSample] = await Promise.all([
     gw('/inventory/tables', 'inventory'),
     gw('/health', 'health'),
     gw('/health/ragflow?retrieval=true&q=测试', 'ragflow', 8000),
+    gw('/content/literature/stats', 'literature-stats'),
     gw('/semantic/units?search=&limit=300', 'semantic-full'),
     gw('/vocabulary/search?q=&limit=5', 'vocabulary-sample'),
   ]);
@@ -222,10 +223,14 @@ async function corpusDiagnostics() {
   const vocabTable = tableMap['vocabulary'] || {};
   const litTable = tableMap['literature'] || {};
 
-  // Literature stats from table inventory (full fetch too slow over tunnel)
-  const litCount = litTable.approximateRows || 0;
-  const litDataBytes = litTable.dataBytes || 0;
-  const litEstimatedChars = Math.round(litDataBytes * 0.82);
+  // Literature stats from lightweight gateway endpoint (no content bodies)
+  const litCount = litStats?.count || litTable.approximateRows || 0;
+  const litTotalChars = litStats?.totalChars || 0;
+  const litByCategory = litStats?.byCategory || {};
+  const litCompleteness = litStats?.completeness || {};
+  const litDuplicateRate = litStats?.duplicateRate || '0%';
+  const litDuplicateTitles = litStats?.duplicateTitles || [];
+  const litItems = Array.isArray(litStats?.items) ? litStats.items : [];
 
   // Semantic units analysis
   const semItems = Array.isArray(semanticFull?.units) ? semanticFull.units : [];
@@ -307,8 +312,7 @@ async function corpusDiagnostics() {
       totalChunks: chunkCount,
       totalDataMB,
       literatureItems: litCount,
-      literatureDataMB: Math.round(litDataBytes / 1048576),
-      literatureEstimatedChars: litEstimatedChars,
+      literatureTotalChars: litTotalChars,
       semanticUnits: semanticUnitsTable.approximateRows || 0,
       semanticTotalChars: semTotalChars,
       vocabularyTerms: vocabCount,
@@ -316,11 +320,15 @@ async function corpusDiagnostics() {
       rerankerKeepRatio: rerankerActive ? Number(process.env.CONTENTBASE_RERANKER_KEEP_RATIO || 0.65) : null,
     },
     quality: {
+      duplication: {
+        rate: litDuplicateRate,
+        duplicateTitles: litDuplicateTitles,
+      },
       completeness: {
         ragDocuments: docCount,
         ragChunks: chunkCount,
         avgChunksPerDocument: avgChunksPerDoc,
-        literatureItems: litCount,
+        literature: litCompleteness,
         semanticUnits: semItems.length,
         vocabularyTerms: vocabCount,
         semanticCoverage: semItems.length > 0 ? 'active' : 'empty',
@@ -328,12 +336,12 @@ async function corpusDiagnostics() {
         structureModules: (tableMap['creative_style_modules'] || {}).approximateRows || 0,
         authorTechniques: (tableMap['creative_author_techniques'] || {}).approximateRows || 0,
       },
-      note: 'Duplication analysis requires deep scan (GET /api/corpus/diagnostics/deep)',
     },
     literature: {
       totalItems: litCount,
-      estimatedTotalChars: litEstimatedChars,
-      dataMB: Math.round(litDataBytes / 1048576),
+      totalChars: litTotalChars,
+      byCategory: litByCategory,
+      topItems: litItems.slice(0, 15),
     },
     channels,
     writer: {
