@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+
+# Runtime & build artifacts
+dist/
+
+# Large binary archives
+*.tar
+*.tar.gz
+
+# Secrets & local env
+deploy.env
+.env
+.runtime/local.env
+DataBase/apps/gateway/.env
+
+# Aider
+.aider*
+
+# Editor / IDE
+.vscode/
+.idea/
+
+# Temporary & working directories
+.tmp-remote/
+.codex-remote-edit/
+.remote-edit/
+.hot-patch-reference-*/
+.worktrees/
+.playwright-mcp/
+
+# Runtime reference snapshots (large TS dumps)
+.runtime-*.ts
+.runtime-*.tar.gz
+.runtime-*.tar
+.runtime-*.yaml
+
+# OS
+Thumbs.db
+.DS_Store
+
+# fanqie-service archives (large)
+fanqie-service-*.tar
+
+# Large training data & model weights (>50MB, download separately)
+*.safetensors
+*.zip
+training/latent-mvp/data/
+training/latent-mvp/data-expanded/
+training/latent-mvp/data-expanded-merged/
+training/latent-mvp/data-hc3-mixed/
+training/latent-mvp/external/pdf-source-cache/
+training/latent-mvp/external/writer-source-ordered/samples.jsonl
+training/latent-mvp/external/writer-source-ordered/train.jsonl
+training/latent-mvp/views/

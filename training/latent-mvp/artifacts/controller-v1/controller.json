@@ -1,0 +1,23 @@
+{
+  "version": "latent-controller.v1",
+  "features": [
+    "vectorSimilarity",
+    "fusedRelevance",
+    "relevanceScore",
+    "qualityBlockCount",
+    "referenceCoverageScore",
+    "styleSignal",
+    "factSignal"
+  ],
+  "coef": [
+    0.02232084795832634,
+    6.488653889391571e-05,
+    1.287795271309733e-06,
+    0.0,
+    0.002664250787347555,
+    0.33041512966156006,
+    -0.2953324019908905
+  ],
+  "intercept": 0.250301331281662,
+  "valMae": 0.002996781375259161
+}

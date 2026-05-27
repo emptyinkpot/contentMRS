@@ -1,0 +1,10 @@
+{
+  "exported_at": "2026-05-23T09:18:38",
+  "voice_id": "cosyvoice-v3.5-plus-bailian-f04eec5bf9e64f14afeefd3bb09cccfe",
+  "target_model": "cosyvoice-v3.5-plus",
+  "status": "OK",
+  "gmt_create": "2026-04-12 11:51:19",
+  "gmt_modified": "2026-04-12 11:51:27",
+  "source": "dashscope voice-enrollment query_voice",
+  "audio_file": "E:\\My Project\\ContentMRS\\training\\latent-mvp\\voice-clone-export\\cosyvoice-v3.5-plus-bailian-f04eec5bf9e64f14afeefd3bb09cccfe.mp3"
+}

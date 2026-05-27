@@ -1,0 +1,44 @@
+{
+  "version": "latent-mvp-corpus.v1",
+  "generatedAt": "2026-05-22T08:10:41.199Z",
+  "acceptanceDir": "E:\\My Project\\ContentMRS\\ContentBase\\product\\novel\\.runtime\\acceptance",
+  "scannedFiles": 0,
+  "samples": 65739,
+  "labelCounts": {
+    "1": 65739
+  },
+  "taskKinds": {
+    "historical_reasoning_positive": 4350,
+    "kinkakuji_raw_literary_positive": 277,
+    "extra_literary_raw_positive": 61112
+  },
+  "positiveSources": {
+    "book_xingwang_world_history_21": 13792,
+    "book_kinkakuji_raw": 277,
+    "book_kawabata_collection_raw": 1105,
+    "book_ishiguro_collection_raw": 1750,
+    "book_miyazaki_history_raw": 1015,
+    "book_naito_konan_raw": 1567,
+    "book_mishima_collection_raw": 3146,
+    "book_natsume_soseki_raw": 13315,
+    "book_dazai_osamu_raw": 959,
+    "book_puyi_memoir_raw": 1060,
+    "book_shina_revolution_gaishi_raw": 412,
+    "book_japanese_empire_observation_raw": 842,
+    "book_oracle_chinese_history_raw": 3684,
+    "book_european_history_selection_raw": 6111,
+    "book_luxun_complete_raw": 9511,
+    "book_dongying_wenren_raw": 1073,
+    "book_kita_ikki_raw": 112,
+    "book_marx_engels_vol32_raw": 1198,
+    "book_quan_tangshi_raw": 3436,
+    "book_saiwai_shidi_raw": 213,
+    "book_sakaguchi_ango_raw": 1161
+  },
+  "negativeSources": {},
+  "train": 52548,
+  "val": 6489,
+  "test": 6702,
+  "trainRatio": 0.8,
+  "valRatio": 0.1
+}

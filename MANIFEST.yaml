@@ -1,0 +1,113 @@
+version: contentmrs-inventory-2.0
+layout: flat
+root: .
+updated: 2026-05-23
+
+# ContentMRS root is an inventory folder only.
+# Dify is the orchestration layer. Do not use this file as a runtime service graph.
+orchestration:
+  owner: dify
+  root_runtime_removed: true
+  doc: docs/dify-orchestration.md
+
+modules:
+  - id: database
+    path: DataBase
+    remote: https://github.com/emptyinkpot/DataBase.git
+    owns:
+      - business data access
+      - Gateway API
+      - EvidencePack
+      - StylePack
+      - DataBase SDK
+    sdk_owner: DataBase
+    sdk_path: DataBase/packages/database-client
+    public_urls:
+      local: http://127.0.0.1:18090
+      production: https://database.tengokukk.com
+
+  - id: contentbase
+    path: ContentBase
+    remote: https://github.com/emptyinkpot/ContentBase.git
+    owns:
+      - generation runtime
+      - writer capability
+      - reviewer capability
+      - ContentBase runtime SDK
+    sdk_owner: ContentBase
+    public_urls:
+      local: http://127.0.0.1:5101
+      production: https://contentbase.tengokukk.com
+
+  - id: contentadmin
+    path: ContentAdmin
+    remote: https://github.com/emptyinkpot/ContentAdmin.git
+    owns:
+      - human admin UI
+      - Directus/public workbench adapters
+    sdk_owner: ContentAdmin
+    note: UI adapters only; not the SDK truth source for DataBase or ContentBase.
+
+  - id: web-evidence-provider
+    path: DataBase/apps/web-evidence-provider
+    owns:
+      - Tavily/web evidence provider API
+    sdk_owner: web-evidence-provider
+    public_urls:
+      local: http://127.0.0.1:19091
+    migration:
+      - split into independent module before standalone packaging
+      - publish its own SDK/API contract
+
+  - id: fanqie-service
+    path: fanqie-service
+    remote: https://github.com/emptyinkpot/fanqie-service.git
+    owns:
+      - Fanqie publish execution
+    sdk_owner: fanqie-service
+    public_urls:
+      production: https://fanqie.tengokukk.com/fanqie
+      health: https://fanqie.tengokukk.com/fanqie/health
+    deployment:
+      platform: Alibaba Cloud ECS
+      instance_id: i-bp1e1lcototdd38ss8q2
+      public_ip: 121.196.202.114
+      domain: fanqie.tengokukk.com
+      service: fanqie-service.service
+      reverse_proxy: nginx /fanqie/
+      source: https://github.com/emptyinkpot/fanqie-service.git
+
+  - id: openlist
+    path: OpenList
+    owns:
+      - file storage surface
+    sdk_owner: OpenList
+
+  - id: myblog
+    path: MyBlog
+    owns:
+      - static blog publishing
+    sdk_owner: MyBlog
+
+external_infrastructure:
+  - id: sub2api
+    role: llm_api_gateway
+    url: https://sub2api.tengokukk.com/v1
+    workspace_repo: ../../sub2api
+    note: external infrastructure; not a ContentMRS module.
+
+removed_root_runtime:
+  paths:
+    - runtime/
+    - .runtime/
+    - Start ContentMRS.cmd
+    - Install ContentMRS.cmd
+  rule: Do not recreate root orchestration; move orchestration to Dify.
+
+removed_or_external:
+  - path: ../OpenClaw/mcps/novel-manager
+    replace_with: ContentBase module API
+  - path: CozeOpenAIProxy
+    replace_with: ../../CozeOpenAIProxy
+  - path: remotion-project
+    replace_with: ../../remotion-project

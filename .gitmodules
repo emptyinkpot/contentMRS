@@ -1,0 +1,12 @@
+[submodule "DataBase"]
+	path = DataBase
+	url = https://github.com/emptyinkpot/DataBase.git
+[submodule "ContentBase"]
+	path = ContentBase
+	url = https://github.com/emptyinkpot/ContentBase.git
+[submodule "ContentAdmin"]
+	path = ContentAdmin
+	url = https://github.com/emptyinkpot/ContentAdmin.git
+[submodule "OpenList"]
+	path = OpenList
+	url = https://github.com/emptyinkpot/OpenList.git

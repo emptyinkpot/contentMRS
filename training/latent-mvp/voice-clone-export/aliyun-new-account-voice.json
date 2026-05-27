@@ -1,0 +1,10 @@
+{
+  "created_at": "2026-05-23T09:20:46+08:00",
+  "provider": "dashscope",
+  "workspace_id": "ws-ja3hsbmw71fs0w80",
+  "source_voice_id": "cosyvoice-v3.5-plus-bailian-f04eec5bf9e64f14afeefd3bb09cccfe",
+  "target_model": "cosyvoice-v3.5-plus",
+  "new_voice_id": "cosyvoice-v3.5-plus-cmrsvoice-6edc16ea5d51455a90e803f10f8377ad",
+  "request_id": "3bca286e-5368-9496-99e7-7eb61051e643",
+  "source_audio_file": "E:\\My Project\\ContentMRS\\training\\latent-mvp\\voice-clone-export\\cosyvoice-v3.5-plus-bailian-f04eec5bf9e64f14afeefd3bb09cccfe.mp3"
+}

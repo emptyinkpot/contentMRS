@@ -1,0 +1,19 @@
+{
+  "version": "latent-reranker.v1",
+  "baseModel": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+  "epochs": 1,
+  "batchSize": 4,
+  "lr": 2e-05,
+  "train": {
+    "count": 32.0,
+    "auc": 0.0,
+    "avgPosScore": 0.0,
+    "avgNegScore": -8.178943634033203
+  },
+  "val": {
+    "count": 16.0,
+    "auc": 0.19047619047619047,
+    "avgPosScore": -8.254499435424805,
+    "avgNegScore": -7.830649375915527
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "version": "latent-mvp-corpus.v1",
+  "generatedAt": "2026-05-22T08:10:10.078Z",
+  "acceptanceDir": "E:\\My Project\\ContentMRS\\ContentBase\\product\\novel\\.runtime\\acceptance",
+  "scannedFiles": 0,
+  "samples": 10739,
+  "labelCounts": {
+    "1": 10739
+  },
+  "taskKinds": {
+    "extra_literary_raw_positive": 10739
+  },
+  "positiveSources": {
+    "book_dongying_wenren_raw": 1073,
+    "book_kita_ikki_raw": 112,
+    "book_marx_engels_vol32_raw": 1198,
+    "book_mishima_collection_raw": 239,
+    "book_miyazaki_history_raw": 389,
+    "book_naito_konan_raw": 1300,
+    "book_natsume_soseki_raw": 1618,
+    "book_quan_tangshi_raw": 3436,
+    "book_saiwai_shidi_raw": 213,
+    "book_sakaguchi_ango_raw": 1161
+  },
+  "negativeSources": {},
+  "train": 8639,
+  "val": 1007,
+  "test": 1093,
+  "trainRatio": 0.8,
+  "valRatio": 0.1
+}

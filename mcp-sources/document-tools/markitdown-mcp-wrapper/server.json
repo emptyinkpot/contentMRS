@@ -1,0 +1,28 @@
+{
+  "": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.microsoft/markitdown-mcp",
+  "title": "MarkItDown MCP",
+  "description": "Official MarkItDown MCP server from the microsoft/markitdown repository.",
+  "repository": {
+    "url": "https://github.com/microsoft/markitdown/tree/604bba13da2f43b756b49122cb65bdedb85b1dff/packages/markitdown-mcp",
+    "source": "github"
+  },
+  "version": "0.0.1a5+604bba1",
+  "packages": [
+    {
+      "registryType": "git",
+      "registryBaseUrl": "https://github.com",
+      "identifier": "microsoft/markitdown",
+      "version": "604bba13da2f43b756b49122cb65bdedb85b1dff",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "MARKITDOWN_ENABLE_PLUGINS",
+          "required": false
+        }
+      ]
+    }
+  ]
+}
