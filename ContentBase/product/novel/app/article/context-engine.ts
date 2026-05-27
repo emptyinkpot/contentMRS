@@ -1,4 +1,4 @@
-import { getRerankerConfig, rerankByEmbedding } from './reranker';
+import { getRerankerConfig, rerankByEmbedding, loadAuthorStateText } from './reranker';
 
 export type ContextEngineRequest = Record<string, any>;
 
@@ -113,8 +113,9 @@ export async function buildArticleContextEngine(input: {
   const genre = detectGenre(input.request);
   const ranked = rankAndDedupe(contextItems, input.topic);
   const rerankerConfig = getRerankerConfig();
+  const authorStateText = rerankerConfig ? await loadAuthorStateText(gatewayUrl) : '';
   const reranked = rerankerConfig
-    ? await rerankByEmbedding(input.topic, ranked, rerankerConfig)
+    ? await rerankByEmbedding(input.topic, ranked, rerankerConfig, authorStateText)
     : ranked;
   if (rerankerConfig && reranked.length < ranked.length) {
     warnings.push(`reranker: kept ${reranked.length}/${ranked.length} items (${Math.round(reranked.length / ranked.length * 100)}%)`);
