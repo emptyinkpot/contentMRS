@@ -298,13 +298,14 @@ async function searchDatabaseEvidence(input: {
     const tokens = tokenizeEvidenceQuery(queryText).slice(0, 10);
     const likeTerms = uniqueStrings([queryText, ...tokens]).filter((item) => item.length >= 2).slice(0, 8);
     if (!likeTerms.length) continue;
-    const where = likeTerms.map(() => "(c.chunk_text LIKE ? OR CAST(c.metadata_json AS CHAR) LIKE ?)").join(" OR ");
+    // Use FULLTEXT MATCH only — metadata hits are low-value and LIKE causes full table scans on 125K+ rows
+    const matchExpr = likeTerms.join(" ");
     const sourceWhere = input.sourceIds.length
       ? `AND d.source_id IN (${input.sourceIds.map(() => "?").join(", ")})`
       : "";
     const params = [
       ...input.sourceIds,
-      ...likeTerms.flatMap((term) => [`%${term}%`, `%${term}%`]),
+      matchExpr,
       Math.max(input.limit * 4, 20),
     ];
     const rows = await query<EvidenceSearchRow[]>(
@@ -326,7 +327,7 @@ async function searchDatabaseEvidence(input: {
       WHERE c.privacy_level IN ('public', 'private')
         AND c.index_status = 'indexed'
         ${sourceWhere}
-        AND (${where})
+        AND (MATCH(c.chunk_text) AGAINST(? IN BOOLEAN MODE))
       ORDER BY c.updated_at DESC, c.id DESC
       LIMIT ?
       `,

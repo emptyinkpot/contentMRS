@@ -165,20 +165,38 @@ async function callSingleWriter(prompt, settings) {
       max_tokens: Number.isFinite(Number(settings?.maxTokens)) && Number(settings.maxTokens) > 0
         ? Math.trunc(Number(settings.maxTokens))
         : 4096,
+      stream: true,
     }),
   });
-  const text = await response.text();
-  let payload = {};
-  if (text.trim()) {
-    try {
-      payload = JSON.parse(text);
-    } catch {
-      throw new Error(`LLM gateway returned non-JSON response: HTTP ${response.status}`);
+  if (!response.ok) {
+    const errText = await response.text().catch(() => '');
+    throw new Error(`LLM gateway returned HTTP ${response.status}: ${errText.slice(0, 240)}`);
+  }
+  // Collect streamed SSE chunks into full response
+  let fullContent = '';
+  let usage = null;
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const data = line.slice(6).trim();
+      if (data === '[DONE]') continue;
+      try {
+        const chunk = JSON.parse(data);
+        const delta = chunk.choices?.[0]?.delta?.content;
+        if (delta) fullContent += delta;
+        if (chunk.usage) usage = chunk.usage;
+      } catch {}
     }
   }
-  if (!response.ok) {
-    throw new Error(`LLM gateway returned HTTP ${response.status}: ${String(payload?.error?.message || payload?.message || text).slice(0, 240)}`);
-  }
+  let payload = { choices: [{ message: { content: fullContent } }], usage };
   return {
     body: payload?.choices?.[0]?.message?.content || '',
     trace: {
