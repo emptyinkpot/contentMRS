@@ -1,0 +1,21 @@
+{
+  "task_id": "cdm-machine-schema-2026-05-13",
+  "title": "Add machine-readable Canonical Document Model schema",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "docs/cdm-machine-schema",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "schemas/document/canonical-document.schema.json",
+    "examples/document/minimal-cdm-document.json",
+    "docs/contracts/canonical-document-model.md",
+    "docs/contracts/cross-repo-artifact-contracts.md",
+    "docs/contracts/cross-repo-artifact-inventory.md",
+    ".runtime/claims/cdm-machine-schema-2026-05-13.json",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T13:05:00Z",
+  "updated_at": "2026-05-13T13:05:00Z",
+  "handoff": null,
+  "notes": "Doc/schema-only CDM machine contract. Scope excludes storage migration, importer, projection engine, and gates."
+}

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://database.tengokukk.com/schemas/document/asset-graph.schema.json",
+  "title": "Asset Graph",
+  "description": "Asset records and relations for media referenced by the Canonical Content Graph.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "graphId", "assets"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "asset-graph.v1" },
+    "graphId": { "$ref": "#/$defs/stableId" },
+    "assets": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/asset" },
+      "default": []
+    },
+    "relations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/assetRelation" },
+      "default": []
+    }
+  },
+  "$defs": {
+    "stableId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "rawArtifactId", "sha256", "mime", "role"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "rawArtifactId": { "$ref": "#/$defs/stableId" },
+        "sha256": { "type": "string", "minLength": 1 },
+        "mime": { "type": "string", "minLength": 1 },
+        "width": { "type": "integer", "minimum": 0 },
+        "height": { "type": "integer", "minimum": 0 },
+        "originalPath": { "type": "string" },
+        "role": { "type": "string", "enum": ["illustration", "cover", "embedded_media", "evidence", "scan", "thumbnail", "projection", "other"] },
+        "metadata": { "type": "object", "additionalProperties": true }
+      }
+    },
+    "assetRelation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "assetId", "targetId"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "type": { "type": "string", "enum": ["illustrates", "embedded_in", "evidence_for", "thumbnail_of", "cover_of", "projection_of"] },
+        "assetId": { "$ref": "#/$defs/stableId" },
+        "targetId": { "$ref": "#/$defs/stableId" },
+        "targetType": { "type": "string", "enum": ["document", "section", "block", "inline", "entity", "evidence", "asset", "projection"] },
+        "payload": { "type": "object", "additionalProperties": true }
+      }
+    }
+  }
+}

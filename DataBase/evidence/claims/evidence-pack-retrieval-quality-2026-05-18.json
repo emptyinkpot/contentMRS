@@ -1,0 +1,22 @@
+{
+  "task_id": "evidence-pack-retrieval-quality-2026-05-18",
+  "title": "Strengthen EvidencePack retrieval quality and ContentBase article consumption",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": null,
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "apps/gateway/src/routes/evidence.ts",
+    "apps/gateway/scripts/generate-openapi.mjs",
+    "packages/schemas/content/canonical-content-contract.ts",
+    "packages/database-client/",
+    "E:/My Project/ContentBase/product/novel/app/article/",
+    "E:/My Project/ContentBase/product/novel/tools/generate-article-mvp.mjs",
+    "E:/My Project/ContentBase/README.md",
+    "E:/My Project/ContentBase/product/novel/README.md"
+  ],
+  "started_at": "2026-05-18T00:00:00Z",
+  "updated_at": "2026-05-19T06:55:00Z",
+  "handoff": null,
+  "notes": "EvidencePack now supports sourceIds filtering, source filter screening evidence, body/locator-first ranking, and ContentBase SDK/CLI passthrough. Verified book_xingwang_world_history_21 readback on temporary Gateway 18206 with locator and metadata sourceId preserved."
+}

@@ -1,0 +1,30 @@
+[Unit]
+Description=DataBase Gateway P0
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/database-gateway
+EnvironmentFile=/srv/database-gateway/.env
+ExecStart=/usr/bin/node /srv/database-gateway/dist/index.js
+Restart=always
+RestartSec=5
+User=ubuntu
+Group=ubuntu
+
+# Security posture:
+# - the gateway is a read-only loopback API facade over MySQL
+# - runtime configuration is supplied only through /srv/database-gateway/.env
+# - the service should not gain privileges or write outside its runtime root
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/srv/database-gateway
+RestrictSUIDSGID=true
+LockPersonality=true
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

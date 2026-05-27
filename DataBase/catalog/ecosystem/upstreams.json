@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "2026-05-10",
+  "purpose": "Track upstream projects, GitHub-recognized forks, and manual mirrors so future agents do not mistake imported code for original source.",
+  "upstreams": [
+    {
+      "localRepo": "https://github.com/emptyinkpot/sub2api",
+      "upstreamRepo": "https://github.com/Wei-Shaw/sub2api",
+      "githubForkRelation": true,
+      "use": "AI gateway foundation"
+    },
+    {
+      "localRepo": "https://github.com/emptyinkpot/mortis-multica-source",
+      "upstreamRepo": "https://github.com/multica-ai/multica",
+      "githubForkRelation": true,
+      "use": "Mortis operator runtime foundation"
+    },
+    {
+      "localRepo": "https://github.com/emptyinkpot/AstrBot",
+      "upstreamRepo": "https://github.com/AstrBotDevs/AstrBot",
+      "githubForkRelation": true,
+      "use": "Chat-agent framework reference"
+    },
+    {
+      "localRepo": "https://github.com/emptyinkpot/AIClient-2-API",
+      "upstreamRepo": "https://github.com/justlovemaki/AIClient2API",
+      "githubForkRelation": true,
+      "use": "Provider-adapter and OpenAI-compatible proxy reference"
+    },
+    {
+      "localRepo": "https://github.com/emptyinkpot/AIClient2API-Tutorial",
+      "upstreamRepo": "https://github.com/helloyangy/AIClient2API-Tutorial",
+      "githubForkRelation": true,
+      "use": "Provider-adapter tutorial reference"
+    },
+    {
+      "localRepo": "https://github.com/emptyinkpot/golutra",
+      "upstreamRepo": "https://github.com/golutra/golutra",
+      "githubForkRelation": true,
+      "use": "Research fork"
+    },
+    {
+      "localRepo": "https://github.com/emptyinkpot/auto-coding-agent-demo",
+      "upstreamRepo": "https://github.com/SamuelQZQ/auto-coding-agent-demo",
+      "githubForkRelation": true,
+      "use": "Research fork"
+    },
+    {
+      "localRepo": "https://github.com/emptyinkpot/ai-office",
+      "upstreamRepo": "https://github.com/Parcha-ai/ai-office",
+      "githubForkRelation": true,
+      "use": "Research fork"
+    },
+    {
+      "localRepo": "https://github.com/emptyinkpot/agent-office",
+      "upstreamRepo": "https://github.com/harishkotra/agent-office",
+      "githubForkRelation": true,
+      "use": "Research fork"
+    },
+    {
+      "localRepo": "https://github.com/emptyinkpot/ai-town",
+      "upstreamRepo": "https://github.com/a16z-infra/ai-town",
+      "githubForkRelation": false,
+      "forkRecognition": "manual",
+      "use": "Manual research mirror; consider recreating as recognized fork if long-term sync matters"
+    },
+    {
+      "localRepo": "https://github.com/emptyinkpot/my-project-qmd",
+      "upstreamRepo": "https://github.com/tobi/qmd",
+      "githubForkRelation": false,
+      "forkRecognition": "manual",
+      "upstreamTrackingFork": "https://github.com/emptyinkpot/qmd",
+      "use": "Private QMD retrieval source extracted from Atramenti cleanstream and maintained as an ecosystem capability repo"
+    },
+    {
+      "localRepo": "https://github.com/emptyinkpot/qmd",
+      "upstreamRepo": "https://github.com/tobi/qmd",
+      "githubForkRelation": true,
+      "use": "GitHub-recognized QMD fork used as upstream tracking anchor for my-project-qmd"
+    }
+  ]
+}

@@ -1,0 +1,231 @@
+{
+  "schemaVersion": "2026-05-10",
+  "purpose": "Cross-repository supply map used by humans, Mortis, and future AI agents.",
+  "relationships": [
+    {
+      "supplier": "DataBase",
+      "consumers": [
+        "Mortis",
+        "FuckVideo",
+        "sub2api",
+        "code-server-workspace-infra",
+        "ContractGuard"
+      ],
+      "supplies": [
+        "ecosystem registry",
+        "storage topology",
+        "runtime surfaces",
+        "data curation schemas",
+        "recovery docs"
+      ]
+    },
+    {
+      "supplier": "ContractGuard",
+      "consumers": [
+        "DataBase",
+        "Mortis",
+        "FuckVideo",
+        "sub2api",
+        "code-server-workspace-infra"
+      ],
+      "supplies": [
+        "project.json checker",
+        "AI behavior gates",
+        "repository contract templates"
+      ]
+    },
+    {
+      "supplier": "sub2api",
+      "consumers": [
+        "Mortis",
+        "FuckVideo",
+        "DataBase curation runtime",
+        "n8n workflows"
+      ],
+      "supplies": [
+        "OpenAI-compatible base URL",
+        "provider account routing",
+        "client keys and groups"
+      ],
+      "baseUrl": "https://sub2api.tengokukk.com/v1"
+    },
+    {
+      "supplier": "code-server-workspace-infra",
+      "consumers": [
+        "human operator",
+        "Codex",
+        "Claude",
+        "future AI coding agents",
+        "DataBase Memory Service"
+      ],
+      "supplies": [
+        "remote IDE",
+        "shared remote source workspace",
+        "anti-duplicate-local-workflow boundary",
+        "server-170 code-server runtime truth",
+        "remote workspace root for DataBase, my-project-qmd, and Atramenti-Console source checkouts"
+      ],
+      "sourceRepository": "https://github.com/emptyinkpot/code-server-workspace-infra",
+      "serverAlias": "server-170",
+      "workspaceRoot": "/home/ubuntu/workspaces",
+      "atramentiConsoleSourceRoot": "/home/ubuntu/workspaces/Atramenti-Console",
+      "atramentiConsoleSourceStatus": "verified",
+      "atramentiConsoleSourceVerifiedCommit": "a0a13cf9",
+      "atramentiConsoleGitCredentialStatus": "read-only deploy key configured and git pull verified",
+      "atramentiConsoleGitRemote": "git@github.com-atramenti-console:emptyinkpot/Atramenti-Console.git",
+      "codeServerAccess": "ssh -L 18080:127.0.0.1:18080 server-170",
+      "localUrlAfterTunnel": "http://127.0.0.1:18080"
+    },
+    {
+      "supplier": "my-project-ffmpeg-mcp",
+      "consumers": [
+        "FuckVideo",
+        "Mortis"
+      ],
+      "supplies": [
+        "FFmpeg video operations"
+      ]
+    },
+    {
+      "supplier": "DataBase Memory Service",
+      "consumers": [
+        "Mortis",
+        "Codex",
+        "Claude",
+        "n8n workflows",
+        "future AI agents"
+      ],
+      "supplies": [
+        "memory_status",
+        "memory_probe",
+        "memory_recall",
+        "memory_search",
+        "memory_get",
+        "memory_refresh_dry_run",
+        "record_experience (contract only; not exposed in current readonly facade)",
+        "record_note (contract only; not exposed in current readonly facade)",
+        "refresh_mirrors (implementation layer)",
+        "cloud_health"
+      ],
+      "publicSurface": true,
+      "preferredAgentEntry": "E:\\My Project\\DataBase\\services\\memory\\mcp\\server.mjs",
+      "localCliEntry": "E:\\My Project\\DataBase\\scripts\\database-memory.ps1",
+      "pathEnvironment": [
+        "DATABASE_MEMORY_REPO_ROOT",
+        "DATABASE_MEMORY_EXPERIENCE_ROOT",
+        "DATABASE_MEMORY_QMD_ROOT",
+        "DATABASE_MEMORY_QMD_INDEX_PATH"
+      ],
+      "internalLayers": [
+        "E:\\My Project\\DataBase\\services\\experience-manager",
+        "E:\\My Project\\DataBase\\services\\qmd-adapter",
+        "https://github.com/emptyinkpot/my-project-qmd",
+        "E:\\My Project\\DataBase\\services\\database-ops-mcp"
+      ],
+      "runtimeDocs": [
+        "services/memory/README.md",
+        "docs/runtime/database-memory-service.md"
+      ],
+      "boundaryRule": "External consumers depend on this facade and must not hard-code QMD collection paths or internal service paths."
+    },
+    {
+      "supplier": "my-project-qmd",
+      "consumers": [
+        "DataBase",
+        "DataBase Memory Service",
+        "future memory and knowledge retrieval jobs"
+      ],
+      "supplies": [
+        "markdown search",
+        "semantic retrieval",
+        "QMD MCP server",
+        "knowledge-base indexing",
+        "memory ingestion retrieval layer"
+      ],
+      "sourceRepository": "https://github.com/emptyinkpot/my-project-qmd",
+      "manualUpstreamRepo": "https://github.com/tobi/qmd",
+      "upstreamTrackingFork": "https://github.com/emptyinkpot/qmd",
+      "sourceExtractedFrom": "https://github.com/emptyinkpot/Atramenti-Console",
+      "sourceBaselineCommit": "d9f2700e59daefb6a352c5d563f6910d652ccd0a",
+      "runtimeState": {
+        "defaultIndexPath": "C:\\Users\\ASUS-KL\\.cache\\qmd\\index.sqlite",
+        "experienceCollection": "experience-manager",
+        "futureEcosystemCollection": "emptyinkpot-ecosystem",
+        "currentExperienceMirrorMode": "controlled-sample",
+        "currentExperienceMirrorCommit": "https://github.com/emptyinkpot/my-project-qmd/commit/1b312d5",
+        "currentExperienceMirrorSample": {
+          "experienceRecords": 5,
+          "notes": 5
+        }
+      }
+    },
+    {
+      "supplier": "qmd",
+      "consumers": [
+        "my-project-qmd",
+        "DataBase upstream-sync process"
+      ],
+      "supplies": [
+        "GitHub-recognized fork relationship",
+        "upstream comparison point",
+        "upstream update tracking"
+      ],
+      "sourceRepository": "https://github.com/emptyinkpot/qmd",
+      "upstreamRepo": "https://github.com/tobi/qmd",
+      "runtimeSource": "https://github.com/emptyinkpot/my-project-qmd"
+    },
+    {
+      "supplier": "experience-manager",
+      "consumers": [
+        "DataBase Memory Service",
+        "QMD mirror"
+      ],
+      "supplies": [
+        "durable experience records",
+        "durable notes",
+        "memory_status",
+        "memory_recall",
+        "refresh_mirrors"
+      ],
+      "dataTruth": "cloud MySQL tables recorded by DataBase",
+      "currentSourcePath": "E:\\My Project\\DataBase\\services\\experience-manager",
+      "sourceExtractedFrom": "https://github.com/emptyinkpot/Atramenti-Console",
+      "sourceBaselineCommit": "d9f2700e59daefb6a352c5d563f6910d652ccd0a",
+      "status": "sanitized-imported-to-database-services",
+      "publicSurface": false,
+      "externalFacade": "DataBase Memory Service",
+      "secretSurface": "DataBase records variable names and approved secret locations; repository must not store secret values."
+    },
+    {
+      "supplier": "database-ops-mcp",
+      "consumers": [
+        "Codex",
+        "Mortis"
+      ],
+      "supplies": [
+        "database inspection",
+        "schema context",
+        "database health probes"
+      ],
+      "currentSourcePath": "E:\\My Project\\DataBase\\services\\database-ops-mcp",
+      "previousSourcePath": "E:\\My Project\\Atramenti-Console\\codex\\mcps\\database-ops-mcp",
+      "status": "retired-from-atramenti-local-checkout",
+      "externalFacade": "DataBase Memory Service"
+    },
+    {
+      "supplier": "my-project-database-ops-mcp",
+      "consumers": [
+        "Codex",
+        "Mortis",
+        "DataBase operations"
+      ],
+      "supplies": [
+        "database inspection MCP",
+        "schema context",
+        "database operational context skill docs"
+      ],
+      "sourceRepository": "https://github.com/emptyinkpot/my-project-database-ops-mcp",
+      "extractedFrom": "https://github.com/emptyinkpot/Atramenti-Console"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "anchor-location.v1",
+  "mapId": "anchor.map.example",
+  "anchors": [
+    {
+      "id": "anchor.example.evidence",
+      "targetNodeId": "blk.example.evidence",
+      "targetNodeType": "block",
+      "offsets": {
+        "start": 0,
+        "end": 24
+      },
+      "sourceLocator": {
+        "sourceHref": "chapter1.xhtml",
+        "sourceFragment": "evidence-1"
+      }
+    }
+  ],
+  "locations": [
+    {
+      "id": "location.example.html",
+      "anchorId": "anchor.example.evidence",
+      "projectionType": "html",
+      "locator": {
+        "cssSelector": "#evidence-1"
+      },
+      "generatedAt": "2026-05-13T15:10:00Z"
+    }
+  ]
+}

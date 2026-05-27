@@ -1,0 +1,19 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: 'DataBase'
+  title: 'DataBase'
+  description: 'ecosystem-truth'
+  annotations:
+    backstage.io/source-location: 'url:https://github.com/emptyinkpot/DataBase'
+    emptyinkpot.io/visibility: 'private'
+    emptyinkpot.io/repository-role: 'ecosystem-truth'
+    emptyinkpot.io/status: 'active'
+    emptyinkpot.io/preferred-source: 'true'
+    emptyinkpot.io/canonical-doc: 'README.md'
+    emptyinkpot.io/machine-readable-entry: 'project.json'
+spec:
+  type: 'library'
+  lifecycle: 'active'
+  owner: 'emptyinkpot'
+  system: 'emptyinkpot-ecosystem'

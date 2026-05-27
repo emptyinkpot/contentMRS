@@ -1,0 +1,18 @@
+{
+  "task_id": "creative-rule-context-enforcement-2026-05-13",
+  "title": "Make creative rules context-aware and remove prompt punctuation drift",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": null,
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "schemas/creative/creative-rules.ts",
+    "gateway/src/routes/creative.ts",
+    "E:/My Project/ContentBase/product/novel/core/manuscript/content-craft/src/generation-pipeline.ts",
+    "E:/My Project/ContentBase/product/novel/tests/generation-context.test.ts"
+  ],
+  "started_at": "2026-05-13T00:00:00Z",
+  "updated_at": "2026-05-13T00:00:00Z",
+  "handoff": null,
+  "notes": "Completed. Removed prompt punctuation contradictions, changed Gateway corpus punctuation guidance to avoid colons/dashes, extended executable rules with narrative context, and wired ContentBase quality gates to pass chapter outline, key events, scene plan, and must-advance beats. Checks: schemas/creative typecheck/build, gateway typecheck/build, ContentBase pnpm run ci."
+}

@@ -1,0 +1,22 @@
+{
+  "task_id": "readme-led-normalization-2026-05-15",
+  "title": "README-led owner map and closed-loop normalization",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "main",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "README.md",
+    "project.json",
+    ".runtime/claims/creative-context-legacy-chapter-material-2026-05-13.json",
+    ".runtime/timeline/events.jsonl",
+    "C:/Users/ASUS-KL/.codex/policy/defaults.md",
+    "C:/Users/ASUS-KL/.codex/policy/structural-laws.md",
+    "C:/Users/ASUS-KL/.codex/policy/annotated.md",
+    "C:/Users/ASUS-KL/.codex/policy/gate-registry.json"
+  ],
+  "started_at": "2026-05-15T03:38:14Z",
+  "updated_at": "2026-05-15T03:38:14Z",
+  "handoff": null,
+  "notes": "README is now explicitly an operating map and owner index, not a corpus store, failure database, learning memory, schema owner, or plan ledger. DataBase project manifest schema validation was restored by using the existing data-infrastructure-map type."
+}

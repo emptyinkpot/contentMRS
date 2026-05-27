@@ -1,0 +1,89 @@
+{
+  "capturedAt": "2026-05-10T10:59:23+08:00",
+  "dirtyWorktreeRoot": "E:\\My Project\\Atramenti-Console",
+  "cleanBaselineRoot": "E:\\My Project\\Atramenti-Console-cleanstream",
+  "cleanBaselineCommit": "d9f2700e59daefb6a352c5d563f6910d652ccd0a",
+  "dirtyWorktreeHead": "b66afb4244d20d29542527a012adb05c8ce96f4e",
+  "originMain": "d9f2700e59daefb6a352c5d563f6910d652ccd0a",
+  "dirtyWorktreeRelation": {
+    "ahead": 2,
+    "behind": 6,
+    "dirtyEntriesApprox": 1035
+  },
+  "capabilityGroups": [
+    {
+      "path": "codex/mcps/experience",
+      "exists": true,
+      "files": 63,
+      "bytes": 585875
+    },
+    {
+      "path": "codex/mcps/core/qmd",
+      "exists": true,
+      "files": 119,
+      "bytes": 4971603
+    },
+    {
+      "path": "codex/mcps/database-ops-mcp",
+      "exists": true,
+      "files": 4,
+      "bytes": 3672
+    },
+    {
+      "path": "codex/mcps/database-api",
+      "exists": true,
+      "files": 19,
+      "bytes": 99840
+    },
+    {
+      "path": "codex/skills/experience-manager",
+      "exists": true,
+      "files": 1,
+      "bytes": 3115
+    },
+    {
+      "path": "codex/skills/qmd",
+      "exists": true,
+      "files": 2,
+      "bytes": 14704
+    },
+    {
+      "path": "codex/skills/plugin-database--database-ops",
+      "exists": true,
+      "files": 5,
+      "bytes": 6519
+    },
+    {
+      "path": "codex/skills/plan-history-recall",
+      "exists": true,
+      "files": 6,
+      "bytes": 53314
+    },
+    {
+      "path": "codex/skills/memory-lancedb-pro",
+      "exists": false,
+      "files": 0,
+      "bytes": 0
+    }
+  ],
+  "redlineFindings": [
+    {
+      "severity": "high",
+      "pathGroup": "codex/mcps/experience",
+      "finding": "Credential-shaped defaults and token examples exist in source/docs/frontend assets. Do not split or publish as-is.",
+      "action": "Remove defaults, move settings to environment/secret surface, and redact knowledge docs before extraction."
+    },
+    {
+      "severity": "high",
+      "pathGroup": "codex/skills/plan-history-recall",
+      "finding": "Credential-shaped database default exists in sync script. Do not split or publish as-is.",
+      "action": "Move DB config to environment/secret surface before extraction."
+    }
+  ],
+  "nextRecommendedSplit": [
+    "codex/mcps/database-ops-mcp",
+    "codex/mcps/core/qmd",
+    "codex/mcps/experience after secret cleanup",
+    "codex/skills/plan-history-recall after secret cleanup"
+  ]
+}

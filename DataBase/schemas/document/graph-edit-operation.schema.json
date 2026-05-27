@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://database.tengokukk.com/schemas/document/graph-edit-operation.schema.json",
+  "title": "Graph Edit Operation",
+  "description": "Explicit edit operation that transforms one CCG version into another without mutating raw artifacts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "operationId", "graphId", "parentVersionId", "operationType", "actor", "reason", "changes", "createdAt"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "graph-edit-operation.v1" },
+    "operationId": { "$ref": "#/$defs/stableId" },
+    "graphId": { "$ref": "#/$defs/stableId" },
+    "parentVersionId": { "$ref": "#/$defs/stableId" },
+    "operationType": {
+      "type": "string",
+      "enum": ["insert_node", "update_node", "tombstone_node", "insert_edge", "remove_edge", "insert_asset_block", "attach_annotation", "replace_projection", "promote_correction"]
+    },
+    "actor": { "$ref": "#/$defs/actor" },
+    "reason": { "type": "string", "minLength": 1 },
+    "sourceAnnotationId": { "$ref": "#/$defs/stableId" },
+    "sourceArtifactIds": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/stableId" },
+      "default": []
+    },
+    "changes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/change" },
+      "minItems": 1
+    },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "review": { "$ref": "#/$defs/review" }
+  },
+  "$defs": {
+    "stableId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "type": { "type": "string", "enum": ["human", "ai", "system", "importer"] },
+        "label": { "type": "string" }
+      }
+    },
+    "change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action"],
+      "properties": {
+        "action": { "type": "string", "enum": ["insert_node", "update_node", "tombstone_node", "insert_edge", "remove_edge", "attach_asset", "attach_annotation", "replace_projection"] },
+        "targetId": { "$ref": "#/$defs/stableId" },
+        "node": { "type": "object", "additionalProperties": true },
+        "edge": { "type": "object", "additionalProperties": true },
+        "patch": { "type": "object", "additionalProperties": true },
+        "tombstoneReason": { "type": "string" }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "type": "string", "enum": ["not_required", "pending", "approved", "rejected"] },
+        "reviewerId": { "$ref": "#/$defs/stableId" },
+        "reviewedAt": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://database.tengokukk.com/schemas/document/content-import-manifest.schema.json",
+  "title": "Content Import Manifest",
+  "description": "Generic manifest for constrained, loss-visible imports into DataBase CDM/CCG.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "manifestId",
+    "status",
+    "sourceArtifact",
+    "extractor",
+    "parser",
+    "normalizationPolicy",
+    "imagePolicy",
+    "outputPolicy",
+    "lossReport",
+    "generatedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "content-import.v1" },
+    "manifestId": { "$ref": "#/$defs/stableId" },
+    "status": {
+      "type": "string",
+      "enum": ["extracted", "normalized", "review_required", "blocked", "completed"]
+    },
+    "sourceArtifact": { "$ref": "#/$defs/sourceArtifact" },
+    "extractor": { "$ref": "#/$defs/toolRef" },
+    "parser": { "$ref": "#/$defs/parserRef" },
+    "normalizationPolicy": { "$ref": "#/$defs/policyRef" },
+    "imagePolicy": { "$ref": "#/$defs/policyRef" },
+    "outputPolicy": { "$ref": "#/$defs/policyRef" },
+    "lossReport": { "$ref": "#/$defs/lossReport" },
+    "unresolvedWarnings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/importWarning" },
+      "default": []
+    },
+    "outputs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/outputArtifact" },
+      "default": []
+    },
+    "generatedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "stableId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "sourceArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "originalPath", "sha256", "mime", "source", "importedAt", "immutable"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "originalPath": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "minLength": 1 },
+        "mime": { "type": "string", "minLength": 1 },
+        "sizeBytes": { "type": "integer", "minimum": 0 },
+        "source": { "type": "string", "minLength": 1 },
+        "importedAt": { "type": "string", "format": "date-time" },
+        "immutable": { "type": "boolean", "const": true }
+      }
+    },
+    "toolRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "command": { "type": "string" }
+      }
+    },
+    "parserRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["route"],
+      "properties": {
+        "route": {
+          "type": "string",
+          "enum": ["pandoc-json", "xhtml-hast", "remark-mdast", "pdf-layout", "ocr-layout", "image-metadata", "hybrid"]
+        },
+        "details": { "type": "object", "additionalProperties": true }
+      }
+    },
+    "policyRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string" },
+        "rules": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        }
+      }
+    },
+    "lossReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unsupportedFeatures", "downgraded", "unresolved", "blockedReasons"],
+      "properties": {
+        "unsupportedFeatures": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "downgraded": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/lossItem" }
+        },
+        "unresolved": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/lossItem" }
+        },
+        "blockedReasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "lossItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "message": { "type": "string", "minLength": 1 },
+        "sourcePath": { "type": "string" },
+        "targetNodeId": { "type": "string" },
+        "severity": { "type": "string", "enum": ["info", "warning", "error", "blocking"] }
+      }
+    },
+    "importWarning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "message": { "type": "string", "minLength": 1 },
+        "severity": { "type": "string", "enum": ["info", "warning", "error"] }
+      }
+    },
+    "outputArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "format", "role"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "format": { "type": "string", "minLength": 1 },
+        "role": {
+          "type": "string",
+          "enum": ["raw-artifact", "extracted-structure", "canonical-document", "content-graph", "projection", "manifest", "loss-report", "asset"]
+        },
+        "hash": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "contentbase",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Corpus retrieval, composition, and Writer article generation",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.mjs --port 5101",
+    "dev": "node server.mjs --port 5101",
+    "dev:port": "node server.mjs --port",
+    "ci": "node --check server.mjs && pnpm --filter novel-product run build",
+    "structure:check": "powershell -ExecutionPolicy Bypass -File scripts/check-product-structure.ps1 -Root ."
+  },
+  "dependencies": {
+    "jieba-wasm": "^2.4.0",
+    "ts-node": "^10.9.2"
+  }
+}

@@ -1,0 +1,6 @@
+database-gateway listening on http://127.0.0.1:18195
+{"level":"info","event":"request","requestId":"164d196b-dc46-41dc-aecf-81162dc4965b","method":"GET","path":"/health","status":200,"elapsedMs":186}
+{"level":"info","event":"request","requestId":"6b027f7f-ea1d-4217-ac65-b2c9d504dae6","method":"GET","path":"/myblog/runtime/visuals/snapshot","status":200,"elapsedMs":58}
+{"level":"info","event":"request","requestId":"2a67625e-8e52-4fe0-9147-203b94663cf9","method":"POST","path":"/myblog/runtime/reader/memory","status":200,"elapsedMs":146}
+{"level":"info","event":"request","requestId":"7342d523-22c2-440e-b2a2-ae7e2f1d92d2","method":"GET","path":"/myblog/runtime/reader/memory","status":200,"elapsedMs":30}
+{"level":"info","event":"request","requestId":"746d3936-d683-46d9-a7e1-80127a8c9969","method":"GET","path":"/myblog/runtime/visuals/snapshot","status":200,"elapsedMs":57}

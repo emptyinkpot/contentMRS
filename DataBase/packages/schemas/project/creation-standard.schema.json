@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://emptyinkpot.local/schemas/project/creation-standard.schema.json",
+  "title": "Project Creation Standard",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "name",
+    "purpose",
+    "status",
+    "requiredFiles",
+    "requiredBoundaries",
+    "productizationLadder",
+    "acceptanceChecklist",
+    "scaffoldCommand",
+    "validationCommand"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "name": {
+      "type": "string"
+    },
+    "purpose": {
+      "type": "string"
+    },
+    "scaffoldType": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "requiredFiles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "requiredBoundaries": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "productizationLadder": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["stage", "shape", "nextStep"],
+        "properties": {
+          "stage": { "type": "string" },
+          "shape": { "type": "string" },
+          "nextStep": { "type": "string" }
+        }
+      }
+    },
+    "acceptanceChecklist": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "scaffoldCommand": {
+      "type": "string"
+    },
+    "validationCommand": {
+      "type": "string"
+    }
+  }
+}

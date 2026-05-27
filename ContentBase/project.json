@@ -1,0 +1,59 @@
+{
+  "name": "contentbase",
+  "projectName": "ContentBase",
+  "canonicalDoc": "README.md",
+  "machineReadableEntry": "project.json",
+  "githubRepo": "https://github.com/emptyinkpot/ContentBase",
+  "visibility": "private",
+  "type": "project",
+  "owner": "emptyinkpot",
+  "canonicalPurpose": "Reality Context packing and single-writer article generation.",
+  "readOrder": [
+    "README.md",
+    "project.json",
+    "product/novel/README.md"
+  ],
+  "defaultBranch": "main",
+  "localSourceRoot": "E:\\My Project\\ContentMRS\\ContentBase",
+  "productRoot": "E:\\My Project\\ContentMRS\\ContentBase",
+  "localRuntimeUrl": "http://127.0.0.1:5101/",
+  "localRuntimeHealthUrl": "http://127.0.0.1:5101/api/health",
+  "preferredActiveServer": {
+    "host": "124.220.233.126",
+    "sourceRoot": "/srv/contentbase/current",
+    "runtimeRoot": "/srv/contentbase/current"
+  },
+  "canonicalDocs": {
+    "root": "README.md",
+    "novelProduct": "product/novel/README.md"
+  },
+  "installEntry": {
+    "packageManager": "pnpm",
+    "install": "pnpm install",
+    "start": "pnpm start",
+    "dev": "pnpm run dev",
+    "ci": "pnpm run ci"
+  },
+  "status": "active",
+  "domainRole": "reality-context-runtime",
+  "ownershipBoundary": {
+    "owns": [
+      "EvidencePack loading",
+      "Reality Context packing",
+      "single-writer model invocation",
+      "article smoke diagnostics"
+    ],
+    "consumes": [
+      "DataBase Gateway EvidencePack",
+      "DataBase generated gateway client",
+      "LLM gateway"
+    ],
+    "forbids": [
+      "runtime outside README"
+    ]
+  },
+  "publicContentBaseUrl": "https://contentbase.tengokukk.com/",
+  "publicContentBaseHealthPath": "/api/health",
+  "publicContentBasePort": 5111,
+  "databaseGatewayPublicUrl": "https://database.tengokukk.com/"
+}

@@ -1,0 +1,41 @@
+services:
+  seaweedfs-master:
+    image: chrislusf/seaweedfs:latest
+    container_name: database-seaweedfs-master
+    command: "master -ip=seaweedfs-master -mdir=/data"
+    ports:
+      - "127.0.0.1:9333:9333"
+    volumes:
+      - ../../.runtime/object-storage-lab/seaweedfs/master:/data
+
+  seaweedfs-volume:
+    image: chrislusf/seaweedfs:latest
+    container_name: database-seaweedfs-volume
+    command: "volume -mserver=seaweedfs-master:9333 -ip=seaweedfs-volume -dir=/data -port=8080"
+    depends_on:
+      - seaweedfs-master
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ../../.runtime/object-storage-lab/seaweedfs/volume:/data
+
+  seaweedfs-filer:
+    image: chrislusf/seaweedfs:latest
+    container_name: database-seaweedfs-filer
+    command: "filer -master=seaweedfs-master:9333 -ip=seaweedfs-filer"
+    depends_on:
+      - seaweedfs-master
+      - seaweedfs-volume
+    ports:
+      - "127.0.0.1:8888:8888"
+    volumes:
+      - ../../.runtime/object-storage-lab/seaweedfs/filer:/data
+
+  seaweedfs-s3:
+    image: chrislusf/seaweedfs:latest
+    container_name: database-seaweedfs-s3
+    command: "s3 -filer=seaweedfs-filer:8888 -ip.bind=0.0.0.0 -port=8333"
+    depends_on:
+      - seaweedfs-filer
+    ports:
+      - "127.0.0.1:8333:8333"

@@ -1,0 +1,67 @@
+{
+  "version": "generation-zero",
+  "frozen": true,
+  "frozenAt": "2026-05-27",
+  "topics": [
+    {
+      "id": "T01",
+      "topic": "权力如何为空间命名：从都市国家到现代民族国家的历史变奏",
+      "targetWordCount": 2200,
+      "note": "已验证成功的首篇，覆盖 Reality+Literary+Semantic+Structure"
+    },
+    {
+      "id": "T02",
+      "topic": "夏目漱石笔下的孤独：在现代社会再读《心》",
+      "targetWordCount": 2200,
+      "note": "日本文学，考验 Literary corpus 深度"
+    },
+    {
+      "id": "T03",
+      "topic": "茶与禅的关系：从唐代陆羽到日本千利休",
+      "targetWordCount": 2000,
+      "note": "跨文化主题，考验 Semantic 语义检索"
+    },
+    {
+      "id": "T04",
+      "topic": "鲁迅的「铁屋子」隐喻与中国现代性焦虑",
+      "targetWordCount": 2200,
+      "note": "中国现代文学核心，Literary+Author 通道"
+    },
+    {
+      "id": "T05",
+      "topic": "博尔赫斯与无限图书馆：迷宫作为认识论",
+      "targetWordCount": 2000,
+      "note": "拉美文学+哲学交叉，考验 Semantic"
+    },
+    {
+      "id": "T06",
+      "topic": "从《源氏物语》看平安贵族的时间感",
+      "targetWordCount": 2200,
+      "note": "古典日本文学，Literary corpus 覆盖测试"
+    },
+    {
+      "id": "T07",
+      "topic": "卡夫卡的官僚机器：现代国家与个人的荒诞对峙",
+      "targetWordCount": 2000,
+      "note": "欧洲文学+政治哲学，Reality+Literary"
+    },
+    {
+      "id": "T08",
+      "topic": "杜甫诗歌中的饥饿：一种政治身体的书写",
+      "targetWordCount": 2000,
+      "note": "古典中国文学，Lexicon+Structure+Author"
+    },
+    {
+      "id": "T09",
+      "topic": "本雅明的「灵韵」概念与机械复制时代的艺术命运",
+      "targetWordCount": 2200,
+      "note": "批评理论，Semantic 高密度"
+    },
+    {
+      "id": "T10",
+      "topic": "沈从文笔下的湘西：地方性知识与现代小说的张力",
+      "targetWordCount": 2200,
+      "note": "中国乡土文学，Literary+Reality+Author"
+    }
+  ]
+}

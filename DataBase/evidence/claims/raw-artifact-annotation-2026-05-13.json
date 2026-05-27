@@ -1,0 +1,27 @@
+{
+  "task_id": "raw-artifact-annotation-2026-05-13",
+  "title": "Define raw artifact store and annotation graph contracts",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "docs/raw-artifact-annotation",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "docs/contracts/raw-artifact-store-contract.md",
+    "schemas/document/raw-artifact.schema.json",
+    "examples/document/minimal-raw-artifact.json",
+    "docs/contracts/annotation-graph-contract.md",
+    "schemas/document/annotation-graph.schema.json",
+    "examples/document/minimal-annotation-graph.json",
+    "docs/contracts/content-ingestion-constitution.md",
+    "docs/contracts/canonical-content-graph.md",
+    "docs/contracts/cross-repo-artifact-contracts.md",
+    "docs/contracts/cross-repo-artifact-inventory.md",
+    "ECOSYSTEM_MAP.md",
+    ".runtime/claims/raw-artifact-annotation-2026-05-13.json",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T14:50:00Z",
+  "updated_at": "2026-05-13T14:50:00Z",
+  "handoff": null,
+  "notes": "Doc/schema-only raw artifact and annotation contracts. Scope excludes OpenList moves, file cleanup, registry implementation, reader UI, and gates."
+}

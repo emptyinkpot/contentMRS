@@ -1,0 +1,30 @@
+{
+  "name": "@emptyinkpot/database-content-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/canonical-content-contract.js",
+  "types": "./dist/canonical-content-contract.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/canonical-content-contract.d.ts",
+      "require": "./dist/cjs/canonical-content-contract.js",
+      "import": "./dist/canonical-content-contract.js",
+      "default": "./dist/canonical-content-contract.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.cjs.json && node scripts/write-cjs-package.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
+}

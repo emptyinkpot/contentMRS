@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "graph-edit-operation.v1",
+  "operationId": "op.example.insert-illustration",
+  "graphId": "graph.example.epub",
+  "parentVersionId": "graph.example.epub.v1",
+  "operationType": "insert_asset_block",
+  "actor": {
+    "id": "person.operator",
+    "type": "human",
+    "label": "Operator"
+  },
+  "reason": "Insert illustration without mutating source EPUB artifact.",
+  "sourceArtifactIds": ["artifact.sha256.example-image"],
+  "changes": [
+    {
+      "action": "insert_node",
+      "node": {
+        "id": "blk.example.illustration",
+        "class": "block",
+        "type": "image",
+        "payload": {
+          "assetId": "asset.example.illustration",
+          "caption": "Inserted illustration"
+        }
+      }
+    },
+    {
+      "action": "insert_edge",
+      "edge": {
+        "id": "edge.contains.section.illustration",
+        "type": "contains",
+        "from": "sec.example.intro",
+        "to": "blk.example.illustration",
+        "order": 1
+      }
+    }
+  ],
+  "createdAt": "2026-05-13T15:35:00Z",
+  "review": {
+    "status": "approved",
+    "reviewerId": "person.operator",
+    "reviewedAt": "2026-05-13T15:35:00Z"
+  }
+}

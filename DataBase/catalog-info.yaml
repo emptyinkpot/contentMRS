@@ -1,0 +1,16 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: 'DataBase'
+  title: 'DataBase'
+  description: 'Canonical topology, inventory, schema, and operations map for the operator''s personal data system.'
+  annotations:
+    backstage.io/source-location: 'url:https://github.com/emptyinkpot/DataBase'
+    database.emptyinkpot/source-of-truth: 'local git repository + Tencent CynosDB MySQL'
+    database.emptyinkpot/runtime-location: 'E:\My Project\DataBase'
+    database.emptyinkpot/deployment-target: 'server-124 / 124.220.233.126'
+    database.emptyinkpot/project-json: 'project.json'
+spec:
+  type: 'documentation'
+  lifecycle: 'active'
+  owner: 'emptyinkpot'

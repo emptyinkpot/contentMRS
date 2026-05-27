@@ -1,0 +1,24 @@
+{
+  "task_id": "contentmrs-2-semantic-corpus-engine-2026-05-25",
+  "title": "Define DataBase as the ContentMRS 2.0 Semantic Corpus Engine",
+  "agent_id": "codex",
+  "status": "active",
+  "branch": "main",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "README.md",
+    "docs/runtime/search-and-classification-runtime.md",
+    "apps/gateway/src/routes/evidence.ts",
+    "apps/gateway/src/routes/semantic.ts",
+    "apps/gateway/src/routes/style.ts",
+    "apps/gateway/src/routes/writes.ts",
+    "packages/schemas/semantic/",
+    "packages/database-client/",
+    "semantic_units",
+    "search_chunks"
+  ],
+  "started_at": "2026-05-25T14:45:00Z",
+  "updated_at": "2026-05-25T14:45:00Z",
+  "handoff": null,
+  "notes": "ContentMRS 2.0 makes Semantic Corpus the core asset. DataBase owns fact/commentary/style/allusion/poetry/lexicon/structure/author-memory semantic units and retrieval projections; ContentBase only packs context and calls a single writer. This claim is a coordination signal for the next implementation pass, not a lock."
+}

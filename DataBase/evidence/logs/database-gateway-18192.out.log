@@ -1,0 +1,5 @@
+database-gateway listening on http://127.0.0.1:18192
+{"level":"info","event":"request","requestId":"b85df3e5-cbff-4663-b1a9-4ff637963ea8","method":"GET","path":"/openlist/mounts","status":200,"elapsedMs":121}
+{"level":"info","event":"request","requestId":"d9756c2a-5685-44a5-ad8f-1301b0264533","method":"GET","path":"/openlist/targets","status":200,"elapsedMs":30}
+{"level":"info","event":"request","requestId":"5b167a88-6aa6-4cac-b367-8371d94b981e","method":"GET","path":"/openlist/targets/mortis-ai-society","status":200,"elapsedMs":31}
+{"level":"info","event":"request","requestId":"51d86253-6762-4f74-8e64-6d16040b476d","method":"POST","path":"/openlist/targets/mortis-ai-society/list","status":200,"elapsedMs":477}

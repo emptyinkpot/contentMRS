@@ -1,0 +1,43 @@
+{
+  "name": "@emptyinkpot/database-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc -p tsconfig.json",
+    "generate:openapi": "node scripts/generate-openapi.mjs",
+    "generate:client": "openapi-generator-cli generate -i openapi.yaml -g typescript-fetch -o ../../packages/database-client --additional-properties=supportsES6=true,npmName=@emptyinkpot/database-gateway-generated-client,npmVersion=0.1.0,typescriptThreePlus=true && node scripts/clean-generated-client.mjs",
+    "import:new-landlord-semantic-materials": "node scripts/import-new-landlord-reference-materials.mjs",
+    "import:local-book-corpus": "node scripts/import-local-book-corpus.mjs",
+    "import:ragflow-literary-corpus": "node scripts/import-ragflow-literary-corpus.mjs",
+    "prepare:ragflow-evidence": "tsx scripts/prepare-ragflow-evidence.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "smoke:ragflow-evidence": "tsx scripts/smoke-ragflow-evidence.mjs",
+    "smoke:research-query": "node scripts/smoke-research-query.mjs",
+    "sync:topic-corpus": "node scripts/sync-topic-corpus.mjs",
+    "import:author-lexicon": "node scripts/import-author-lexicon-from-markdown.mjs",
+    "smoke:web-evidence": "node scripts/smoke-web-evidence-remote.mjs",
+    "example": "tsx src/clients/example.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@emptyinkpot/database-content-contracts": "file:../../packages/schemas/content",
+    "@emptyinkpot/database-creative-contracts": "file:../../packages/schemas/creative",
+    "@emptyinkpot/database-openlist-adapter": "file:../../services/openlist-adapter",
+    "@emptyinkpot/database-semantic-contracts": "file:../../packages/schemas/semantic",
+    "@hono/node-server": "^1.14.4",
+    "adm-zip": "^0.5.17",
+    "hono": "^4.7.11",
+    "mysql2": "^3.14.1",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@openapitools/openapi-generator-cli": "^2.32.0",
+    "@types/node": "^22.15.29",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "yaml": "^2.9.0"
+  }
+}

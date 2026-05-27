@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://database.tengokukk.com/schemas/document/raw-artifact.schema.json",
+  "title": "Raw Artifact",
+  "description": "Immutable source artifact record for DataBase ingestion. Bytes may live in OpenList-backed storage; identity and lifecycle metadata belong to DataBase.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "artifactId",
+    "sha256",
+    "mime",
+    "sizeBytes",
+    "originalName",
+    "originalPath",
+    "sourceUri",
+    "storageUri",
+    "importedAt",
+    "immutable",
+    "retentionPolicy"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "raw-artifact.v1" },
+    "artifactId": { "$ref": "#/$defs/stableId" },
+    "sha256": { "type": "string", "pattern": "^(sha256:)?[a-fA-F0-9]{64}$" },
+    "mime": { "type": "string", "minLength": 1 },
+    "sizeBytes": { "type": "integer", "minimum": 0 },
+    "originalName": { "type": "string", "minLength": 1 },
+    "originalPath": { "type": "string", "minLength": 1 },
+    "sourceUri": { "type": "string", "minLength": 1 },
+    "storageUri": { "type": "string", "minLength": 1 },
+    "importedAt": { "type": "string", "format": "date-time" },
+    "immutable": { "type": "boolean", "const": true },
+    "retentionPolicy": { "$ref": "#/$defs/retentionPolicy" },
+    "derivatives": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/derivativeRef" },
+      "default": []
+    },
+    "referencedBy": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/reference" },
+      "default": []
+    },
+    "metadata": { "type": "object", "additionalProperties": true }
+  },
+  "$defs": {
+    "stableId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "retentionPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "type": "string", "enum": ["retain", "archive", "candidate_gc", "legal_hold"] },
+        "reason": { "type": "string" },
+        "reviewAfter": { "type": "string", "format": "date-time" }
+      }
+    },
+    "derivativeRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifactId", "role"],
+      "properties": {
+        "artifactId": { "$ref": "#/$defs/stableId" },
+        "role": { "type": "string", "enum": ["extracted-structure", "canonical-document", "content-graph", "projection", "asset", "thumbnail", "ocr-text", "layout-map"] },
+        "path": { "type": "string" }
+      }
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "type": { "type": "string", "minLength": 1 },
+        "role": { "type": "string" }
+      }
+    }
+  }
+}

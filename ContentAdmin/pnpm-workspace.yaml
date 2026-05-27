@@ -1,0 +1,5 @@
+packages:
+  - "apps/*"
+  - "apps/directus-admin/extensions/directus-extension-*"
+  - "apps/directus-admin/extensions/evidence-search"
+  - "packages/*"

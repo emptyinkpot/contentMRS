@@ -1,0 +1,18 @@
+{
+  "task_id": "myblog-edit-surface-reference-2026-05-13",
+  "title": "Define MyBlog edit surface reference architecture",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "docs/myblog-edit-surface-reference-architecture",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "docs/reference-architecture/myblog-edit-surface.md",
+    "ECOSYSTEM_MAP.md",
+    ".runtime/claims/myblog-edit-surface-reference-2026-05-13.json",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T17:10:00Z",
+  "updated_at": "2026-05-13T17:10:00Z",
+  "handoff": null,
+  "notes": "Doc-only reference architecture for clone-first MyBlog edit surface. Scope excludes MyBlog implementation, dependency installation, and DataBase runtime routes."
+}

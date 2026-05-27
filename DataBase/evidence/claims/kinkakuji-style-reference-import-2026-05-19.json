@@ -1,0 +1,23 @@
+{
+  "task_id": "kinkakuji-style-reference-import-2026-05-19",
+  "title": "Import Kinkakuji as restricted style reference corpus",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "refactor/codex/canonical-content-gateway-client",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "apps/gateway/scripts/import-local-book-corpus.mjs",
+    "apps/gateway/package.json",
+    "apps/gateway/package-lock.json",
+    "docs/runtime/search-and-classification-runtime.md",
+    "README.md",
+    "literature",
+    "search_documents",
+    "search_chunks",
+    "semantic_units"
+  ],
+  "started_at": "2026-05-19T09:50:00Z",
+  "updated_at": "2026-05-19T10:05:00Z",
+  "handoff": null,
+  "notes": "Imported C:\\Users\\ASUS-KL\\Downloads\\金阁寺.epub as sourceId book_kinkakuji_restricted_style. Stored restricted style/syntax profiles only; no reusable sentence-copy library or ContentBase shadow registry."
+}

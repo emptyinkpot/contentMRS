@@ -1,0 +1,22 @@
+{
+  "task_id": "gateway-core-health-optional-downstreams-2026-05-14",
+  "title": "Separate DataBase Gateway core health from optional downstream health",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "main",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "gateway/src/routes/health.ts",
+    "gateway/scripts/generate-openapi.mjs",
+    "gateway/openapi.yaml",
+    "generated/clients/database-gateway/",
+    "gateway/scripts/smoke.mjs",
+    "gateway/README.md",
+    "docs/gateway/database-gateway-operations.md",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-14T15:20:00Z",
+  "updated_at": "2026-05-14T15:45:00Z",
+  "handoff": null,
+  "notes": "/health now represents required Gateway core readiness: MySQL must pass, while NocoDB/OpenList are exposed under optionalDownstreams and do not decide core readiness. /health/dependencies still reports MySQL/schema as required and optional downstream status as evidence. Verified with gateway typecheck, gateway build, OpenAPI generation, generated client build, live /health 200 with optionalDownstreams.nocodb=error, and npm run smoke. Residual risk: NocoDB itself remains unhealthy and must be fixed by its owning runtime, not by weakening Gateway readiness."
+}

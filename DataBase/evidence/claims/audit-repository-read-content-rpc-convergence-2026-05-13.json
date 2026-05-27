@@ -1,0 +1,17 @@
+{
+  "task_id": "audit-repository-read-content-rpc-convergence-2026-05-13",
+  "title": "Complete audit repository RPC convergence",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "main",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "gateway/src/routes/content.ts",
+    "gateway/openapi.yaml",
+    "generated/clients/database-gateway/"
+  ],
+  "started_at": "2026-05-13T04:45:00Z",
+  "updated_at": "2026-05-13T05:20:00Z",
+  "handoff": null,
+  "notes": "Completed: Gateway chapter read contract exposes audit_issues, suggested_action, and published_at; generated SDK rebuilt and ContentBase audit repository consumes those fields without direct chapter SQL."
+}

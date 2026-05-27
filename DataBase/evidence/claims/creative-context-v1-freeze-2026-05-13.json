@@ -1,0 +1,36 @@
+{
+  "task_id": "creative-context-v1-freeze-2026-05-13",
+  "title": "Freeze CreativeContext v1 aggregate",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "local",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "schemas/creative/creative-context-contract.ts",
+    "gateway/src/routes/creative.ts",
+    "gateway/scripts/generate-openapi.mjs",
+    "gateway/openapi.yaml",
+    "generated/clients/database-gateway/",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T16:20:00+08:00",
+  "updated_at": "2026-05-13T16:21:00+08:00",
+  "handoff": null,
+  "checks": [
+    "npm run typecheck in schemas/creative",
+    "npm run build in schemas/creative",
+    "npm run typecheck/build in schemas/content and schemas/semantic",
+    "npm run typecheck in gateway",
+    "npm run build in gateway",
+    "npm run generate:openapi in gateway",
+    "npm run generate:client in gateway",
+    "npm run build in generated/clients/database-gateway",
+    "pnpm install in ContentBase",
+    "pnpm --filter novel-product run build",
+    "pnpm --filter novel-product run test",
+    "check-contentbase-canonical-sql-boundary ok",
+    "check-project-standard ok",
+    "git diff --check"
+  ],
+  "notes": "CreativeContext v1 aggregate fields are contract-defined, Gateway-populated, OpenAPI/SDK-generated, documented as stable v1, and compatible with existing ContentBase build/test consumers."
+}

@@ -1,0 +1,19 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: 'mortis-napcat-control'
+  title: 'mortis-napcat-control'
+  description: 'mortis-chat-control-adapter'
+  annotations:
+    backstage.io/source-location: 'url:https://github.com/emptyinkpot/mortis-napcat-control'
+    emptyinkpot.io/visibility: 'public'
+    emptyinkpot.io/repository-role: 'mortis-chat-control-adapter'
+    emptyinkpot.io/status: 'deleted-after-backup'
+    emptyinkpot.io/preferred-source: 'false'
+    emptyinkpot.io/canonical-doc: ''
+    emptyinkpot.io/machine-readable-entry: ''
+spec:
+  type: 'library'
+  lifecycle: 'deleted-after-backup'
+  owner: 'emptyinkpot'
+  system: 'emptyinkpot-ecosystem'

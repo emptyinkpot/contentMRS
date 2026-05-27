@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/emptyinkpot/DataBase/schemas/data-curation/knowledge-label.schema.json",
+  "title": "Knowledge Curation Label",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "content_kind",
+    "value_level",
+    "privacy_level",
+    "action",
+    "tags",
+    "summary",
+    "confidence"
+  ],
+  "properties": {
+    "content_kind": {
+      "type": "string",
+      "enum": [
+        "note",
+        "story",
+        "prompt",
+        "project_doc",
+        "school_doc",
+        "account_secret_candidate",
+        "runtime_log",
+        "reference",
+        "trash",
+        "unknown"
+      ]
+    },
+    "value_level": {
+      "type": "string",
+      "enum": ["high", "medium", "low", "archive_only", "trash"]
+    },
+    "privacy_level": {
+      "type": "string",
+      "enum": ["public", "private", "sensitive", "secret"]
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "keep_searchable",
+        "keep_archived",
+        "route_to_secret_table",
+        "deduplicate",
+        "review_manually",
+        "discard_candidate"
+      ]
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 48 },
+      "maxItems": 12
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "normalized_title": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "duplicate_hint": {
+      "type": ["string", "null"],
+      "maxLength": 200
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "rationale": {
+      "type": "string",
+      "maxLength": 500
+    }
+  }
+}

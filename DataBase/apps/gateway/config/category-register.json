@@ -1,0 +1,23 @@
+{
+  "version": "category-register.v1",
+  "categories": {
+    "日方语境": ["japanese-right-context"],
+    "中方语境": ["chinese-resistance-context"],
+    "苏联语境": ["left-soviet-context"],
+    "古典语境": ["classical-imperial-context"],
+    "明代海洋": ["ming-maritime-context"],
+    "明代制度": ["ming-maritime-context"],
+    "宏大叙事": ["historical-narrative"],
+    "政权与制度": ["historical-narrative"],
+    "历史术语": ["historical-term"],
+    "比喻系统": ["metaphor-system"],
+    "象征物": ["metaphor-system"],
+    "情态": ["emotional-register"],
+    "动作": ["action-image"],
+    "语言": ["author-active"],
+    "物境": ["material-detail"],
+    "思辨": ["author-active"],
+    "社会": ["author-active"],
+    "语法": ["author-active"]
+  }
+}

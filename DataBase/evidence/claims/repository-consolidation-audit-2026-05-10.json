@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "task_id": "repository-consolidation-audit-2026-05-10",
+  "title": "Audit archive readiness for candidate repositories",
+  "agent_id": "codex",
+  "status": "active",
+  "branch": "main",
+  "conflict_policy": "review-before-merge",
+  "claimed_paths": [
+    "docs/github/archive-readiness-scan-2026-05-10.md",
+    "docs/github/repository-consolidation-plan.md",
+    "docs/github/archive-candidates-2026-05-10.md",
+    "ecosystem/repository-consolidation.json",
+    "README.md",
+    "project.json",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-10T00:00:00Z",
+  "updated_at": "2026-05-10T00:00:00Z",
+  "handoff": null,
+  "notes": "Reference-only audit of archive readiness. No repository deletion or GitHub state change is authorized by this task."
+}

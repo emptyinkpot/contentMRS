@@ -1,0 +1,27 @@
+{
+  "task_id": "canonical-content-gateway-client-2026-05-12",
+  "title": "Expose canonical content gateway routes and generated client",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "refactor/codex/canonical-content-gateway-client",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "gateway/src/routes/content.ts",
+    "gateway/src/routes/creative.ts",
+    "gateway/src/routes/semantic.ts",
+    "gateway/src/routes.ts",
+    "gateway/openapi.yaml",
+    "gateway/API.md",
+    "gateway/sql/005_canonical_content_schema.sql",
+    "gateway/sql/006_promote_legacy_content.sql",
+    "schemas/content/",
+    "generated/clients/database-gateway/",
+    "docs/architecture/canonical-content-system.md",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-12T13:09:06Z",
+  "updated_at": "2026-05-12T13:09:06Z",
+  "completed_at": "2026-05-12T13:09:06Z",
+  "handoff": null,
+  "notes": "ContentBase canonical consumer depends on these DataBase Gateway routes and generated TypeScript client methods."
+}

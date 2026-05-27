@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "asset-graph.v1",
+  "graphId": "asset.graph.example",
+  "assets": [
+    {
+      "id": "asset.example.illustration",
+      "rawArtifactId": "artifact.sha256.example-image",
+      "sha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "mime": "image/png",
+      "width": 1200,
+      "height": 800,
+      "originalPath": "imports/images/illustration.png",
+      "role": "illustration"
+    }
+  ],
+  "relations": [
+    {
+      "id": "assetrel.example.illustrates-block",
+      "type": "illustrates",
+      "assetId": "asset.example.illustration",
+      "targetId": "blk.example.evidence",
+      "targetType": "block"
+    }
+  ]
+}

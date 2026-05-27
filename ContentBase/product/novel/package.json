@@ -1,0 +1,22 @@
+{
+  "name": "novel-product",
+  "version": "3.0.0",
+  "description": "Corpus article runtime",
+  "main": "dist/product/novel/app/article/context-engine.js",
+  "types": "dist/product/novel/app/article/context-engine.d.ts",
+  "private": true,
+  "scripts": {
+    "dev": "node --watch --experimental-strip-types ../../server.mjs --port 5101",
+    "build": "pnpm run clean && tsc -p tsconfig.json",
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
+    "smoke:article-mvp": "node --experimental-strip-types tools/generate-article-mvp.mjs",
+    "smoke:evidence-pack": "node tools/evidence-pack-smoke.mjs"
+  },
+  "dependencies": {
+    "@emptyinkpot/database-gateway-generated-client": "file:../../vendor/database-artifacts/emptyinkpot-database-gateway-generated-client-0.1.0.tgz"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.39",
+    "typescript": "^6.0.2"
+  }
+}

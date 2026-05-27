@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "epub-ingestion.v1",
+  "manifestId": "manifest.example.epub-import",
+  "sourceArtifact": {
+    "path": "imports/example.epub",
+    "format": "epub",
+    "hash": "sha256:example"
+  },
+  "importer": {
+    "name": "database-epub-importer",
+    "version": "planned.v1",
+    "command": "pandoc example.epub -t json"
+  },
+  "parserRoute": "pandoc-json",
+  "packageDocument": "OEBPS/content.opf",
+  "navDocument": "OEBPS/nav.xhtml",
+  "spineItemCount": 12,
+  "targetDocumentId": "doc.example.epub",
+  "targetGraphId": "graph.example.epub",
+  "targetGraphVersion": "example.1",
+  "generatedAt": "2026-05-13T14:05:00Z",
+  "outputs": [
+    {
+      "path": "out/document.ast.json",
+      "format": "json",
+      "role": "cdm-document"
+    },
+    {
+      "path": "out/content-graph.json",
+      "format": "json",
+      "role": "content-graph"
+    }
+  ],
+  "warnings": [
+    {
+      "code": "NO_FIXED_PAGE_NUMBERS",
+      "message": "EPUB is reflowable; canonical anchors were emitted instead of page numbers.",
+      "severity": "info"
+    }
+  ]
+}

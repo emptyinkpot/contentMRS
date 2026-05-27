@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://database.tengokukk.com/schemas/document/projection-package.schema.json",
+  "title": "Projection Package",
+  "description": "Rebuildable projection package derived from a DataBase CCG graph version for reader/runtime/search/public surfaces.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "packageId", "graphId", "graphVersionId", "projectionType", "producer", "generatedAt", "manifest", "renderedContent"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "projection-package.v1" },
+    "packageId": { "$ref": "#/$defs/stableId" },
+    "graphId": { "$ref": "#/$defs/stableId" },
+    "graphVersionId": { "$ref": "#/$defs/stableId" },
+    "projectionType": { "type": "string", "enum": ["html", "mdx", "astro", "epub", "pdf", "fanqie", "search", "reader_runtime"] },
+    "producer": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "manifest": { "$ref": "#/$defs/packageManifest" },
+    "renderedContent": { "type": "array", "items": { "$ref": "#/$defs/artifactRef" } },
+    "toc": { "type": "array", "items": { "$ref": "#/$defs/tocNode" }, "default": [] },
+    "anchorMap": { "type": "array", "items": { "$ref": "#/$defs/anchorMapping" }, "default": [] },
+    "assetMap": { "type": "array", "items": { "$ref": "#/$defs/assetMapping" }, "default": [] },
+    "annotationOverlay": { "type": "array", "items": { "$ref": "#/$defs/stableId" }, "default": [] },
+    "searchChunks": { "type": "array", "items": { "$ref": "#/$defs/searchChunk" }, "default": [] }
+  },
+  "$defs": {
+    "stableId": { "type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$" },
+    "artifactRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "format"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "format": { "type": "string", "minLength": 1 },
+        "hash": { "type": "string" }
+      }
+    },
+    "packageManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceGraphVersion", "inputContracts"],
+      "properties": {
+        "sourceGraphVersion": { "$ref": "#/$defs/stableId" },
+        "inputContracts": { "type": "array", "items": { "type": "string" } },
+        "warnings": { "type": "array", "items": { "type": "string" }, "default": [] }
+      }
+    },
+    "tocNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "level", "anchorId"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "title": { "type": "string" },
+        "level": { "type": "integer", "minimum": 1 },
+        "anchorId": { "$ref": "#/$defs/stableId" },
+        "children": { "type": "array", "items": { "$ref": "#/$defs/tocNode" }, "default": [] }
+      }
+    },
+    "anchorMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["anchorId", "locator"],
+      "properties": {
+        "anchorId": { "$ref": "#/$defs/stableId" },
+        "locator": { "type": "object", "additionalProperties": true }
+      }
+    },
+    "assetMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assetId", "path"],
+      "properties": {
+        "assetId": { "$ref": "#/$defs/stableId" },
+        "path": { "type": "string", "minLength": 1 },
+        "hash": { "type": "string" }
+      }
+    },
+    "searchChunk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sourceNodeId", "anchorId", "text"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "sourceNodeId": { "$ref": "#/$defs/stableId" },
+        "anchorId": { "$ref": "#/$defs/stableId" },
+        "text": { "type": "string" },
+        "metadata": { "type": "object", "additionalProperties": true }
+      }
+    }
+  }
+}

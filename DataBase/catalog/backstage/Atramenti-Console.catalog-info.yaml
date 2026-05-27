@@ -1,0 +1,19 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: 'Atramenti-Console'
+  title: 'Atramenti-Console'
+  description: 'self-hosted-console-surface'
+  annotations:
+    backstage.io/source-location: 'url:https://github.com/emptyinkpot/Atramenti-Console'
+    emptyinkpot.io/visibility: 'private'
+    emptyinkpot.io/repository-role: 'self-hosted-console-surface'
+    emptyinkpot.io/status: 'active'
+    emptyinkpot.io/preferred-source: 'false'
+    emptyinkpot.io/canonical-doc: ''
+    emptyinkpot.io/machine-readable-entry: ''
+spec:
+  type: 'library'
+  lifecycle: 'active'
+  owner: 'emptyinkpot'
+  system: 'emptyinkpot-ecosystem'

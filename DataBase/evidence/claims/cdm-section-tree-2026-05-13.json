@@ -1,0 +1,19 @@
+{
+  "task_id": "cdm-section-tree-2026-05-13",
+  "title": "Make CDM hierarchy-first and define TOC as section tree projection",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "docs/cdm-section-tree",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "docs/contracts/canonical-document-model.md",
+    "schemas/document/canonical-document.schema.json",
+    "examples/document/minimal-cdm-document.json",
+    ".runtime/claims/cdm-section-tree-2026-05-13.json",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T13:25:00Z",
+  "updated_at": "2026-05-13T13:25:00Z",
+  "handoff": null,
+  "notes": "Doc/schema correction: CDM is structure-first; TOC/nav/outline are projections from recursive Section tree."
+}

@@ -1,0 +1,20 @@
+{
+  "task_id": "generation-output-write-contract-2026-05-13",
+  "title": "Add DataBase Gateway generation output write contract",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "local",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "schemas/content/",
+    "gateway/src/routes/writes.ts",
+    "gateway/scripts/generate-openapi.mjs",
+    "gateway/openapi.yaml",
+    "generated/clients/database-gateway/",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T03:34:16Z",
+  "updated_at": "2026-05-13T03:45:24Z",
+  "handoff": null,
+  "notes": "Added the idempotent record-generation-output write path, generated OpenAPI/SDK, and kept legacy chapter status transitions owned by ContentBase state machine."
+}

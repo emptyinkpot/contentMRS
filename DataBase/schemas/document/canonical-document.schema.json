@@ -1,0 +1,567 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://database.tengokukk.com/schemas/document/canonical-document.schema.json",
+  "title": "Canonical Document Model",
+  "description": "DataBase-owned canonical Document AST. Markdown, EPUB, PDF, HTML, MDX, Astro, Fanqie, search, and print outputs are projections of this model.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "type",
+    "title",
+    "authors",
+    "status",
+    "sourceLineage",
+    "projectionPolicy",
+    "sections"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "cdm.v1"
+    },
+    "id": {
+      "$ref": "#/$defs/stableId"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "novel",
+        "article",
+        "note",
+        "paper",
+        "world_file",
+        "evidence_file",
+        "other"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "authors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/reference"
+      },
+      "default": []
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "reviewed",
+        "published",
+        "archived"
+      ]
+    },
+    "sourceLineage": {
+      "$ref": "#/$defs/sourceLineage"
+    },
+    "styleProfile": {
+      "$ref": "#/$defs/reference"
+    },
+    "semanticTags": {
+      "$ref": "#/$defs/tagList"
+    },
+    "projectionPolicy": {
+      "$ref": "#/$defs/projectionPolicy"
+    },
+    "projections": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/projectionManifest"
+      },
+      "default": []
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/section"
+      }
+    }
+  },
+  "$defs": {
+    "stableId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/stableId"
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string"
+        },
+        "uri": {
+          "type": "string"
+        }
+      }
+    },
+    "tagList": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": []
+    },
+    "sourceLineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceType",
+        "sourceId"
+      ],
+      "properties": {
+        "sourceType": {
+          "type": "string",
+          "enum": [
+            "markdown",
+            "database",
+            "import",
+            "generated",
+            "manual",
+            "external"
+          ]
+        },
+        "sourceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourcePath": {
+          "type": "string"
+        },
+        "sourceVersion": {
+          "type": "string"
+        },
+        "ingestedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "producer": {
+          "type": "string"
+        }
+      }
+    },
+    "projectionPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allowedProjectionTypes"
+      ],
+      "properties": {
+        "allowedProjectionTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/projectionType"
+          },
+          "uniqueItems": true
+        },
+        "publicFields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "privateByDefault": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "projectionType": {
+      "type": "string",
+      "enum": [
+        "epub",
+        "pdf",
+        "html",
+        "mdx",
+        "astro",
+        "fanqie",
+        "print",
+        "search",
+        "semantic_chunks"
+      ]
+    },
+    "projectionManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "documentId",
+        "sourceDocumentVersion",
+        "projectionType",
+        "projectionVersion",
+        "producer",
+        "generatedAt",
+        "outputArtifacts"
+      ],
+      "properties": {
+        "documentId": {
+          "$ref": "#/$defs/stableId"
+        },
+        "sourceDocumentVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "projectionType": {
+          "$ref": "#/$defs/projectionType"
+        },
+        "projectionVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "producer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "generatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "inputContracts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "outputArtifacts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/artifactRef"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        }
+      }
+    },
+    "artifactRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "format"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "format": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hash": {
+          "type": "string"
+        }
+      }
+    },
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "documentId",
+        "order",
+        "level",
+        "title",
+        "semanticRole",
+        "blocks"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/stableId"
+        },
+        "documentId": {
+          "$ref": "#/$defs/stableId"
+        },
+        "parentSectionId": {
+          "$ref": "#/$defs/stableId"
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6
+        },
+        "title": {
+          "type": "string"
+        },
+        "semanticRole": {
+          "type": "string",
+          "enum": [
+            "chapter",
+            "scene",
+            "introduction",
+            "argument",
+            "appendix",
+            "evidence",
+            "section",
+            "other"
+          ]
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/reference"
+          },
+          "default": []
+        },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/block"
+          }
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/section"
+          },
+          "default": []
+        }
+      }
+    },
+    "block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "documentId",
+        "sectionId",
+        "order",
+        "type",
+        "content"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/stableId"
+        },
+        "documentId": {
+          "$ref": "#/$defs/stableId"
+        },
+        "sectionId": {
+          "$ref": "#/$defs/stableId"
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "paragraph",
+            "quote",
+            "dialogue",
+            "narration",
+            "inner_monologue",
+            "poetry",
+            "code",
+            "image",
+            "table",
+            "footnote",
+            "aside",
+            "epigraph",
+            "scene_break",
+            "evidence",
+            "claim",
+            "argument",
+            "reflection"
+          ]
+        },
+        "content": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/inlineList"
+            },
+            {
+              "type": "object"
+            }
+          ]
+        },
+        "annotations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/annotation"
+          },
+          "default": []
+        },
+        "citations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/citation"
+          },
+          "default": []
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/reference"
+          },
+          "default": []
+        },
+        "layoutHints": {
+          "$ref": "#/$defs/layoutHints"
+        },
+        "semanticTags": {
+          "$ref": "#/$defs/tagList"
+        }
+      }
+    },
+    "inlineList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/inlineSpan"
+      }
+    },
+    "inlineSpan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "text",
+            "emphasis",
+            "strong",
+            "link",
+            "citation_ref",
+            "footnote_ref",
+            "person_ref",
+            "concept_ref",
+            "entity_ref",
+            "code_span",
+            "ruby",
+            "annotation"
+          ]
+        },
+        "text": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "children": {
+          "$ref": "#/$defs/inlineList"
+        },
+        "attrs": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "annotation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "value"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "value": {},
+        "source": {
+          "type": "string"
+        }
+      }
+    },
+    "citation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "sourceId"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/stableId"
+        },
+        "sourceId": {
+          "$ref": "#/$defs/stableId"
+        },
+        "fragmentId": {
+          "$ref": "#/$defs/stableId"
+        },
+        "locator": {
+          "type": "string"
+        },
+        "citationStyle": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "layoutHints": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pageBreakBefore": {
+          "type": "boolean"
+        },
+        "pageBreakAfter": {
+          "type": "boolean"
+        },
+        "keepWithNext": {
+          "type": "boolean"
+        },
+        "keepTogether": {
+          "type": "boolean"
+        },
+        "orphanControl": {
+          "type": "boolean"
+        },
+        "widowControl": {
+          "type": "boolean"
+        },
+        "preferredFloat": {
+          "type": "string",
+          "enum": [
+            "none",
+            "top",
+            "bottom",
+            "left",
+            "right"
+          ]
+        },
+        "projectionOverrides": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    }
+  }
+}

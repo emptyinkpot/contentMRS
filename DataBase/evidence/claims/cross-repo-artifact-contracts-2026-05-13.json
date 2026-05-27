@@ -1,0 +1,18 @@
+{
+  "task_id": "cross-repo-artifact-contracts-2026-05-13",
+  "title": "Define cross-repo artifact contracts for DataBase ContentBase MyBlog",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "docs/cross-repo-artifact-contracts",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "docs/contracts/cross-repo-artifact-contracts.md",
+    "ECOSYSTEM_MAP.md",
+    ".runtime/claims/cross-repo-artifact-contracts-2026-05-13.json",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T11:55:00Z",
+  "updated_at": "2026-05-13T11:55:00Z",
+  "handoff": null,
+  "notes": "Doc-only artifact grammar. Scope excludes ContractGuard gates and implementation changes."
+}

@@ -1,0 +1,22 @@
+{
+  "task_id": "gateway-api-surface-governance-2026-05-13",
+  "title": "Stabilize DataBase Gateway API surface governance",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "local",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "docs/gateway/api-surface-governance.md",
+    "scripts/check-contentbase-canonical-sql-boundary.ps1",
+    "project.json",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T15:00:00+08:00",
+  "updated_at": "2026-05-13T15:05:00+08:00",
+  "handoff": null,
+  "notes": "Consolidation task completed: defined Gateway stable API surface rules and added a boundary guard for ContentBase novel canonical works/chapters SQL regression.",
+  "checks": [
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\check-contentbase-canonical-sql-boundary.ps1 -ContentBaseRoot \"E:\\My Project\\ContentBase\"",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\check-project-standard.ps1 -Root \"E:\\My Project\\DataBase\""
+  ]
+}

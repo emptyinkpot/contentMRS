@@ -1,0 +1,11 @@
+# Default owner is the operator. This file exists so GitHub can surface review
+# boundaries if branch protection is enabled later.
+
+* @emptyinkpot
+
+# Coordination and runtime truth require explicit operator review.
+/AGENT_WORKFLOW.md @emptyinkpot
+/evidence/ @emptyinkpot
+/packages/schemas/agent-coordination/ @emptyinkpot
+/project.json @emptyinkpot
+/README.md @emptyinkpot

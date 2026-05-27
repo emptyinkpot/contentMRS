@@ -1,0 +1,18 @@
+{
+  "task_id": "creative-rule-repair-loop-2026-05-13",
+  "title": "Add structured creative rule repair plans",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": null,
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "schemas/creative/creative-rules.ts",
+    "E:/My Project/ContentBase/product/novel/core/manuscript/content-craft/src/generation-pipeline.ts",
+    "E:/My Project/ContentBase/product/novel/core/manuscript/content-craft/src/generation-types.ts",
+    "E:/My Project/ContentBase/product/novel/tests/generation-context.test.ts"
+  ],
+  "started_at": "2026-05-13T00:00:00Z",
+  "updated_at": "2026-05-13T00:00:00Z",
+  "handoff": null,
+  "notes": "Completed. CreativeRuleViolation now carries fixAction/fixInstruction. ContentBase reports ruleViolations and fixPlan, and revision prompts include structured repair actions. Checks: schemas/creative typecheck/build, gateway typecheck/build, ContentBase pnpm run ci."
+}

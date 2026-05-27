@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "task_id": "experience-manager-service",
+  "agent_id": "external-builder-or-active-agent",
+  "branch": "main",
+  "status": "ready-for-review",
+  "base": "main",
+  "commit": "2779cb0",
+  "claimed_paths": [
+    "services/experience-manager/",
+    "docs/operations/ai-memory-ingestion-roadmap.md",
+    "ecosystem/atramenti-capability-inventory.json",
+    "ecosystem/repos.json",
+    "ecosystem/supply-relationships.json",
+    "ecosystem/upstreams.json"
+  ],
+  "checks": [
+    "npm run smoke",
+    "node --check ./mcp/server.mjs"
+  ],
+  "updated_at": "2026-05-10T00:00:00Z",
+  "integration_notes": "Sanitized experience-manager import exists at services/experience-manager and smoke syntax checks pass. Review focus: secret loading, MCP startup wiring, QMD path existence, and alignment with DataBase/Mortis memory policy before enabling as default memory runtime."
+}

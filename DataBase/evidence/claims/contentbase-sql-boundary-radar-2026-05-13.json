@@ -1,0 +1,22 @@
+{
+  "task_id": "contentbase-sql-boundary-radar-2026-05-13",
+  "title": "Add ContentBase SQL boundary migration radar",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "local",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "scripts/check-contentbase-canonical-sql-boundary.ps1",
+    "docs/gateway/api-surface-governance.md",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T15:20:00+08:00",
+  "updated_at": "2026-05-13T15:30:00+08:00",
+  "handoff": null,
+  "notes": "Completed: existing ContentBase boundary guard now has ReportAll mode that inventories direct SQL table references for the next SDK/RPC migration batch without failing non-guarded runtime-owned tables.",
+  "checks": [
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\check-contentbase-canonical-sql-boundary.ps1 -ContentBaseRoot \"E:\\My Project\\ContentBase\"",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\check-contentbase-canonical-sql-boundary.ps1 -ContentBaseRoot \"E:\\My Project\\ContentBase\" -ReportAll",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\check-project-standard.ps1 -Root \"E:\\My Project\\DataBase\""
+  ]
+}

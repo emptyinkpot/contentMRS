@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "ccg.v1",
+  "graphId": "graph.example.article",
+  "graphVersion": "example.1",
+  "generatedAt": "2026-05-13T13:45:00Z",
+  "nodes": [
+    { "id": "doc.example.article", "class": "document", "type": "article", "title": "Example Canonical Content Graph" },
+    { "id": "sec.example.intro", "class": "section", "type": "introduction", "title": "Introduction" },
+    { "id": "blk.example.evidence", "class": "block", "type": "evidence", "payload": { "text": "Evidence is a graph node target, not just a footnote string." } },
+    { "id": "entity.concept.structure-first", "class": "entity", "type": "concept", "title": "Structure First" },
+    { "id": "anchor.example.evidence", "class": "anchor", "type": "block-anchor", "payload": { "targetNodeId": "blk.example.evidence", "offset": 0 } },
+    { "id": "projection.example.toc", "class": "projection", "type": "toc", "title": "Example TOC" }
+  ],
+  "edges": [
+    { "id": "edge.contains.doc.intro", "type": "contains", "from": "doc.example.article", "to": "sec.example.intro", "order": 0 },
+    { "id": "edge.contains.intro.evidence", "type": "contains", "from": "sec.example.intro", "to": "blk.example.evidence", "order": 0 },
+    { "id": "edge.references.evidence.structure", "type": "references", "from": "blk.example.evidence", "to": "entity.concept.structure-first" },
+    { "id": "edge.located.evidence.anchor", "type": "located_by", "from": "blk.example.evidence", "to": "anchor.example.evidence" },
+    { "id": "edge.projects.doc.toc", "type": "projects_to", "from": "doc.example.article", "to": "projection.example.toc" }
+  ],
+  "projectionManifests": [
+    {
+      "projectionNodeId": "projection.example.toc",
+      "sourceGraphVersion": "example.1",
+      "projectionType": "toc",
+      "producer": "manual-example",
+      "generatedAt": "2026-05-13T13:45:00Z",
+      "outputArtifacts": [
+        { "path": "example.toc.json", "format": "json" }
+      ]
+    }
+  ]
+}

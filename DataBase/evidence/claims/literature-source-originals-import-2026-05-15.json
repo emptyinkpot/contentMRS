@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "task_id": "literature-source-originals-import-2026-05-15",
+  "title": "Import lawful theory source originals into DataBase literature",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "main",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "gateway/sql/",
+    "docs/storage/mysql-current-state.md",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-15T07:39:00+08:00",
+  "updated_at": "2026-05-15T09:05:00+08:00",
+  "completed_at": "2026-05-15T07:50:00+08:00",
+  "handoff": null,
+  "commit": null,
+  "notes": "DataBase remains canonical owner for literature originals. Import uses existing literature table after schema convergence with Gateway read contract; no ContentBase or Obsidian shadow truth. Reopened for expansion: added canonical importer and imported 10 more theory/historical-document records, including 9 text originals and 1 metadata-only newspaper source."
+}

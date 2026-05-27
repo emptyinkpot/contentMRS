@@ -1,0 +1,47 @@
+services:
+  seaweedfs-master:
+    image: chrislusf/seaweedfs@sha256:f5515a88db87397b65b613d604d88dc9855dcca9de6d0ed5a95bf8cf5572f03c
+    container_name: database-pilot-seaweedfs-master
+    command: "master -ip=seaweedfs-master -mdir=/data"
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9333:9333"
+    volumes:
+      - /mnt/data/object-store/seaweedfs/master:/data
+
+  seaweedfs-volume:
+    image: chrislusf/seaweedfs@sha256:f5515a88db87397b65b613d604d88dc9855dcca9de6d0ed5a95bf8cf5572f03c
+    container_name: database-pilot-seaweedfs-volume
+    command: "volume -mserver=seaweedfs-master:9333 -ip=seaweedfs-volume -dir=/data -port=8080"
+    restart: unless-stopped
+    depends_on:
+      - seaweedfs-master
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - /mnt/data/object-store/seaweedfs/volume:/data
+
+  seaweedfs-filer:
+    image: chrislusf/seaweedfs@sha256:f5515a88db87397b65b613d604d88dc9855dcca9de6d0ed5a95bf8cf5572f03c
+    container_name: database-pilot-seaweedfs-filer
+    command: "filer -master=seaweedfs-master:9333 -ip=seaweedfs-filer"
+    restart: unless-stopped
+    depends_on:
+      - seaweedfs-master
+      - seaweedfs-volume
+    ports:
+      - "127.0.0.1:18888:8888"
+    volumes:
+      - /mnt/data/object-store/seaweedfs/filer:/data
+
+  seaweedfs-s3:
+    image: chrislusf/seaweedfs@sha256:f5515a88db87397b65b613d604d88dc9855dcca9de6d0ed5a95bf8cf5572f03c
+    container_name: database-pilot-seaweedfs-s3
+    command: "s3 -filer=seaweedfs-filer:8888 -ip.bind=0.0.0.0 -port=8333 -config=/etc/seaweedfs/s3-config.json"
+    restart: unless-stopped
+    depends_on:
+      - seaweedfs-filer
+    ports:
+      - "127.0.0.1:8333:8333"
+    volumes:
+      - /srv/database-object-store/seaweedfs/s3-config.json:/etc/seaweedfs/s3-config.json:ro

@@ -1,0 +1,2 @@
+database-gateway listening on http://127.0.0.1:18206
+{"level":"info","event":"request","requestId":"90616bb8-4bfb-4178-b9a0-544fc45e422c","method":"GET","path":"/evidence/search","status":200,"elapsedMs":1631}

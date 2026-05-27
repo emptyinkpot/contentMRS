@@ -1,0 +1,38 @@
+name: Agent Task
+description: Track an AI agent work item.
+title: "[agent] "
+labels:
+  - agent-task
+body:
+  - type: input
+    id: task_id
+    attributes:
+      label: Task ID
+      description: Kebab-case task id matching evidence/claims/<task-id>.json.
+      placeholder: database-gateway-p0
+    validations:
+      required: true
+  - type: input
+    id: agent_id
+    attributes:
+      label: Agent ID
+      placeholder: codex / claude-architect / builder-agent
+    validations:
+      required: true
+  - type: textarea
+    id: claimed_paths
+    attributes:
+      label: Claimed Paths
+      description: Paths the agent expects to edit.
+      placeholder: |
+        apps/gateway/
+        docs/gateway/database-gateway-p0.md
+    validations:
+      required: true
+  - type: textarea
+    id: delivery
+    attributes:
+      label: Delivery Plan
+      description: Branch, checks, integration notes, and expected handoff.
+    validations:
+      required: true

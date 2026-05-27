@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "name": "database-search-index-policy",
+  "status": "p1-callable-mysql-projection",
+  "sourceOfTruth": "Tencent CynosDB MySQL",
+  "projectionTables": [
+    "search_documents",
+    "search_chunks",
+    "search_index_jobs"
+  ],
+  "genericSearchAllowedPrivacyLevels": [
+    "public",
+    "private"
+  ],
+  "genericSearchDeniedPrivacyLevels": [
+    "sensitive",
+    "secret"
+  ],
+  "sourceTables": [
+    {
+      "table": "knowledge_import_items",
+      "status": "active",
+      "allowedImportQuality": [
+        "readable-body",
+        "notion-readable-page"
+      ],
+      "deniedActions": [
+        "route_to_secret_table",
+        "discard_candidate"
+      ]
+    }
+  ],
+  "externalIndexes": {
+    "meilisearch": {
+      "status": "planned",
+      "defaultInternalUrl": "http://127.0.0.1:17700",
+      "purpose": "keyword and faceted search projection"
+    },
+    "qdrant": {
+      "status": "planned",
+      "defaultInternalUrl": "http://127.0.0.1:16333",
+      "purpose": "semantic vector search projection"
+    }
+  },
+  "modelGateway": {
+    "repository": "https://github.com/emptyinkpot/sub2api",
+    "baseUrlEnv": "DATA_CURATION_OPENAI_BASE_URL",
+    "apiKeyEnv": "DATA_CURATION_OPENAI_API_KEY",
+    "modelEnv": "DATA_CURATION_MODEL",
+    "defaultBaseUrl": "https://sub2api.tengokukk.com/v1"
+  },
+  "entrypoints": {
+    "unified": "scripts/query/database-query.ps1",
+    "status": "scripts/query/mysql-status.ps1",
+    "search": "scripts/query/search-database.ps1",
+    "rebuildIndex": "scripts/query/build-search-index.ps1",
+    "curate": "scripts/curation/curate-knowledge-items.ps1"
+  }
+}

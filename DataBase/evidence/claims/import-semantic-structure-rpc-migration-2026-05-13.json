@@ -1,0 +1,35 @@
+{
+  "task_id": "import-semantic-structure-rpc-migration-2026-05-13",
+  "title": "Migrate ContentBase import semantic structure writes to DataBase Gateway",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "local",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "schemas/content/canonical-content-contract.ts",
+    "gateway/src/routes/writes.ts",
+    "gateway/scripts/generate-openapi.mjs",
+    "gateway/openapi.yaml",
+    "generated/clients/database-gateway/",
+    "E:/My Project/ContentBase/product/novel/tools/import-txt-works.mjs",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T15:40:00+08:00",
+  "updated_at": "2026-05-13T16:05:00+08:00",
+  "handoff": null,
+  "notes": "Completed: ContentBase import/backfill writes for volume/chapter outlines, characters, world settings, and seeded story memory now go through DataBase Gateway replaceWorkStructure RPC.",
+  "checks": [
+    "npm run typecheck in schemas/content",
+    "npm run build in schemas/content",
+    "npm run typecheck in gateway",
+    "npm run build in gateway",
+    "npm run generate:openapi in gateway",
+    "npm run generate:client in gateway",
+    "npm run build in generated/clients/database-gateway",
+    "node --check E:\\My Project\\ContentBase\\product\\novel\\tools\\import-txt-works.mjs",
+    "pnpm --filter novel-product run build",
+    "pnpm --filter novel-product run test",
+    "check-contentbase-canonical-sql-boundary -ReportAll",
+    "check-project-standard"
+  ]
+}

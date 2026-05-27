@@ -1,0 +1,36 @@
+{
+  "name": "@emptyinkpot/database-openlist-adapter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "DataBase-owned SDK and API adapter for an external OpenList runtime.",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    },
+    "./sdk": {
+      "types": "./dist/src/sdk/OpenListClient.d.ts",
+      "default": "./dist/src/sdk/OpenListClient.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/src/api/server.js",
+    "smoke": "node --check dist/src/api/server.js && node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.4",
+    "hono": "^4.7.11"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.29",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

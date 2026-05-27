@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "2026-05-10",
+  "purpose": "Runtime URL and source repository map for production-facing surfaces.",
+  "surfaces": [
+    {
+      "name": "Sub2API",
+      "url": "https://sub2api.tengokukk.com/",
+      "openAiCompatibleBaseUrl": "https://sub2api.tengokukk.com/v1",
+      "sourceRepository": "https://github.com/emptyinkpot/sub2api",
+      "role": "AI gateway and provider/key routing"
+    },
+    {
+      "name": "Mortis",
+      "url": "https://mortis.tengokukk.com",
+      "sourceRepository": "https://github.com/emptyinkpot/mortis-multica-source",
+      "role": "Operator runtime and agent coordination surface",
+      "doNotUseSourceRepositories": [
+        "deleted:https://github.com/emptyinkpot/mortis-multica-watch",
+        "deleted:https://github.com/emptyinkpot/mortis-multica-source-legacy",
+        "deleted:https://github.com/emptyinkpot/mortis-napcat-control"
+      ]
+    },
+    {
+      "name": "Atramenti Console",
+      "url": "https://console.tengokukk.com/",
+      "sourceRepository": "https://github.com/emptyinkpot/Atramenti-Console",
+      "role": "Self-hosted console and control surface",
+      "remoteIdeTruth": "https://github.com/emptyinkpot/code-server-workspace-infra",
+      "remoteSourceRoot": "/home/ubuntu/workspaces/Atramenti-Console",
+      "remoteSourceStatus": "verified",
+      "remoteSourceVerifiedAt": "2026-05-11T02:18:00Z",
+      "remoteSourceVerifiedCommit": "a0a13cf9",
+      "remoteIdeServer": "server-170",
+      "remoteGitCredentialStatus": "read-only Atramenti-Console deploy key configured and git pull verified",
+      "remoteOrigin": "git@github.com-atramenti-console:emptyinkpot/Atramenti-Console.git",
+      "localWindowsCheckoutStatus": "retired-after-clean-push"
+    },
+    {
+      "name": "Remote IDE",
+      "sourceRepository": "https://github.com/emptyinkpot/code-server-workspace-infra",
+      "role": "Shared code-server based remote development surface",
+      "serverAlias": "server-170",
+      "host": "170.106.179.226",
+      "sshUser": "ubuntu",
+      "workspaceRoot": "/home/ubuntu/workspaces",
+      "codeServerHostBind": "127.0.0.1:18080",
+      "containerPort": 8080,
+      "accessMode": "ssh-tunnel-only",
+      "localTunnelCommand": "ssh -L 18080:127.0.0.1:18080 server-170",
+      "localUrlAfterTunnel": "http://127.0.0.1:18080",
+      "truthSource": "https://github.com/emptyinkpot/code-server-workspace-infra"
+    },
+    {
+      "name": "DataBase Memory Service",
+      "role": "Unified memory and retrieval facade for agents",
+      "sourceRepository": "https://github.com/emptyinkpot/DataBase",
+      "preferredAgentEntry": "services/memory/mcp/server.mjs",
+      "localCliEntry": "scripts/database-memory.ps1",
+      "crossPlatformCliEntry": "scripts/database-memory.mjs",
+      "localStatus": "validated",
+      "remoteStatus": "readonly-validated",
+      "remoteIdeTruth": "https://github.com/emptyinkpot/code-server-workspace-infra",
+      "remoteIdeServer": "server-170",
+      "remoteSourceRoot": "/home/ubuntu/workspaces/DataBase",
+      "remoteQmdRoot": "/home/ubuntu/workspaces/my-project-qmd",
+      "remoteRuntimeRoot": "/srv/database-memory",
+      "remoteIndexPath": "/srv/database-memory/index.sqlite",
+      "remoteEnvPath": "/srv/database-memory/database-memory.env",
+      "remoteEnvTemplatePath": "/srv/database-memory/database-memory.env.example",
+      "validatedRemoteCapabilities": [
+        "DataBase checkout",
+        "my-project-qmd checkout",
+        "dependency install",
+        "QMD collection add/update",
+        "database health",
+        "readonly database probe",
+        "refresh dry-run",
+        "BM25 memory_search",
+        "vector embeddings",
+        "vector memory_recall",
+        "MCP smoke",
+        "controlled write dry-run",
+        "readonly credential commit blocked"
+      ],
+      "pendingRemoteCapabilities": [
+        "approved write credential",
+        "optional service manager"
+      ],
+      "remoteModelPolicy": "QMD_LLAMA_GPU=false on server-170; CPU-only vector recall is validated but slower.",
+      "remotePathPolicy": "Use DATABASE_MEMORY_* environment variables; do not hard-code local Windows paths in consumers."
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "task_id": "story-memory-gateway-contract-2026-05-13",
+  "title": "Expose canonical story memory through DataBase Gateway",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "refactor/codex/canonical-content-gateway-client",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "gateway/sql/007_story_memory.sql",
+    "gateway/src/routes/story-memory.ts",
+    "gateway/src/routes/writes.ts",
+    "gateway/src/routes.ts",
+    "gateway/openapi.yaml",
+    "generated/clients/database-gateway/"
+  ],
+  "started_at": "2026-05-13T01:14:00Z",
+  "updated_at": "2026-05-13T02:29:08Z",
+  "handoff": null,
+  "notes": "Moved story_events, character_growth, and important_items behind DataBase Gateway read/write contracts. Added creative story-memory Zod schemas, runtime response validation for /creative/story-memory and /creative/story-memory/context, validated record_story_memory mutation response, schema-derived OpenAPI paths, and regenerated SDK methods getStoryMemory/getStoryMemoryContext/recordStoryMemory. Not deployed; SQL migration remains prepared in gateway/sql/007_story_memory.sql."
+}

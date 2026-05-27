@@ -1,0 +1,23 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: 'mortis-multica-source'
+  title: 'mortis-multica-source'
+  description: 'ACTIVE Mortis operator-runtime source line and consolidation target'
+  annotations:
+    backstage.io/source-location: 'url:https://github.com/emptyinkpot/mortis-multica-source'
+    emptyinkpot.io/visibility: 'public'
+    emptyinkpot.io/repository-role: 'ACTIVE Mortis operator-runtime source line and consolidation target'
+    emptyinkpot.io/status: 'active'
+    emptyinkpot.io/preferred-source: 'true'
+    emptyinkpot.io/canonical-doc: ''
+    emptyinkpot.io/machine-readable-entry: ''
+spec:
+  type: 'service'
+  lifecycle: 'active'
+  owner: 'emptyinkpot'
+  system: 'emptyinkpot-ecosystem'
+  dependsOn:
+    - 'component:default/code-server-workspace-infra'
+    - 'component:default/DataBase'
+    - 'component:default/sub2api'

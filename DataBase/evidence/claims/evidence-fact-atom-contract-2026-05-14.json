@@ -1,0 +1,23 @@
+{
+  "task_id": "evidence-fact-atom-contract-2026-05-14",
+  "title": "Expose DataBase-owned evidence fact atoms from canonical content blocks",
+  "agent_id": "codex",
+  "status": "active",
+  "branch": "main",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "schemas/content/canonical-content-contract.ts",
+    "schemas/creative/article-acceptance-contract.ts",
+    "schemas/creative/package.json",
+    "gateway/src/routes/content.ts",
+    "gateway/scripts/generate-openapi.mjs",
+    "gateway/openapi.yaml",
+    "generated/clients/database-gateway/",
+    ".runtime/claims/evidence-fact-atom-contract-2026-05-14.json",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-14T10:50:00Z",
+  "updated_at": "2026-05-14T10:50:00Z",
+  "handoff": null,
+  "notes": "Move strict article fact atoms toward DataBase evidence ownership by deriving typed atoms from canonical evidence_citation blocks instead of ContentBase request payloads."
+}

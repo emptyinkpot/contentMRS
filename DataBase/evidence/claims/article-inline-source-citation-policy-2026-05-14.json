@@ -1,0 +1,20 @@
+{
+  "task_id": "article-inline-source-citation-policy-2026-05-14",
+  "title": "Forbid visible inline source anchors in article body acceptance",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "main",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "schemas/creative/article-acceptance-contract.ts",
+    "schemas/creative/README.md",
+    "scripts/export-contentbase-database-artifacts.ps1",
+    "E:/My Project/ContentBase/product/novel/app/api-content-runtime.ts",
+    "E:/My Project/ContentBase/product/novel/app/runtime-capabilities.ts",
+    "E:/My Project/ContentBase/product/novel/tests/content-runtime-api.test.ts"
+  ],
+  "started_at": "2026-05-14T15:25:34Z",
+  "updated_at": "2026-05-14T15:40:00Z",
+  "handoff": null,
+  "notes": "Completed. ArticleAcceptancePolicy now defaults forbidInlineSourceCitations=true and runArticleAcceptance emits ARTICLE-INLINE-SOURCE-CITATION-001 for visible [Sxx] body anchors. Required source coverage still accepts structured sourcePassages, so reference usage remains in DataBase reports/final source projection."
+}

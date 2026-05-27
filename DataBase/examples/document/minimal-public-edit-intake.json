@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "public-edit-intake.v1",
+  "intakeId": "intake.myblog.example.illustration",
+  "sourceSurface": {
+    "repo": "emptyinkpot/emptyinkpot.github.io",
+    "surface": "myblog",
+    "route": "/reader/example",
+    "projectionType": "html",
+    "buildId": "myblog-build.example"
+  },
+  "actor": {
+    "id": "person.operator",
+    "type": "owner",
+    "displayName": "Operator"
+  },
+  "graphId": "graph.example.epub",
+  "graphVersionId": "graph.example.epub.v2",
+  "packageId": "projection.package.example.html",
+  "intakeClass": "edit_proposal",
+  "target": {
+    "targetType": "anchor",
+    "targetId": "anchor.example.evidence",
+    "anchorId": "anchor.example.evidence",
+    "selector": {
+      "cssSelector": "#evidence-1"
+    }
+  },
+  "payload": {
+    "intent": "insert_asset_block",
+    "text": "Insert an illustration after this evidence block.",
+    "assetRefs": [
+      {
+        "assetId": "asset.example.illustration",
+        "rawArtifactId": "raw.openlist.example.illustration",
+        "role": "illustration"
+      }
+    ],
+    "visibility": "editorial",
+    "reason": "Owner edit from MyBlog reader surface."
+  },
+  "clientContext": {
+    "locator": {
+      "scrollY": 1280
+    },
+    "selectedText": "Evidence is a graph node target.",
+    "locale": "en-US"
+  },
+  "reviewPolicy": {
+    "required": true,
+    "reason": "Illustration insertion changes canonical graph structure.",
+    "allowedResultTypes": ["graph_edit_operation"]
+  },
+  "createdAt": "2026-05-13T16:30:00Z",
+  "status": "needs_review"
+}

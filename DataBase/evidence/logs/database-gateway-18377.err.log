@@ -1,0 +1,13 @@
+file:///E:/My%20Project/DataBase/apps/gateway/dist/config.js:5
+        throw new Error(`Missing required environment variable: ${name}`);
+              ^
+
+Error: Missing required environment variable: MYSQL_HOST
+    at requireEnv (file:///E:/My%20Project/DataBase/apps/gateway/dist/config.js:5:15)
+    at loadConfig (file:///E:/My%20Project/DataBase/apps/gateway/dist/config.js:39:18)
+    at file:///E:/My%20Project/DataBase/apps/gateway/dist/index.js:6:16
+    at ModuleJob.run (node:internal/modules/esm/module_job:430:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:661:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.14.0

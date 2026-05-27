@@ -1,0 +1,27 @@
+{
+  "task_id": "graph-versioning-edit-2026-05-13",
+  "title": "Define graph versioning and edit operation contracts",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "docs/graph-versioning-edit-contract",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "docs/contracts/graph-versioning-edit-contract.md",
+    "schemas/document/graph-edit-operation.schema.json",
+    "schemas/document/graph-version-manifest.schema.json",
+    "examples/document/minimal-graph-edit-operation.json",
+    "examples/document/minimal-graph-version-manifest.json",
+    "docs/contracts/canonical-content-graph.md",
+    "docs/contracts/annotation-graph-contract.md",
+    "docs/contracts/asset-graph-contract.md",
+    "docs/contracts/cross-repo-artifact-contracts.md",
+    "docs/contracts/cross-repo-artifact-inventory.md",
+    "ECOSYSTEM_MAP.md",
+    ".runtime/claims/graph-versioning-edit-2026-05-13.json",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T15:35:00Z",
+  "updated_at": "2026-05-13T15:35:00Z",
+  "handoff": null,
+  "notes": "Doc/schema-only graph version/edit contract. Scope excludes graph storage, editor implementation, conflict resolution, and projection rebuild triggers."
+}

@@ -1,0 +1,21 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: 'astrbot_plugin_external_gateway'
+  title: 'astrbot_plugin_external_gateway'
+  description: 'chat-event-http-gateway-plugin'
+  annotations:
+    backstage.io/source-location: 'url:https://github.com/emptyinkpot/astrbot_plugin_external_gateway'
+    emptyinkpot.io/visibility: 'public'
+    emptyinkpot.io/repository-role: 'chat-event-http-gateway-plugin'
+    emptyinkpot.io/status: 'active'
+    emptyinkpot.io/preferred-source: 'false'
+    emptyinkpot.io/canonical-doc: ''
+    emptyinkpot.io/machine-readable-entry: ''
+spec:
+  type: 'library'
+  lifecycle: 'active'
+  owner: 'emptyinkpot'
+  system: 'emptyinkpot-ecosystem'
+  dependsOn:
+    - 'component:default/AstrBot'

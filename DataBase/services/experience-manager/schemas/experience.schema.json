@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/emptyinkpot/DataBase/services/experience-manager/schemas/experience.schema.json",
+  "title": "ExperienceRecordInput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["title"],
+  "properties": {
+    "title": { "type": "string", "minLength": 1, "maxLength": 240 },
+    "type": {
+      "type": "string",
+      "enum": ["problem_solving", "feature_dev", "bug_fix", "optimization", "learning", "refactoring"]
+    },
+    "description": { "type": "string", "maxLength": 8000 },
+    "userQuery": { "type": "string", "maxLength": 4000 },
+    "solution": { "type": "string", "maxLength": 12000 },
+    "experienceApplied": {
+      "type": "array",
+      "maxItems": 20,
+      "items": { "type": "string", "maxLength": 1000 }
+    },
+    "experienceGained": {
+      "type": "array",
+      "maxItems": 20,
+      "items": { "type": "string", "maxLength": 1000 }
+    },
+    "tags": {
+      "type": "array",
+      "maxItems": 16,
+      "items": { "type": "string", "minLength": 1, "maxLength": 80 }
+    },
+    "difficulty": { "type": "integer", "minimum": 1, "maximum": 5 },
+    "xpGained": { "type": "integer", "minimum": 0, "maximum": 100000 },
+    "summary": { "type": "string", "maxLength": 1000 },
+    "rootCause": { "type": "string", "maxLength": 4000 },
+    "verification": {
+      "type": "array",
+      "maxItems": 20,
+      "items": { "type": "string", "maxLength": 1000 }
+    },
+    "source": { "type": "object" },
+    "cloud": { "type": "object" }
+  }
+}

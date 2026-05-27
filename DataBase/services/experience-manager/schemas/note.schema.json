@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/emptyinkpot/DataBase/services/experience-manager/schemas/note.schema.json",
+  "title": "ExperienceNoteInput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["title", "content"],
+  "properties": {
+    "title": { "type": "string", "minLength": 1, "maxLength": 240 },
+    "content": { "type": "string", "minLength": 1, "maxLength": 20000 },
+    "category": { "type": "string", "maxLength": 120 },
+    "tags": {
+      "type": "array",
+      "maxItems": 16,
+      "items": { "type": "string", "minLength": 1, "maxLength": 80 }
+    },
+    "summary": { "type": "string", "maxLength": 1000 },
+    "sections": { "type": "object" },
+    "relatedExperienceIds": {
+      "type": "array",
+      "maxItems": 50,
+      "items": { "type": "string", "maxLength": 120 }
+    },
+    "cloud": { "type": "object" }
+  }
+}

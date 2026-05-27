@@ -1,0 +1,23 @@
+{
+  "task_id": "canonical-content-graph-2026-05-13",
+  "title": "Define DataBase-owned Canonical Content Graph",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "docs/canonical-content-graph",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "docs/contracts/canonical-content-graph.md",
+    "schemas/document/canonical-content-graph.schema.json",
+    "examples/document/minimal-content-graph.json",
+    "docs/contracts/canonical-document-model.md",
+    "docs/contracts/cross-repo-artifact-contracts.md",
+    "docs/contracts/cross-repo-artifact-inventory.md",
+    "ECOSYSTEM_MAP.md",
+    ".runtime/claims/canonical-content-graph-2026-05-13.json",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T13:45:00Z",
+  "updated_at": "2026-05-13T13:45:00Z",
+  "handoff": null,
+  "notes": "Doc/schema-only graph model. Scope excludes graph storage, importer, projection runtime, reader runtime, and gates."
+}

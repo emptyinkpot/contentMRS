@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://emptyinkpot.local/schemas/project/template-catalog.schema.json",
+  "title": "Project Template Catalog",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "templates"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "templates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "purpose",
+          "baselineDirectories",
+          "baselineFiles"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "baselineDirectories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "baselineFiles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

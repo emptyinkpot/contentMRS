@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "raw-artifact.v1",
+  "artifactId": "artifact.sha256.example",
+  "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "mime": "application/epub+zip",
+  "sizeBytes": 123456,
+  "originalName": "example.epub",
+  "originalPath": "imports/example.epub",
+  "sourceUri": "operator://manual-import/example.epub",
+  "storageUri": "openlist://raw-artifacts/sha256/aa/aa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.epub",
+  "importedAt": "2026-05-13T14:50:00Z",
+  "immutable": true,
+  "retentionPolicy": {
+    "status": "archive",
+    "reason": "source artifact for CCG import"
+  },
+  "derivatives": [],
+  "referencedBy": [
+    {
+      "id": "manifest.example.content-import",
+      "type": "content-import-manifest",
+      "role": "source"
+    }
+  ]
+}

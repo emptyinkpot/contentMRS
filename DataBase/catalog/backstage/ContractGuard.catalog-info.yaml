@@ -1,0 +1,19 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: 'ContractGuard'
+  title: 'ContractGuard'
+  description: 'repository-governance-and-ai-behavior-gates'
+  annotations:
+    backstage.io/source-location: 'url:https://github.com/emptyinkpot/ContractGuard'
+    emptyinkpot.io/visibility: 'public'
+    emptyinkpot.io/repository-role: 'repository-governance-and-ai-behavior-gates'
+    emptyinkpot.io/status: 'active'
+    emptyinkpot.io/preferred-source: 'true'
+    emptyinkpot.io/canonical-doc: 'README.md'
+    emptyinkpot.io/machine-readable-entry: 'project.json'
+spec:
+  type: 'library'
+  lifecycle: 'active'
+  owner: 'emptyinkpot'
+  system: 'emptyinkpot-ecosystem'

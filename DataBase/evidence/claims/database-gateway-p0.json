@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "task_id": "database-gateway-p0",
+  "title": "Implement DataBase Gateway P0",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "main",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "gateway/",
+    "docs/gateway/database-gateway-p0.md",
+    "docs/gateway/database-api-service-plan.md",
+    "docs/gateway/README.md",
+    "project.json"
+  ],
+  "started_at": "2026-05-10T00:00:00Z",
+  "updated_at": "2026-05-10T20:40:00+08:00",
+  "completed_at": "2026-05-10T20:40:00+08:00",
+  "handoff": null,
+  "commit": "a1d2860",
+  "notes": "Gateway P0 is implemented and deployed. Public host is https://database.tengokukk.com. Auth is configurable through DATABASE_GATEWAY_AUTH_REQUIRED and defaults to false. Read APIs and five write facade APIs have been verified; write facade uses database_gateway_mutations for idempotency."
+}

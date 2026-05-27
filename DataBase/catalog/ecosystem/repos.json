@@ -1,0 +1,541 @@
+{
+  "schemaVersion": "2026-05-10",
+  "owner": "emptyinkpot",
+  "generatedFrom": "GitHub repository inventory plus operator-maintained ecosystem facts",
+  "canonicalPurpose": "Machine-readable registry for repository identity, source-of-truth boundaries, upstream relationships, runtime surfaces, and AI memory material.",
+  "aiEvolutionPolicy": {
+    "goal": "Help operator-facing AI systems become more useful over time by indexing stable repository facts, decisions, runbooks, upstream sources, and user preference signals without storing secrets.",
+    "memoryMaterial": [
+      "repository roles and boundaries",
+      "supply relationships between services",
+      "runtime surfaces and source roots",
+      "upstream projects and cloneable reference implementations",
+      "runbooks, architecture notes, and decision records",
+      "do-not-use-as constraints that prevent future agents from choosing the wrong source"
+    ],
+    "excludedMaterial": [
+      "provider keys",
+      "personal access tokens",
+      "cookies",
+      "passwords",
+      "raw production dumps",
+      "private account recovery material"
+    ],
+    "preferredConsumers": [
+      "Mortis",
+      "ContractGuard",
+      "code-server-workspace-infra",
+      "sub2api-backed curation jobs",
+      "QMD or vector-search knowledge indexes"
+    ]
+  },
+  "layers": {
+    "governance": [
+      "DataBase",
+      "ContractGuard"
+    ],
+    "remoteWorkspace": [
+      "code-server-workspace-infra",
+      "my-project-root",
+      "asus-kl-codex-home"
+    ],
+    "aiGateway": [
+      "sub2api",
+      "token-pool",
+      "AIClient-2-API",
+      "AIClient2API-Tutorial"
+    ],
+    "operatorRuntime": [
+      "mortis-multica-source",
+      "astrbot_plugin_external_gateway",
+      "AstrBot"
+    ],
+    "applications": [
+      "FuckVideo",
+      "Atramenti-Console",
+      "emptyinkpot.github.io",
+      "Parliamentary-Simulation",
+      "Lex-Universalis"
+    ],
+    "tooling": [
+      "my-project-ffmpeg-mcp",
+      "my-project-video-audio-mcp",
+      "my-project-yt-dlp-mcp",
+      "qmd",
+      "my-project-qmd",
+      "ai-frontend-starter",
+      "Roo-Kit",
+      "codex-crs-profile",
+      "my-project-database-ops-mcp"
+    ],
+    "dataAndContent": [
+      "DataSheet",
+      "mirror-openai-skills-vendor-imports"
+    ],
+    "researchForksAndMirrors": [
+      "golutra",
+      "auto-coding-agent-demo",
+      "ai-town",
+      "ai-office",
+      "agent-office"
+    ],
+    "profile": [
+      "emptyinkpot"
+    ],
+    "archived": [
+      "cloude-app"
+    ],
+    "memoryAndRetrieval": [
+      "experience-manager",
+      "qmd",
+      "database-ops-mcp",
+      "plan-history-recall"
+    ],
+    "internalDataBaseServices": [
+      "services/experience-manager",
+      "services/database-ops-mcp",
+      "services/qmd-adapter"
+    ]
+  },
+  "repositories": [
+    {
+      "name": "DataBase",
+      "url": "https://github.com/emptyinkpot/DataBase",
+      "visibility": "private",
+      "repositoryRole": "ecosystem-truth",
+      "status": "active",
+      "preferredSource": true,
+      "canonicalDoc": "README.md",
+      "machineReadableEntry": "project.json",
+      "primaryMemoryMaterial": true,
+      "doNotUseAs": [
+        "secret store",
+        "full production data dump"
+      ],
+      "branchContract": {
+        "model": "three-environment-branches",
+        "integrationBranch": "main",
+        "localDebugBranch": "local",
+        "remoteIdeDebugBranch": "remote-ide",
+        "contractDoc": "docs/contracts/remote-workspace-boundary.md",
+        "promotionRule": "local and remote-ide are debugging lanes; durable changes must be promoted into main through normal integration.",
+        "localCheckout": "E:\\My Project\\MRS\\DataBase",
+        "remoteIdeCheckout": "server-170:/home/ubuntu/workspaces/DataBase"
+      },
+      "defaultBranch": "main"
+    },
+    {
+      "name": "ContractGuard",
+      "url": "https://github.com/emptyinkpot/ContractGuard",
+      "visibility": "public",
+      "repositoryRole": "repository-governance-and-ai-behavior-gates",
+      "status": "active",
+      "preferredSource": true,
+      "canonicalDoc": "README.md",
+      "machineReadableEntry": "project.json",
+      "supplies": [
+        "project.json checker",
+        "AI behavior gates",
+        "project contract templates"
+      ]
+    },
+    {
+      "name": "code-server-workspace-infra",
+      "url": "https://github.com/emptyinkpot/code-server-workspace-infra",
+      "visibility": "private",
+      "repositoryRole": "remote-ide-and-shared-workspace-infra",
+      "status": "active",
+      "preferredSource": true,
+      "homepage": "https://github.com/emptyinkpot/code-server-workspace-infra",
+      "supplies": [
+        "remote workspace truth",
+        "server IDE topology"
+      ]
+    },
+    {
+      "name": "sub2api",
+      "url": "https://github.com/emptyinkpot/sub2api",
+      "visibility": "public",
+      "repositoryRole": "ai-gateway",
+      "status": "active",
+      "preferredSource": true,
+      "githubForkRelation": true,
+      "upstreamRepo": "https://github.com/Wei-Shaw/sub2api",
+      "homepage": "https://sub2api.tengokukk.com/",
+      "runtimeSurface": "https://sub2api.tengokukk.com/",
+      "openAiCompatibleBaseUrl": "https://sub2api.tengokukk.com/v1",
+      "supplies": [
+        "OpenAI-compatible model access",
+        "account pool routing",
+        "group and key management"
+      ],
+      "consumedBy": [
+        "Mortis",
+        "FuckVideo",
+        "DataBase curation",
+        "n8n workflows"
+      ]
+    },
+    {
+      "name": "mortis-multica-source",
+      "url": "https://github.com/emptyinkpot/mortis-multica-source",
+      "visibility": "public",
+      "repositoryRole": "ACTIVE Mortis operator-runtime source line and consolidation target",
+      "status": "active",
+      "preferredSource": true,
+      "githubForkRelation": true,
+      "upstreamRepo": "https://github.com/multica-ai/multica",
+      "defaultBranch": "mortis/operator-runtime",
+      "homepage": "https://mortis.tengokukk.com",
+      "runtimeSurface": "https://mortis.tengokukk.com",
+      "consumes": [
+        "sub2api",
+        "DataBase",
+        "code-server-workspace-infra"
+      ],
+      "doNotUseAs": [
+        "watch mirror",
+        "legacy rollback source"
+      ],
+      "consolidationTargetFor": [
+        "deleted:mortis-multica-source-legacy",
+        "deleted:mortis-multica-watch",
+        "deleted:mortis-napcat-control"
+      ],
+      "consolidationDoc": "docs/github/mortis-repository-consolidation.md",
+      "branchContract": {
+        "model": "three-environment-branches-plus-active-operator-branch",
+        "integrationBranch": "main",
+        "activeOperatorBranch": "mortis/operator-runtime",
+        "localDebugBranch": "local",
+        "remoteIdeDebugBranch": "remote-ide",
+        "promotionRule": "Use mortis/operator-runtime as active operator source until branch-default migration is explicit; do not treat legacy/watch as source truth."
+      },
+      "latestConsolidationCommit": "7a0636388c3163ee9ecdc889d9dd71a36d8f2ba8",
+      "napcatControlPath": "integrations/napcat-control/",
+      "legacyAndWatchReferenceDoc": "docs/archive/legacy-and-watch-repositories.md",
+      "archiveReadinessDoc": "docs/archive/legacy-and-watch-repositories.md"
+    },
+    {
+      "name": "mortis-multica-source-legacy",
+      "url": "https://github.com/emptyinkpot/mortis-multica-source-legacy",
+      "visibility": "public",
+      "repositoryRole": "legacy-source-record",
+      "status": "deleted-after-backup",
+      "preferredSource": false,
+      "githubForkRelation": false,
+      "manualUpstreamRepo": "https://github.com/multica-ai/multica",
+      "activeForwardSource": "https://github.com/emptyinkpot/mortis-multica-source",
+      "doNotUseAs": [
+        "preferred forward source",
+        "deployment source unless explicit rollback task names it"
+      ],
+      "consolidationDisposition": "archive-after-backup-export",
+      "consolidationDoc": "docs/github/mortis-repository-consolidation.md",
+      "rollbackReferenceCommit": "c495be267c1aca9de453c1bae888b7dd5e2c57f9",
+      "backupMirror": "E:\\Backups\\github\\mortis-multica-source-legacy.git",
+      "backupFsck": "passed",
+      "backupVerifiedAt": "2026-05-11T16:33:00+08:00",
+      "archivedAt": "2026-05-11T16:34:51+08:00",
+      "deletedAt": "2026-05-11T16:39:00+08:00"
+    },
+    {
+      "name": "mortis-multica-watch",
+      "url": "https://github.com/emptyinkpot/mortis-multica-watch",
+      "visibility": "public",
+      "repositoryRole": "sanitized-watch-mirror",
+      "status": "deleted-after-backup",
+      "preferredSource": false,
+      "deployFromHere": false,
+      "activeForwardSource": "https://github.com/emptyinkpot/mortis-multica-source",
+      "doNotUseAs": [
+        "source of truth",
+        "deployment source",
+        "secret store"
+      ],
+      "consolidationDisposition": "archive-after-backup-export",
+      "consolidationDoc": "docs/github/mortis-repository-consolidation.md",
+      "watchReferenceCommit": "476c3453113fe62402c4d9e3fafcdd1249e37537",
+      "backupMirror": "E:\\Backups\\github\\mortis-multica-watch.git",
+      "backupFsck": "passed",
+      "backupVerifiedAt": "2026-05-11T16:33:00+08:00",
+      "archivedAt": "2026-05-11T16:34:51+08:00",
+      "deletedAt": "2026-05-11T16:39:00+08:00"
+    },
+    {
+      "name": "FuckVideo",
+      "url": "https://github.com/emptyinkpot/FuckVideo",
+      "visibility": "private",
+      "repositoryRole": "ai-video-understanding-and-remotion-generation-application",
+      "status": "active",
+      "preferredSource": true,
+      "consumes": [
+        "sub2api",
+        "DataBase storage topology",
+        "my-project-ffmpeg-mcp",
+        "my-project-video-audio-mcp",
+        "my-project-yt-dlp-mcp"
+      ],
+      "primaryMemoryMaterial": true
+    },
+    {
+      "name": "Atramenti-Console",
+      "url": "https://github.com/emptyinkpot/Atramenti-Console",
+      "visibility": "private",
+      "repositoryRole": "self-hosted-console-surface",
+      "status": "active",
+      "homepage": "https://console.tengokukk.com/",
+      "runtimeSurface": "https://console.tengokukk.com/",
+      "remoteIdeTruth": "https://github.com/emptyinkpot/code-server-workspace-infra",
+      "remoteSourceRoot": "server-170:/home/ubuntu/workspaces/Atramenti-Console",
+      "remoteSourceStatus": "verified",
+      "remoteSourceVerifiedAt": "2026-05-11T02:18:00Z",
+      "remoteSourceVerifiedCommit": "a0a13cf9",
+      "remoteSourceProvisioning": "restored from local Git bundle, then switched to a repository-scoped read-only GitHub deploy key on server-170",
+      "remoteGitCredentialStatus": "read-only deploy key configured and git pull verified",
+      "localWindowsCheckout": {
+        "path": null,
+        "status": "local-checkout-deleted",
+        "retirementDate": "2026-05-20",
+        "lastVerifiedCommit": "a0a13cf9",
+        "note": "Forward edits use GitHub and server-170:/home/ubuntu/workspaces/Atramenti-Console only."
+      },
+      "doNotUseAs": [
+        "global Codex capability truth",
+        "DataBase memory topology truth",
+        "remote IDE topology truth"
+      ],
+      "branchContract": {
+        "model": "three-environment-branches",
+        "integrationBranch": "main",
+        "localDebugBranch": "local",
+        "remoteIdeDebugBranch": "remote-ide",
+        "contractDoc": "docs/contracts/remote-workspace-boundary.md",
+        "promotionRule": "local and remote-ide are debugging lanes; durable changes must be promoted into main through normal integration.",
+        "localCheckout": null,
+        "remoteIdeCheckout": "server-170:/home/ubuntu/workspaces/Atramenti-Console"
+      },
+      "defaultBranch": "main"
+    },
+    {
+      "name": "mortis-napcat-control",
+      "url": "https://github.com/emptyinkpot/mortis-napcat-control",
+      "visibility": "public",
+      "repositoryRole": "mortis-chat-control-adapter",
+      "status": "deleted-after-backup",
+      "consumes": [
+        "Mortis",
+        "NapCat",
+        "OneBot"
+      ],
+      "preferredSource": false,
+      "activeForwardSource": "https://github.com/emptyinkpot/mortis-multica-source",
+      "targetPathInActiveSource": "integrations/napcat-control/",
+      "consolidationDoc": "docs/github/mortis-repository-consolidation.md",
+      "migratedTo": "https://github.com/emptyinkpot/mortis-multica-source/tree/mortis/operator-runtime/integrations/napcat-control",
+      "migratedAtCommit": "ae2705fe223b0e570fbb82fc34d46d70da82c716",
+      "consolidationDisposition": "archive-after-backup-export; durable code migrated into active source",
+      "backupMirror": "E:\\Backups\\github\\mortis-napcat-control.git",
+      "backupFsck": "passed",
+      "backupVerifiedAt": "2026-05-11T16:33:00+08:00",
+      "backupMainCommit": "c13567db0f3f537854bd6593c3fc619b6116a14b",
+      "archivedAt": "2026-05-11T16:34:51+08:00",
+      "deletedAt": "2026-05-11T16:39:00+08:00"
+    },
+    {
+      "name": "astrbot_plugin_external_gateway",
+      "url": "https://github.com/emptyinkpot/astrbot_plugin_external_gateway",
+      "visibility": "public",
+      "repositoryRole": "chat-event-http-gateway-plugin",
+      "status": "active",
+      "consumes": [
+        "AstrBot",
+        "external agent runtime"
+      ]
+    },
+    {
+      "name": "AstrBot",
+      "url": "https://github.com/emptyinkpot/AstrBot",
+      "visibility": "public",
+      "repositoryRole": "forked-chat-agent-framework-reference",
+      "status": "reference-fork",
+      "githubForkRelation": true,
+      "upstreamRepo": "https://github.com/AstrBotDevs/AstrBot"
+    },
+    {
+      "name": "ai-town",
+      "url": "https://github.com/emptyinkpot/ai-town",
+      "visibility": "public",
+      "repositoryRole": "manual-research-mirror",
+      "status": "research",
+      "githubForkRelation": false,
+      "manualUpstreamRepo": "https://github.com/a16z-infra/ai-town",
+      "forkRecognition": "manual",
+      "doNotUseAs": [
+        "original source",
+        "production source"
+      ]
+    },
+    {
+      "name": "ai-office",
+      "url": "https://github.com/emptyinkpot/ai-office",
+      "visibility": "public",
+      "repositoryRole": "research-fork",
+      "status": "research",
+      "githubForkRelation": true,
+      "upstreamRepo": "https://github.com/Parcha-ai/ai-office"
+    },
+    {
+      "name": "agent-office",
+      "url": "https://github.com/emptyinkpot/agent-office",
+      "visibility": "public",
+      "repositoryRole": "research-fork",
+      "status": "research",
+      "githubForkRelation": true,
+      "upstreamRepo": "https://github.com/harishkotra/agent-office"
+    },
+    {
+      "name": "auto-coding-agent-demo",
+      "url": "https://github.com/emptyinkpot/auto-coding-agent-demo",
+      "visibility": "public",
+      "repositoryRole": "research-fork",
+      "status": "research",
+      "githubForkRelation": true,
+      "upstreamRepo": "https://github.com/SamuelQZQ/auto-coding-agent-demo"
+    },
+    {
+      "name": "golutra",
+      "url": "https://github.com/emptyinkpot/golutra",
+      "visibility": "public",
+      "repositoryRole": "research-fork",
+      "status": "research",
+      "githubForkRelation": true,
+      "upstreamRepo": "https://github.com/golutra/golutra",
+      "homepage": "https://www.golutra.com"
+    },
+    {
+      "name": "my-project-qmd",
+      "url": "https://github.com/emptyinkpot/my-project-qmd",
+      "visibility": "private",
+      "repositoryRole": "private QMD markdown search and indexing service",
+      "status": "active",
+      "preferredSource": true,
+      "githubForkRelation": false,
+      "manualUpstreamRepo": "https://github.com/tobi/qmd",
+      "upstreamTrackingFork": "https://github.com/emptyinkpot/qmd",
+      "sourceExtractedFrom": "https://github.com/emptyinkpot/Atramenti-Console",
+      "sourceBaselineCommit": "d9f2700e59daefb6a352c5d563f6910d652ccd0a",
+      "localSourceRoot": "E:\\My Project\\my-project-qmd",
+      "sourcePath": "codex/mcps/core/qmd",
+      "consumes": [
+        "DataBase",
+        "ContractGuard"
+      ],
+      "supplies": [
+        "markdown search",
+        "semantic retrieval",
+        "QMD MCP server",
+        "local knowledge indexing",
+        "memory ingestion retrieval layer"
+      ],
+      "consumedBy": [
+        "DataBase",
+        "Mortis",
+        "Codex",
+        "experience-manager",
+        "future AI memory ingestion jobs"
+      ],
+      "runtimeState": {
+        "defaultIndexPath": "C:\\Users\\ASUS-KL\\.cache\\qmd\\index.sqlite",
+        "experienceCollection": "experience-manager",
+        "futureEcosystemCollection": "emptyinkpot-ecosystem"
+      },
+      "doNotUseAs": [
+        "secret store",
+        "database truth",
+        "raw production data dump"
+      ]
+    },
+    {
+      "name": "qmd",
+      "url": "https://github.com/emptyinkpot/qmd",
+      "visibility": "public",
+      "repositoryRole": "GitHub-recognized QMD upstream tracking fork",
+      "status": "upstream-tracking",
+      "preferredSource": false,
+      "githubForkRelation": true,
+      "upstreamRepo": "https://github.com/tobi/qmd",
+      "runtimeSource": "https://github.com/emptyinkpot/my-project-qmd",
+      "doNotUseAs": [
+        "private runtime source",
+        "DataBase memory truth",
+        "secret store"
+      ]
+    },
+    {
+      "name": "my-project-database-ops-mcp",
+      "url": "https://github.com/emptyinkpot/my-project-database-ops-mcp",
+      "visibility": "private",
+      "repositoryRole": "database inspection MCP and paired skill docs",
+      "status": "active",
+      "preferredSource": true,
+      "sourceExtractedFrom": "https://github.com/emptyinkpot/Atramenti-Console",
+      "sourceBaselineCommit": "d9f2700e59daefb6a352c5d563f6910d652ccd0a",
+      "consumes": [
+        "DataBase",
+        "ContractGuard"
+      ],
+      "supplies": [
+        "database inspection MCP",
+        "database operational context skill docs"
+      ],
+      "doNotUseAs": [
+        "database dump",
+        "secret store",
+        "business API surface"
+      ]
+    }
+  ],
+  "normalizationBacklog": [
+    {
+      "repo": "emptyinkpot",
+      "action": "Add repository topics and keep profile README aligned with this registry."
+    },
+    {
+      "repo": "emptyinkpot.github.io",
+      "action": "Decide whether this is a production homepage, legacy page, or redirect surface; add project.json accordingly."
+    },
+    {
+      "repo": "token-pool",
+      "action": "Classify as secret-adjacent infrastructure; add private identity card and do-not-store-raw-secret rules."
+    },
+    {
+      "repo": "ai-town",
+      "action": "Either recreate as a GitHub-recognized fork or keep manual mirror metadata explicit."
+    },
+    {
+      "repo": "MCP repositories",
+      "action": "Add project.json and README identity cards that describe their tool supply relationship to FuckVideo, Mortis, and DataBase."
+    },
+    {
+      "repo": "Atramenti-Console",
+      "action": "Extract memory/database capability ownership into DataBase registry before any source relocation; remove credential-shaped defaults from experience-manager source."
+    }
+  ],
+  "memoryIngestion": {
+    "roadmap": "docs/operations/ai-memory-ingestion-roadmap.md",
+    "atramentiCapabilityInventory": "ecosystem/atramenti-capability-inventory.json",
+    "atramentiExtractionPlan": "docs/operations/atramenti-memory-database-extraction.md",
+    "firstTargetCollection": "emptyinkpot-ecosystem",
+    "initialFlow": "DataBase ecosystem registry -> normalized markdown mirror -> QMD -> Mortis/Codex query",
+    "cleanstreamSyncPlan": "docs/operations/atramenti-cleanstream-sync-plan.md"
+  },
+  "branchContract": {
+    "model": "three-environment-branches",
+    "integrationBranch": "main",
+    "localDebugBranch": "local",
+    "remoteIdeDebugBranch": "remote-ide",
+    "contractDoc": "docs/contracts/remote-workspace-boundary.md",
+    "promotionRule": "local and remote-ide are debugging lanes; durable changes must be promoted into main through normal integration."
+  }
+}

@@ -1,0 +1,8 @@
+apiVersion: backstage.io/v1alpha1
+kind: Domain
+metadata:
+  name: emptyinkpot
+  title: EmptyInkPot
+  description: Canonical domain for the operator's personal ecosystem.
+spec:
+  owner: 'emptyinkpot'

@@ -1,0 +1,420 @@
+{
+  "name": "DataBase",
+  "projectName": "DataBase",
+  "canonicalDoc": "README.md",
+  "machineReadableEntry": "project.json",
+  "ecosystemMap": "ECOSYSTEM_MAP.md",
+  "githubRepo": "https://github.com/emptyinkpot/DataBase",
+  "visibility": "private",
+  "type": "data-infrastructure-map",
+  "status": "active",
+  "canonicalPurpose": "Canonical topology, inventory, schema, and operations map for the operator's personal data system.",
+  "owner": "emptyinkpot",
+  "sourceOfTruth": "local git repository + Tencent CynosDB MySQL",
+  "runtimeLocation": "E:\\My Project\\MRS\\DataBase",
+  "deploymentTarget": "server-124 / 124.220.233.126",
+  "consumerInterfaces": [
+    "README.md",
+    "ECOSYSTEM_MAP.md",
+    "STORAGE_TOPOLOGY.md",
+    "docs/",
+    "evidence/inventories/"
+  ],
+  "configurationSurfaces": [
+    "project.json",
+    "scripts/*/*.ps1"
+  ],
+  "secretSurfaces": [
+    "C:\\Users\\ASUS-KL\\.codex-secrets\\mysql\\myblog.cnf",
+    "C:\\Users\\ASUS-KL\\.codex-secrets\\mysql\\database_service_users.env",
+    "C:\\Users\\ASUS-KL\\.codex-secrets\\nocodb\\database_nocodb.env",
+    "C:\\Users\\ASUS-KL\\.codex-secrets\\database-gateway\\database_gateway.env"
+  ],
+  "verificationCommands": [
+    ".\\scripts\\project\\check-project-standard.ps1 -Root \"E:\\My Project\\MRS\\DataBase\"",
+    ".\\scripts\\project\\project-standards.ps1 show",
+    ".\\scripts\\memory\\database-memory.ps1 status"
+  ],
+  "documentation": [
+    "README.md",
+    "STORAGE_TOPOLOGY.md",
+    "ECOSYSTEM_MAP.md",
+    "ARCHITECTURE_INSPIRATIONS.md",
+    "docs/architecture/author-operating-database.md",
+    "docs/architecture/canonical-content-system.md",
+    "docs/architecture/civilization-semantic-writing-system.md",
+    "docs/contracts/evidence-contract.md",
+    "docs/operations/obsidian-canonical-projection.md"
+  ],
+  "syncCommands": [
+    ".\\scripts\\project\\sync-project-directory.ps1",
+    ".\\scripts\\catalog\\export-backstage-entity.ps1",
+    ".\\scripts\\catalog\\export-backstage-catalog.ps1"
+  ],
+  "backstage": {
+    "entity": "catalog-info.yaml",
+    "mappingDoc": "docs/contracts/backstage-mapping.md",
+    "catalogExportDoc": "docs/contracts/backstage-catalog-export.md",
+    "relationshipDoc": "docs/contracts/backstage-relationships.md",
+    "relationMappingDoc": "docs/contracts/backstage-relation-mapping.md"
+  },
+  "contractPipeline": {
+    "workflow": ".github/workflows/project-contracts.yml",
+    "doc": "docs/contracts/project-contract-pipeline.md"
+  },
+  "workspaceBoundary": {
+    "doc": "docs/contracts/remote-workspace-boundary.md",
+    "canonicalIntegrationBranch": "main",
+    "environmentBranches": {
+      "local": {
+        "branch": "local",
+        "purpose": "local Windows debugging lane",
+        "checkout": "E:\\My Project\\MRS\\DataBase",
+        "truthRole": "environment debug lane, not product truth"
+      },
+      "remoteIde": {
+        "branch": "remote-ide",
+        "purpose": "remote IDE / code-server debugging lane",
+        "checkout": "server-170:/home/ubuntu/workspaces/DataBase",
+        "truthRole": "environment debug lane, not product truth"
+      }
+    },
+    "promotionRule": "Promote useful changes through a task branch or pull request into main; do not treat local or remote-ide as durable product truth."
+  },
+  "currentTruth": {
+    "structuredDataTruth": "Tencent CynosDB MySQL cloudbase-4glvyyq9f61b19cd",
+    "fileAccessGateway": "OpenList",
+    "fileObjectTruth": [
+      "Quark Drive",
+      "server file roots",
+      "explicit OpenList-mounted storage backends"
+    ],
+    "fileTruthRule": "OpenList is an access gateway and projection surface; file object truth belongs to the mounted backend that actually persists the object.",
+    "longTermFileObjectArchitecture": {
+      "stableInterface": "S3-compatible object storage",
+      "primarySelfHostedCandidate": "SeaweedFS",
+      "benchmarkChallenger": "RustFS",
+      "migrationAndVerificationTool": "rclone",
+      "accessProjection": "OpenList",
+      "optionalPosixLayer": "JuiceFS",
+      "backupCandidates": [
+        "restic",
+        "BorgBackup"
+      ],
+      "canonicalDoc": "docs/storage/long-term-file-object-storage.md",
+      "benchmarkRunbook": "docs/operations/object-storage-benchmark.md",
+      "benchmarkEntrypoint": "scripts/storage/object-storage-benchmark.ps1",
+      "labEntrypoint": "scripts/storage/object-storage-lab.ps1",
+      "labCompose": "scripts/ops/object-storage-lab/docker-compose.seaweedfs.yml",
+      "labRuntimeIgnoredPath": "evidence/object-storage-lab",
+      "rule": "DataBase records object metadata, references, ownership, recovery knowledge, and API policy; it must not implement object storage primitives."
+    },
+    "operatorServer": "server-124 / 124.220.233.126",
+    "localMysqlConfig": "C:\\Users\\ASUS-KL\\.codex-secrets\\mysql\\myblog.cnf"
+  },
+  "inventories": {
+    "mysqlTables": "evidence/inventories/mysql/table-inventory.json",
+    "serverPaths": "evidence/inventories/server/path-inventory.json"
+  },
+  "readOrder": [
+    "README.md",
+    "STORAGE_TOPOLOGY.md",
+    "ECOSYSTEM_MAP.md",
+    "ARCHITECTURE_INSPIRATIONS.md",
+    "DATA_CLASSIFICATION.md",
+    "docs/contracts/storage-contract.md",
+    "docs/contracts/project-creation-standard.md",
+    "docs/contracts/remote-workspace-boundary.md",
+    "docs/contracts/git-workflow.md",
+    "docs/contracts/mcp-security-policy.md",
+    "docs/contracts/environment-branch-runbook.md",
+    "scripts/project/git-env-sync.ps1",
+    "docs/storage/mysql-current-state.md",
+    "docs/storage/openlist-and-quark.md",
+    "docs/storage/long-term-file-object-storage.md",
+    "docs/operations/object-storage-benchmark.md",
+    "docs/storage/server-runtime-paths.md",
+    "docs/storage/secrets-surfaces.md",
+    "docs/storage/data-flow.md",
+    "docs/architecture/author-operating-database.md",
+    "docs/architecture/canonical-content-system.md",
+    "docs/architecture/civilization-semantic-writing-system.md",
+    "docs/contracts/evidence-contract.md",
+    "docs/apps/gateway/README.md",
+    "docs/apps/gateway/directus.md",
+    "docs/apps/gateway/nocodb.md",
+    "docs/apps/gateway/api-access.md",
+    "docs/apps/gateway/dreamfactory.md",
+    "docs/apps/gateway/database-api-service-plan.md",
+    "docs/apps/gateway/database-gateway-p0.md",
+    "docs/apps/gateway/database-gateway-operations.md",
+    "docs/automation/n8n.md",
+    "docs/automation/n8n-workflows.md",
+    "catalog/ecosystem/repos.json",
+    "catalog/ecosystem/supply-relationships.json",
+    "catalog/ecosystem/upstreams.json",
+    "catalog/ecosystem/repository-consolidation.json",
+    "catalog/ecosystem/runtime-surfaces.json",
+    "catalog/ecosystem/atramenti-capability-inventory.json",
+    "docs/operations/ai-memory-ingestion-roadmap.md",
+    "docs/operations/atramenti-memory-database-extraction.md",
+    "docs/operations/atramenti-cleanstream-sync-plan.md",
+    "docs/operations/qmd-upstream-sync.md",
+    "docs/runtime/database-memory-service.md",
+    "docs/runtime/database-memory-service-production.md",
+    "docs/github/repository-consolidation-plan.md",
+    "docs/github/mortis-repository-consolidation.md",
+    "docs/github/archive-candidates-2026-05-10.md",
+    "docs/github/archive-readiness-scan-2026-05-10.md",
+    "services/README.md",
+    "services/memory/README.md",
+    "services/memory/package.json",
+    "services/memory/mcp/server.mjs",
+    "services/memory/mcp/server.json",
+    "services/memory/scripts/smoke.mjs",
+    "services/experience-manager/README.md",
+    "services/experience-manager/RUNBOOK.md",
+    "services/experience-manager/.env.example",
+    "services/database-ops-mcp/README.md",
+    "services/qmd-adapter/README.md"
+  ],
+  "coreRepositories": {
+    "governance": "https://github.com/emptyinkpot/ContractGuard",
+    "remoteWorkspace": "https://github.com/emptyinkpot/code-server-workspace-infra",
+    "aiGateway": "https://github.com/emptyinkpot/sub2api",
+    "operatorRuntime": "https://github.com/emptyinkpot/mortis-multica-source",
+    "videoApplication": "https://github.com/emptyinkpot/FuckVideo"
+  },
+  "dataCurationRuntime": {
+    "status": "callable-mvp",
+    "entrypoint": "scripts/curation/curate-knowledge-items.ps1",
+    "pythonWorker": "scripts/curation/curate_knowledge_items.py",
+    "schema": "packages/schemas/data-curation/knowledge-label.schema.json",
+    "docs": [
+      "docs/operations/data-cleaning-and-labeling-runtime.md",
+      "docs/operations/sub2api-data-curation-consumer.md"
+    ],
+    "sourceTable": "knowledge_import_items",
+    "labelTables": [
+      "data_curation_runs",
+      "data_curation_labels",
+      "data_curation_decisions"
+    ],
+    "modelGateway": {
+      "repository": "https://github.com/emptyinkpot/sub2api",
+      "baseUrlEnv": "DATA_CURATION_OPENAI_BASE_URL",
+      "apiKeyEnv": "DATA_CURATION_OPENAI_API_KEY",
+      "modelEnv": "DATA_CURATION_MODEL",
+      "defaultBaseUrl": "https://sub2api.tengokukk.com/v1",
+      "defaultModel": "glm-4-flash",
+      "endpoint": "/chat/completions",
+      "protocol": "OpenAI-compatible"
+    },
+    "modelPolicy": "Codex maintains scripts, schemas, checks, and failure analysis. Bulk semantic cleaning is delegated to a replaceable model through sub2api."
+  },
+  "runtimeGateways": {
+    "plannedStableApiFacade": {
+      "name": "DataBase Gateway",
+      "status": "active-p0",
+      "runtimePath": "/srv/database-gateway",
+      "localBind": "127.0.0.1:18090",
+      "preferredStack": "Hono + TypeScript + mysql2",
+      "credentialSurface": "C:\\Users\\ASUS-KL\\.codex-secrets\\mysql\\database_service_users.env",
+      "serverCredentialSurface": "/srv/database-gateway/.env",
+      "p0Endpoints": [
+        "GET /health",
+        "GET /inventory/tables",
+        "GET /content/works",
+        "GET /content/works/:id/chapters",
+        "GET /creative/style-contract",
+        "GET /semantic/units",
+        "GET /semantic/tags",
+        "GET /semantic/relations",
+        "GET /vocabulary/search?q="
+      ],
+      "serviceManager": "systemd",
+      "unit": "database-gateway.service",
+      "healthEndpoint": "http://127.0.0.1:18090/health",
+      "apiKeyHeader": "X-DataBase-Api-Key",
+      "apiKeyCredentialSurface": "C:\\Users\\ASUS-KL\\.codex-secrets\\database-gateway\\database_gateway.env",
+      "openapi": "apps/gateway/openapi.yaml",
+      "operationsDoc": "docs/gateway/database-gateway-operations.md",
+      "smokeCommand": "cd /srv/database-gateway && set -a && . ./.env && set +a && npm run smoke",
+      "policy": "Read-only first; loopback-only first; use database_readonly; no sensitive tables; data routes require API key."
+    },
+    "apiServiceCandidate": {
+      "name": "DreamFactory",
+      "runtimePath": "/srv/dreamfactory",
+      "localBind": "127.0.0.1:18089",
+      "status": "active-loopback-blocked-for-mysql",
+      "purpose": "Generated REST API service layer for existing SQL data sources.",
+      "metadataStore": "database-dreamfactory-mysql / mariadb:10.11",
+      "cache": "database-dreamfactory-redis / redis:7-alpine",
+      "webContainer": "database-dreamfactory-web",
+      "webImage": "database-dreamfactory-web:local",
+      "adminCredentialSurface": "C:\\Users\\ASUS-KL\\.codex-secrets\\dreamfactory\\database_dreamfactory_admin.env",
+      "serverAdminCredentialSurface": "/srv/dreamfactory/admin.env",
+      "healthEndpoint": "http://127.0.0.1:18089/api/v2/system/environment",
+      "cynosdbSource": "blocked because current DreamFactory runtime does not expose a MySQL service type",
+      "availableDatabaseServiceTypes": [
+        "alloydb",
+        "aws_dynamodb",
+        "aws_redshift_db",
+        "azure_documentdb",
+        "azure_table",
+        "cassandra",
+        "couchdb",
+        "firebird",
+        "pgsql",
+        "sqlite"
+      ],
+      "policy": "Loopback-only; not the active MySQL API path until a MySQL-capable DreamFactory runtime is available."
+    },
+    "active": {
+      "name": "NocoDB",
+      "runtimePath": "/srv/nocodb",
+      "localBind": "127.0.0.1:18088",
+      "metadataStore": "database-nocodb-postgres",
+      "status": "active",
+      "connectedSources": [
+        {
+          "name": "CynosDB MyBlog Runtime",
+          "type": "mysql2",
+          "database": "cloudbase-4glvyyq9f61b19cd",
+          "modelsDiscovered": 76,
+          "enabledModelsAfterHardening": 69,
+          "sensitiveEnabledModels": 0,
+          "activeApiTokens": 1,
+          "apiTokenCredentialSurface": "C:\\Users\\ASUS-KL\\.codex-secrets\\nocodb\\database_nocodb.env",
+          "apiTokenPolicy": "admin-owned personal access token for NocoDB administration only; DataBase Gateway should use database_readonly MySQL",
+          "status": "connected"
+        }
+      ]
+    },
+    "blocked": {
+      "name": "Directus",
+      "runtimePath": "/srv/directus",
+      "localBind": "127.0.0.1:8055",
+      "status": "blocked",
+      "reason": "CynosDB explicit_defaults_for_timestamp=OFF causes Directus migration failure on directus_files.uploaded_on."
+    }
+  },
+  "serviceAccounts": {
+    "mysql": [
+      {
+        "user": "database_readonly",
+        "scope": "SELECT on cloudbase-4glvyyq9f61b19cd.*",
+        "credentialsSurface": "C:\\Users\\ASUS-KL\\.codex-secrets\\mysql\\database_service_users.env",
+        "status": "verified"
+      },
+      {
+        "user": "database_content_rw",
+        "scope": "SELECT, INSERT, UPDATE, DELETE on approved content tables only",
+        "credentialsSurface": "C:\\Users\\ASUS-KL\\.codex-secrets\\mysql\\database_service_users.env",
+        "sensitiveTablesGranted": false,
+        "status": "verified"
+      }
+    ]
+  },
+  "automationBus": {
+    "name": "n8n",
+    "container": "n8n",
+    "image": "blowsnow/n8n-chinese",
+    "server": "server-124 / 124.220.233.126",
+    "localBind": "127.0.0.1:5678",
+    "publicEditorUrl": "https://mortis.tengokukk.com/n8n/",
+    "dataRoot": "/mnt/data/n8n",
+    "locale": "zh-CN",
+    "status": "active",
+    "metadataStore": "/mnt/data/n8n/database.sqlite",
+    "knownIssue": "Currently uses SQLite metadata; logs have shown database timeout events. Future migration to Postgres is recommended as a separate maintenance task.",
+    "currentWorkflows": [
+      "mortis-smoke-gateway",
+      "mortis-telegram-operator"
+    ],
+    "plannedDatabaseWorkflows": [
+      "database-inventory-refresh",
+      "telegram-db-status",
+      "nocodb-health-report",
+      "openlist-storage-check"
+    ],
+    "activeDatabaseWorkflows": [
+      {
+        "id": "database-health-report",
+        "name": "DataBase Health Report",
+        "endpoint": "http://127.0.0.1:5678/webhook/database-health-report",
+        "status": "active",
+        "checks": [
+          "DataBase Gateway health"
+        ],
+        "mysql": "checked through DataBase Gateway /health"
+      }
+    ]
+  },
+  "repositoryRole": "ecosystem-truth",
+  "supplies": [
+    "ecosystem registry",
+    "storage topology",
+    "runtime surfaces",
+    "supply relationships",
+    "AI memory material boundaries"
+  ],
+  "consumedBy": [
+    "Mortis",
+    "ContractGuard",
+    "FuckVideo",
+    "sub2api",
+    "code-server-workspace-infra",
+    "future AI assistants"
+  ],
+  "memoryIngestion": {
+    "roadmap": "docs/operations/ai-memory-ingestion-roadmap.md",
+    "atramentiCapabilityInventory": "catalog/ecosystem/atramenti-capability-inventory.json",
+    "atramentiExtractionPlan": "docs/operations/atramenti-memory-database-extraction.md",
+    "firstTargetCollection": "emptyinkpot-ecosystem",
+    "cleanstreamSyncPlan": "docs/operations/atramenti-cleanstream-sync-plan.md"
+  },
+  "ecosystemRegistry": {
+    "repos": "catalog/ecosystem/repos.json",
+    "upstreams": "catalog/ecosystem/upstreams.json",
+    "runtimeSurfaces": "catalog/ecosystem/runtime-surfaces.json",
+    "supplyRelationships": "catalog/ecosystem/supply-relationships.json",
+    "atramentiCapabilityInventory": "catalog/ecosystem/atramenti-capability-inventory.json",
+    "roleVocabulary": "catalog/ecosystem/repository-roles.md",
+    "cloneableSolutions": "catalog/ecosystem/cloneable-solutions.md",
+    "creativeStyleContracts": "MySQL tables: creative_style_protocols, creative_style_modules, creative_editing_steps, creative_quality_rules, creative_source_materials",
+    "creativeStyleContractTypes": "packages/schemas/creative/creative-style-contract.ts",
+    "creativeStyleContractPackage": "packages/schemas/creative/package.json",
+    "creativeStyleGateway": "GET /creative/style-contract",
+    "creativeStyleMigration": "apps/gateway/sql/003_creative_style_registry.sql",
+    "canonicalContentSystem": "docs/architecture/canonical-content-system.md",
+    "canonicalContentContractTypes": "packages/schemas/content/canonical-content-contract.ts",
+    "canonicalContentMigration": "apps/gateway/sql/005_canonical_content_schema.sql",
+    "evidenceContract": "docs/contracts/evidence-contract.md",
+    "civilizationSemanticWritingSystem": "docs/architecture/civilization-semantic-writing-system.md",
+    "semanticUnitsMigration": "apps/gateway/sql/004_semantic_units.sql",
+    "semanticUnitsGateway": "GET /semantic/units"
+  },
+  "contentDomainPlatform": {
+    "obsidianCanonicalProjection": {
+      "boundaryDoc": "docs/operations/obsidian-canonical-projection.md",
+      "gatewayEndpoint": "POST /writes/project-obsidian-markdown",
+      "sourceTruth": "Obsidian Vault Markdown file bytes remain human-editable file truth",
+      "databaseTruth": "DataBase owns canonical identity, structure, source hash, frontmatter snapshot, asset references, and relations",
+      "targetTables": [
+        "content_works",
+        "content_parts",
+        "content_blocks",
+        "content_assets",
+        "content_relations"
+      ],
+      "nonGoals": [
+        "file sync",
+        "markdown parsing",
+        "markdown write-back",
+        "publishing",
+        "semantic unit generation"
+      ]
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "task_id": "article-acceptance-contract-2026-05-14",
+  "title": "Add DataBase-owned article acceptance contract consumed by ContentBase",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "refactor/codex/canonical-database-consumer",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "schemas/creative/",
+    "gateway/src/routes/creative.ts",
+    "generated/clients/database-gateway/",
+    "E:/My Project/ContentBase/product/novel/app/article-runtime.ts",
+    "E:/My Project/ContentBase/product/novel/app/api-content-runtime.ts",
+    "E:/My Project/ContentBase/product/novel/tests/content-runtime-api.test.ts"
+  ],
+  "started_at": "2026-05-14T05:34:24.3837920Z",
+  "updated_at": "2026-05-14T05:48:18.5407050Z",
+  "handoff": null,
+  "notes": "Completed v1 package contract and documentation. DataBase owns author/style/policy truth; ContentBase may only execute imported contract gates. Gateway durable persistence for acceptance reports remains next evolution."
+}

@@ -1,0 +1,18 @@
+{
+  "task_id": "database-gateway-write-client-boundary-2026-05-12",
+  "title": "Expose explicit DataBase Gateway write client contract",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "main",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "gateway/openapi.yaml",
+    "generated/clients/database-gateway/",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-12T02:26:19Z",
+  "updated_at": "2026-05-12T02:39:09Z",
+  "completed_at": "2026-05-12T02:39:09Z",
+  "handoff": null,
+  "notes": "Existing DataBase Gateway /writes endpoints are now represented in gateway/openapi.yaml and generated TypeScript client methods. Gateway status mode now reports read-write-facade instead of read-only."
+}

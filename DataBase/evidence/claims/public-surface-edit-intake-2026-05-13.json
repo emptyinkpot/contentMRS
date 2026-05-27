@@ -1,0 +1,27 @@
+{
+  "task_id": "public-surface-edit-intake-2026-05-13",
+  "title": "Define MyBlog public surface edit intake contract",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "docs/myblog-public-edit-intake-contract",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "docs/contracts/public-surface-edit-intake-contract.md",
+    "schemas/document/public-edit-intake.schema.json",
+    "examples/document/minimal-public-edit-intake.json",
+    "docs/contracts/three-repo-topology-constitution.md",
+    "docs/contracts/cross-repo-artifact-contracts.md",
+    "docs/contracts/cross-repo-artifact-inventory.md",
+    "docs/contracts/reader-runtime-projection-contract.md",
+    "docs/contracts/graph-versioning-edit-contract.md",
+    "docs/contracts/annotation-graph-contract.md",
+    "docs/contracts/canonical-content-graph.md",
+    "ECOSYSTEM_MAP.md",
+    ".runtime/claims/public-surface-edit-intake-2026-05-13.json",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T16:30:00Z",
+  "updated_at": "2026-05-13T16:45:00Z",
+  "handoff": null,
+  "notes": "Doc/schema-only MyBlog public surface write intake contract. Scope excludes MyBlog implementation, auth, moderation storage, and DataBase runtime routes."
+}

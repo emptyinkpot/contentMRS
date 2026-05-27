@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "annotation-graph.v1",
+  "graphId": "annotation.graph.example",
+  "annotations": [
+    {
+      "id": "annotation.example.highlight",
+      "type": "highlight",
+      "target": {
+        "targetType": "anchor",
+        "targetId": "anchor.example.evidence"
+      },
+      "authorId": "person.operator",
+      "visibility": "private",
+      "content": {
+        "text": "Important evidence block."
+      },
+      "createdAt": "2026-05-13T14:50:00Z",
+      "status": "active",
+      "source": "human"
+    }
+  ]
+}

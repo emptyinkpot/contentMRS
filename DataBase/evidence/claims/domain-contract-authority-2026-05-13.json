@@ -1,0 +1,18 @@
+{
+  "task_id": "domain-contract-authority-2026-05-13",
+  "title": "Document DataBase as unique domain schema authority",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "local",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "docs/architecture/author-operating-database.md",
+    "docs/architecture/civilization-semantic-writing-system.md",
+    "schemas/README.md",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-12T23:57:23Z",
+  "updated_at": "2026-05-13T00:05:00Z",
+  "handoff": null,
+  "notes": "Record the architecture rule that DataBase owns domain contracts and consumers only consume generated contracts; encode creative semantic graph direction."
+}

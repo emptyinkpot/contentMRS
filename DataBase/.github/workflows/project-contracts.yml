@@ -1,0 +1,91 @@
+name: Project Contracts
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Validate project manifest
+        run: python .\scripts\validate-project-manifest.py .\packages\schemas\project\project-manifest.schema.json .\project.json
+
+      - name: Validate governance files
+        shell: powershell
+        run: |
+          $required = @(
+            'AGENTS.md',
+            'AGENT_WORKFLOW.md',
+            'docs/contracts/git-workflow.md',
+            'docs/contracts/remote-workspace-boundary.md',
+            'docs/contracts/environment-branch-runbook.md',
+            'docs/contracts/mcp-security-policy.md',
+            'scripts/git-env-sync.ps1',
+            '.github/PULL_REQUEST_TEMPLATE.md',
+            '.github/CODEOWNERS'
+          )
+          foreach ($path in $required) {
+            if (-not (Test-Path -LiteralPath $path)) {
+              throw "Missing governance file: $path"
+            }
+          }
+          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content -LiteralPath 'scripts/git-env-sync.ps1' -Raw), [ref]$null)
+
+      - name: Check project standard
+        run: .\scripts\check-project-standard.ps1 -Root "${{ github.workspace }}"
+        shell: powershell
+
+      - name: Export Backstage entity
+        run: .\scripts\export-backstage-entity.ps1
+        shell: powershell
+
+      - name: Export Backstage catalog
+        run: .\scripts\export-backstage-catalog.ps1
+        shell: powershell
+
+      - name: Sync project directory
+        run: .\scripts\sync-project-directory.ps1
+        shell: powershell
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: |
+            apps/gateway/package-lock.json
+
+      - name: Install Gateway dependencies
+        run: npm ci
+        working-directory: apps/gateway
+
+      - name: Build Gateway
+        run: npm run build
+        working-directory: apps/gateway
+
+      - name: Check Gateway dist is committed
+        shell: bash
+        run: |
+          if ! git diff --exit-code -- apps/gateway/dist; then
+            echo "apps/gateway/dist is out of sync with apps/gateway/src."
+            echo "Run 'cd apps/gateway && npm run build', then commit the updated dist output."
+            exit 1
+          fi
+
+      - name: Install Gateway MCP dependencies
+        run: npm ci
+        working-directory: services/gateway-mcp
+
+      - name: Smoke Gateway MCP adapter
+        run: npm run smoke
+        working-directory: services/gateway-mcp

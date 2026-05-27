@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "task_id": "search-query-entrypoint",
+  "title": "Add unified database query entrypoint and search policy",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "main",
+  "conflict_policy": "review-before-merge",
+  "claimed_paths": [
+    "scripts/database-query.ps1",
+    "scripts/mysql-status.ps1",
+    "schemas/search/index-policy.json",
+    "docs/runtime/search-and-classification-runtime.md",
+    "docs/runtime/service-addresses.md"
+  ],
+  "started_at": "2026-05-10T00:00:00Z",
+  "updated_at": "2026-05-10T00:00:00Z",
+  "handoff": null,
+  "commit": "ef6494c",
+  "notes": "Completed P1 local query entrypoint. Future gateway work should call this boundary or reimplement it deliberately behind a stable API."
+}

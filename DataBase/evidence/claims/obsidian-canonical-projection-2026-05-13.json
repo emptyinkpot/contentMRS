@@ -1,0 +1,20 @@
+{
+  "claimed_paths": [
+    "gateway/src/routes/writes.ts",
+    "gateway/API.md",
+    "gateway/openapi.yaml",
+    "docs/architecture/canonical-content-system.md",
+    "docs/operations/obsidian-canonical-projection.md",
+    "project.json"
+  ],
+  "title": "Add canonical Obsidian Markdown projection write path",
+  "agent_id": "codex",
+  "updated_at": "2026-05-13T00:03:27Z",
+  "branch": "refactor/codex/canonical-content-gateway-client",
+  "started_at": "2026-05-12T23:52:59Z",
+  "status": "completed",
+  "conflict_policy": "coordinate-on-overlap",
+  "notes": "DataBase owns structured canonical projection of Obsidian Markdown; Vault remains human editable file truth.",
+  "handoff": null,
+  "task_id": "obsidian-canonical-projection-2026-05-13"
+}

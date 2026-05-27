@@ -1,0 +1,8 @@
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: emptyinkpot-ecosystem
+  title: EmptyInkPot Ecosystem
+  description: Canonical registry of repositories, runtime surfaces, and memory material.
+spec:
+  owner: 'emptyinkpot'

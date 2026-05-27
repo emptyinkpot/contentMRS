@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/emptyinkpot/DataBase/schemas/agent-coordination/claim.schema.json",
+  "title": "Agent Claim",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_id",
+    "title",
+    "agent_id",
+    "status",
+    "branch",
+    "conflict_policy",
+    "claimed_paths",
+    "started_at",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "task_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,96}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "agent_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 96
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "blocked", "review", "handoff", "completed", "abandoned"]
+    },
+    "branch": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "conflict_policy": {
+      "type": "string",
+      "enum": [
+        "coordinate-on-overlap",
+        "review-before-merge",
+        "handoff-required",
+        "operator-owned"
+      ]
+    },
+    "claimed_paths": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 260
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    },
+    "handoff": {
+      "type": ["string", "null"]
+    },
+    "commit": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

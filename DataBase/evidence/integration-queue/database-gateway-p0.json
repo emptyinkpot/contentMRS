@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "task_id": "database-gateway-p0",
+  "agent_id": "codex",
+  "branch": "main",
+  "status": "integrated",
+  "base": "main",
+  "commit": "a1d2860",
+  "claimed_paths": [
+    "gateway/",
+    "docs/gateway/database-gateway-p0.md",
+    "docs/gateway/database-api-service-plan.md",
+    "docs/gateway/README.md",
+    "project.json"
+  ],
+  "checks": [
+    "npm run typecheck",
+    "npm run build",
+    "npm run smoke",
+    "public API write check"
+  ],
+  "updated_at": "2026-05-10T20:40:00+08:00",
+  "integration_notes": "Gateway source has been synced into the DataBase repository under gateway/. Production runs from server-124:/srv/database-gateway. Public API docs are available at /docs/api and /openapi.yaml. Auth key validation is optional and disabled by default. Five write facade routes are implemented and verified."
+}

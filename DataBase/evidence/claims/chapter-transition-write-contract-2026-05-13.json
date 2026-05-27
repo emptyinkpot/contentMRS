@@ -1,0 +1,20 @@
+{
+  "task_id": "chapter-transition-write-contract-2026-05-13",
+  "title": "Add DataBase Gateway chapter transition write contract",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "local",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "schemas/content/",
+    "gateway/src/routes/writes.ts",
+    "gateway/scripts/generate-openapi.mjs",
+    "gateway/openapi.yaml",
+    "generated/clients/database-gateway/",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T04:00:00Z",
+  "updated_at": "2026-05-13T04:08:00Z",
+  "handoff": null,
+  "notes": "Added idempotent record-chapter-transition write path, generated OpenAPI/SDK, and validated Gateway plus generated client builds."
+}

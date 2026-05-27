@@ -1,0 +1,21 @@
+{
+  "task_id": "publication-result-write-contract-2026-05-15",
+  "title": "Add DataBase-owned publication result write contract",
+  "agent_id": "codex",
+  "status": "active",
+  "branch": "refactor/codex/canonical-content-gateway-client",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "packages/schemas/content/canonical-content-contract.ts",
+    "apps/gateway/src/routes/writes.ts",
+    "apps/gateway/scripts/generate-openapi.mjs",
+    "apps/gateway/openapi.yaml",
+    "packages/database-client/",
+    "evidence/claims/publication-result-write-contract-2026-05-15.json",
+    "evidence/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-15T12:20:00Z",
+  "updated_at": "2026-05-15T12:20:00Z",
+  "handoff": null,
+  "notes": "Define the canonical Gateway write API for publication_records and chapter/content_part publication state. fanqie-service must call this endpoint instead of keeping local publication truth."
+}

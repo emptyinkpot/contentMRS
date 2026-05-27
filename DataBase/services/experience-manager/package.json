@@ -1,0 +1,31 @@
+{
+  "name": "@emptyinkpot/database-experience-manager",
+  "version": "1.0.0",
+  "description": "DataBase-owned experience memory MCP and QMD mirror service",
+  "private": true,
+  "scripts": {
+    "mcp": "node ./mcp/experience-manager-mcp.mjs",
+    "health": "node ./scripts/healthcheck.mjs",
+    "health:local": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/load-env-and-healthcheck.ps1",
+    "probe:readonly": "node ./scripts/readonly-probe.mjs",
+    "probe:readonly:local": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/load-env-and-healthcheck.ps1 -Command readonly-probe",
+    "sync:qmd": "node ./scripts/sync-to-qmd.mjs",
+    "sync:qmd:local": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/load-env-and-healthcheck.ps1 -Command sync-qmd",
+    "sync:qmd:dry": "node ./scripts/sync-to-qmd.mjs --dry-run",
+    "sync:qmd:dry:local": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/load-env-and-healthcheck.ps1 -Command sync-qmd-dry",
+    "record:controlled": "node ./scripts/controlled-record.mjs",
+    "approval": "node ./scripts/memory-approval.mjs",
+    "smoke": "node --check ./lib/config.mjs && node --check ./lib/db.mjs && node --check ./mcp/experience-manager-mcp.mjs && node --check ./scripts/sync-to-qmd.mjs && node --check ./scripts/healthcheck.mjs && node --check ./scripts/readonly-probe.mjs && node --check ./scripts/controlled-record.mjs && node --check ./scripts/memory-approval.mjs",
+    "check:secrets": "rg -n -I \"(sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9_]{30,}|xox[baprs]-[A-Za-z0-9-]{20,}|password\\\\s*[:=]\\\\s*['\\\"][^'\\\"]{6,})\" ."
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "express": "^4.21.2",
+    "mysql2": "^3.14.5",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^6.0.2"
+  }
+}

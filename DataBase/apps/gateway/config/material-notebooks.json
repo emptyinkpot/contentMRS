@@ -1,0 +1,52 @@
+{
+  "version": "material-scope.v2-open",
+  "defaultEvidence": {
+    "rounds": 8,
+    "limit": 16,
+    "suggestIncludeWeb": true,
+    "skipDatabaseSearch": false
+  },
+  "notebooks": {
+    "scope-ragflow-web": {
+      "label": "RAGFlow 向量 + 联网（skipDatabaseSearch）",
+      "retrieval": { "mode": "ragflow_web", "defaultIncludeRagflow": true },
+      "ragflowDatasetEnv": "DATABASE_EVIDENCE_RAGFLOW_DATASET_WEB",
+      "sourceIds": [],
+      "forbiddenSourceIds": [],
+      "ragflowDatasetIds": [],
+      "defaultRounds": 6,
+      "defaultLimit": 14,
+      "suggestIncludeWeb": true,
+      "skipDatabaseSearch": true,
+      "excludeQueries": [
+        "一肖一码", "预测", "下载", "官方", "直播", "麻将", "小品网", "顶级大片",
+        "教育社会学", "www.", "http", "youtube", "youtu.be",
+        "抖音", "bilibili", "哔哩", "一肖", "中特", "开奖"
+      ]
+    },
+    "scope-hybrid-tight": {
+      "label": "Hybrid 检索（较紧轮次/条数）",
+      "retrieval": { "mode": "hybrid", "defaultIncludeRagflow": true },
+      "ragflowDatasetEnv": "DATABASE_EVIDENCE_RAGFLOW_DATASET_HYBRID",
+      "sourceIds": ["book_xingwang_world_history_21"],
+      "forbiddenSourceIds": [],
+      "ragflowDatasetIds": [],
+      "defaultRounds": 6,
+      "defaultLimit": 12,
+      "suggestIncludeWeb": true,
+      "skipDatabaseSearch": false
+    },
+    "scope-hybrid-default": {
+      "label": "Hybrid 检索（默认轮次/条数）",
+      "retrieval": { "mode": "hybrid", "defaultIncludeRagflow": true },
+      "ragflowDatasetEnv": "DATABASE_EVIDENCE_RAGFLOW_DATASET_HYBRID",
+      "sourceIds": ["book_xingwang_world_history_21"],
+      "forbiddenSourceIds": [],
+      "ragflowDatasetIds": [],
+      "defaultRounds": 8,
+      "defaultLimit": 16,
+      "suggestIncludeWeb": true,
+      "skipDatabaseSearch": false
+    }
+  }
+}

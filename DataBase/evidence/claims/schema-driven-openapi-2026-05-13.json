@@ -1,0 +1,22 @@
+{
+  "task_id": "schema-driven-openapi-2026-05-13",
+  "title": "Make Gateway OpenAPI consumable from DataBase Zod contract schemas",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "local",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "gateway/openapi.yaml",
+    "gateway/package.json",
+    "gateway/package-lock.json",
+    "gateway/scripts/",
+    "schemas/content/",
+    "schemas/creative/",
+    "generated/clients/database-gateway/",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T01:10:00Z",
+  "updated_at": "2026-05-13T01:37:05Z",
+  "handoff": null,
+  "notes": "Added Gateway generate:openapi script that derives canonical content and creative style response schemas from DataBase Zod contracts, updates OpenAPI refs for runtime-enforced routes, and regenerates the TypeScript SDK. Added generated client whitespace cleanup as a repeatable post-generation step. Active repository-consolidation paths README.md/project.json were not touched."
+}

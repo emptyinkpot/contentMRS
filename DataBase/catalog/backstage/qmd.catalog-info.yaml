@@ -1,0 +1,19 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: 'qmd'
+  title: 'qmd'
+  description: 'GitHub-recognized QMD upstream tracking fork'
+  annotations:
+    backstage.io/source-location: 'url:https://github.com/emptyinkpot/qmd'
+    emptyinkpot.io/visibility: 'public'
+    emptyinkpot.io/repository-role: 'GitHub-recognized QMD upstream tracking fork'
+    emptyinkpot.io/status: 'upstream-tracking'
+    emptyinkpot.io/preferred-source: 'false'
+    emptyinkpot.io/canonical-doc: ''
+    emptyinkpot.io/machine-readable-entry: ''
+spec:
+  type: 'library'
+  lifecycle: 'upstream-tracking'
+  owner: 'emptyinkpot'
+  system: 'emptyinkpot-ecosystem'

@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "content-import.v1",
+  "manifestId": "manifest.example.content-import",
+  "status": "review_required",
+  "sourceArtifact": {
+    "id": "artifact.example.epub",
+    "originalPath": "imports/example.epub",
+    "sha256": "sha256:example",
+    "mime": "application/epub+zip",
+    "source": "manual-import",
+    "importedAt": "2026-05-13T14:25:00Z",
+    "immutable": true
+  },
+  "extractor": {
+    "name": "epub-import-worker",
+    "version": "planned.v1",
+    "command": "pandoc example.epub -t json"
+  },
+  "parser": {
+    "route": "pandoc-json"
+  },
+  "normalizationPolicy": {
+    "name": "cdm-normalization",
+    "version": "v1",
+    "rules": ["preserve-section-tree", "preserve-footnotes", "emit-anchors"]
+  },
+  "imagePolicy": {
+    "name": "asset-graph",
+    "version": "v1",
+    "rules": ["no-inline-base64", "preserve-original-path", "hash-assets"]
+  },
+  "outputPolicy": {
+    "name": "no-silent-loss",
+    "version": "v1",
+    "rules": ["block-on-structural-loss", "report-unresolved-warnings"]
+  },
+  "lossReport": {
+    "unsupportedFeatures": [],
+    "downgraded": [],
+    "unresolved": [
+      {
+        "code": "REVIEW_TOC_CONFIDENCE",
+        "message": "TOC was extracted but requires human review before durable promotion.",
+        "severity": "warning"
+      }
+    ],
+    "blockedReasons": []
+  },
+  "unresolvedWarnings": [],
+  "outputs": [
+    {
+      "path": "out/content-graph.json",
+      "format": "json",
+      "role": "content-graph"
+    }
+  ],
+  "generatedAt": "2026-05-13T14:25:00Z"
+}

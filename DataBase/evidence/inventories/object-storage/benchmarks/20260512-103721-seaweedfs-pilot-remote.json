@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "run_id": "20260512-103721",
+  "generated_at": "2026-05-12T10:37:22.4698014Z",
+  "mode": "remote",
+  "ssh_target": "server-124",
+  "backend": "seaweedfs-pilot",
+  "bucket": "database-lab-artifacts",
+  "remote_rclone_config_surface": "/srv/database-object-store/seaweedfs/rclone.conf",
+  "remote_prefix": "seaweedfs-pilot:database-lab-artifacts/benchmark/20260512-103721",
+  "workload": {
+    "small_file_count": 20,
+    "small_file_size_kb": 4,
+    "medium_file_count": 3,
+    "medium_file_size_kb": 128,
+    "large_file_count": 1,
+    "large_file_size_mb": 4,
+    "total_files": 24,
+    "total_bytes": 4669440
+  },
+  "steps": [
+    {
+      "step": "rclone-copy",
+      "exit_code": 0,
+      "success": true,
+      "duration_ms": 142,
+      "output": ""
+    },
+    {
+      "step": "rclone-check",
+      "exit_code": 0,
+      "success": true,
+      "duration_ms": 88,
+      "output": "2026/05/12 18:37:24 NOTICE: S3 bucket database-lab-artifacts path benchmark/20260512-103721: 0 differences found 2026/05/12 18:37:24 NOTICE: S3 bucket database-lab-artifacts path benchmark/20260512-103721: 24 matching files "
+    },
+    {
+      "step": "rclone-lsjson",
+      "exit_code": 0,
+      "success": true,
+      "duration_ms": 82,
+      "output": "[ {\"Path\":\"large-archives/large-1.bin\",\"Name\":\"large-1.bin\",\"Size\":4194304,\"MimeType\":\"application/octet-stream\",\"ModTime\":\"2026-05-12T18:37:24.066087695+08:00\",\"IsDir\":false,\"Tier\":\"STANDARD\"}, {\"Path\":\"many-small-files/small-01.bin\",\"Name\":\"small-01.bin\",\"Size\":4096,\"MimeType\":\"application/octet-stream\",\"ModTime\":\"2026-05-12T18:37:24.031087433+08:00\",\"IsDir\":false,\"Tier\":\"STANDARD\"}, {\"Path\":\"many-small-files/small-02.bin\",\"Name\":\"small-02.bin\",\"Size\":4096,\"MimeType\":\"application/octet-stream\",\"ModTime\":\"2026-05-12T18:37:24.032087440+08:00\",\"IsDir\":false,\"Tier\":\"STANDARD\"}, {\"Path\":\"many-small-files/small-03.bin\",\"Name\":\"small-03.bin\",\"Size\":4096,\"MimeType\":\"application/octet-stream\",\"ModTime\":\"2026-05-12T18:37:24.033087448+08:00\",\"IsDir\":false,\"Tier\":\"STANDARD\"}, {\"Path\":\"many-small-files/small-04.bin\",\"Name\":\"small-04.bin\",\"Size\":4096,\"MimeType\":\"application/octet-stream\",\"ModTime\":\"2026-05-12T18:37:24.034087455+08:00\",\"IsDir\":false,\"Tier\":\"STANDARD\"}, {\"Path\":\"many-small-files/small-05.bin\",\"Name\":\"small-05.bin\",\"Size\":4096,\"MimeType\":\"application/octet-stream\",\"ModTime\":\"2026-05-12T18:37:24.034087455+08:00\",\"IsDir\":false,\"Tier\":\"STANDARD\"}, {\"Path\":\"many-small-files/small-06.bin\",\"Name\":\"small-06.bin\",\"Size\":4096,\"MimeType\":\"application/octet-stream\",\"ModTime\":\"2026-05-12T18:37:24.035087463+08:00\",\"IsDir\":false,\"Tier\":\"STANDARD\"}, {\"Path\":\"many-small-files/small-07.bin\",\"Name\":\"small-07.bin\",\"Size\":4096,\"MimeType\":\"application/octet-stream\",\"ModTime\":\"2026-05-12T18:37:24.036087470+08:00\",\"IsDir\":false,\"Tier\":\"STANDARD\"}, {\"Path\":\"many-small-files/small-08.bin\",\"Name\":\"small-08.bin\",\"Size\":4096,\"MimeType\":\"application/octet-stream\",\"ModTime\":\"2026-05-12T18:37:24.037087478+08:00\",\"IsDir\":false,\"Tier\":\"STANDARD\"}, {\"Path\":\"many-small-files/small-09.bin\",\"Name\":\"small-09.bin\",\"Size\":4096,\"MimeType\":\"application/octet-stream\",\"ModTime\":\"2026-05-12T18:37:24.038087485+08:00\",\"IsDir\":false,\"Tier\":\"STANDARD\"}, {\"Path\":\"many-small-files/small-10.bin\",\"Name\":\"small-10.bin\",\"Size\":4096,\"MimeType\":\"application/octet-stream\",\"ModTime\":\"2026-05-12T18:37:24.039087493+08:00\",\"IsDir\":false,\"Tier\":\"STANDARD\"}, {\"Path\":\"many-small-files/small-11.bin\",\"Name\":\"small-11.bin\",\"Size\":4096,\"MimeType\":\"application/octet-stream\",\"ModTime\":\"2026-05-12T18:37:24.039087493+08:00\",\"IsDir\":false,\"Tier\":\"STANDARD\"}, {\"Path\":\"many-small-files/small-12.bin\",\"Name\":\"small-12.bin\",\"Size\":4096,\"MimeType\":\"application/octet-stream\",\"ModTime\":\"2026-05-12T18:37:24.040087500+08:00\",\"IsDir\":false,\"Tier\":\"STANDARD\"}, {\"Path\":\"many-small-files/small-13.bin\",\"Name\":\"small-13.bin\",\"Size\":4096,\"MimeType\":\"application/octet-stream\",\"ModTime\":\"2026-05-12T18:37:24.041087508+08:00\",\"IsDir\":false,\"Tier\":\"STANDARD\"}, {\"Path\":\"many-small-files/small-14.bin\",\"Name\":\"small-14.bin\",\"Size\":4096,\"MimeType\":\"application/octet-stream\",\"ModTime\":\"2026-05-12T18:37:24.042087515+08:00\",\"IsDir\":false,\"Tier\":\"STANDARD\"}, {\"Path\":\"many-small-files/small-15.bin\",\"Name\":\"small-15.bin\",\"Size\":4096,\"MimeType\":\"application/octet-stream\",\"ModTime\":\"2026-05-12T18:37:24.043087523+08:00\",\"IsDir\":false,\"Tier\":\"STANDARD\"}, {\"Path\":\"many-small-files/small-16.bin\",\"Name\":\"small-16.bin\",\"Size\":4096,\"MimeType\":\"application/octet-stream\",\"ModTime\":\"2026-05-12T18:37:24.043087523+08:00\",\"IsDir\":false,\"Tier\":\"STANDARD\"}, {\"Path\":\"many-small-files/small-17.bin\",\"Name\":\"small-17.bin\",\"Size\":4096,\"MimeType\":\"application/octet-stream\",\"ModTime\":\"2026-05-12T18:37:24.044087530+08:00\",\"IsDir\":false,\"Tier\":\"STANDARD\"}, {\"Path\":\"many-small-files/small-18.bin\",\"Name\":\"small-18.bin\",\"Size\":4096,\"MimeType\":\"application/octet-stream\",\"ModTime\":\"2026-05-12T18:37:24.045087538+08:00\",\"IsDir\":false,\"Tier\":\"STANDARD\"}, {\"Path\":\"many-small-files/small-19.bin\",\"Name\":\"small-19.bin\",\"Size\":4096,\"MimeType\":\"application/octet-stream\",\"ModTime\":\"2026-05-12T18:37:24.046087545+08:00\",\"IsDir\":false,\"Tier\":\"STANDARD\"}, {\"Path\":\"many-small-files/small-20.bin\",\"Name\":\"small-20.bin\",\"Size\":4096,\"MimeType\":\"application/octet-stream\",\"ModTim"
+    },
+    {
+      "step": "rclone-copy-restore",
+      "exit_code": 0,
+      "success": true,
+      "duration_ms": 91,
+      "output": ""
+    },
+    {
+      "step": "rclone-check-restore",
+      "exit_code": 0,
+      "success": true,
+      "duration_ms": 74,
+      "output": "2026/05/12 18:37:24 NOTICE: Local file system at /tmp/database-object-benchmark-20260512-103721/restore: 0 differences found 2026/05/12 18:37:24 NOTICE: Local file system at /tmp/database-object-benchmark-20260512-103721/restore: 24 matching files "
+    }
+  ],
+  "df_after": "/dev/vdb       ext4   40G   17G   22G  44% /mnt/data",
+  "success": true,
+  "notes": "Remote benchmark via SSH using server-local rclone config. Credential values are not stored in this report."
+}

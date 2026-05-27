@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://database.tengokukk.com/schemas/document/canonical-content-graph.schema.json",
+  "title": "Canonical Content Graph",
+  "description": "DataBase-owned content graph schema. CDM is the ordered document-structure subgraph; projections, entities, citations, evidence, annotations, and anchors are graph nodes and edges.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "graphId", "graphVersion", "nodes", "edges"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "ccg.v1" },
+    "graphId": { "$ref": "#/$defs/stableId" },
+    "graphVersion": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "nodes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/node" },
+      "minItems": 1
+    },
+    "edges": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/edge" },
+      "default": []
+    },
+    "projectionManifests": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/projectionManifest" },
+      "default": []
+    }
+  },
+  "$defs": {
+    "stableId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "class"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "class": {
+          "type": "string",
+          "enum": ["document", "section", "block", "inline", "entity", "citation", "evidence", "annotation", "anchor", "projection"]
+        },
+        "type": { "type": "string" },
+        "title": { "type": "string" },
+        "payload": { "type": "object", "additionalProperties": true },
+        "sourceLineage": { "type": "object", "additionalProperties": true },
+        "semanticTags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "from", "to"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "type": {
+          "type": "string",
+          "enum": ["contains", "references", "cites", "supports", "annotates", "projects_to", "derived_from", "located_by", "supersedes", "related_to"]
+        },
+        "from": { "$ref": "#/$defs/stableId" },
+        "to": { "$ref": "#/$defs/stableId" },
+        "order": { "type": "integer", "minimum": 0 },
+        "role": { "type": "string" },
+        "payload": { "type": "object", "additionalProperties": true }
+      }
+    },
+    "projectionManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectionNodeId", "sourceGraphVersion", "projectionType", "producer", "generatedAt", "outputArtifacts"],
+      "properties": {
+        "projectionNodeId": { "$ref": "#/$defs/stableId" },
+        "sourceGraphVersion": { "type": "string", "minLength": 1 },
+        "projectionType": {
+          "type": "string",
+          "enum": ["epub", "pdf", "html", "mdx", "astro", "fanqie", "print", "search", "semantic_chunks", "toc", "reader_runtime"]
+        },
+        "producer": { "type": "string", "minLength": 1 },
+        "generatedAt": { "type": "string", "format": "date-time" },
+        "outputArtifacts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/artifactRef" }
+        },
+        "warnings": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        }
+      }
+    },
+    "artifactRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "format"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "format": { "type": "string", "minLength": 1 },
+        "hash": { "type": "string" }
+      }
+    }
+  }
+}

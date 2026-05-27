@@ -1,0 +1,24 @@
+{
+  "task_id": "content-ingestion-constitution-2026-05-13",
+  "title": "Define no-silent-loss content ingestion constitution",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "docs/content-ingestion-constitution",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "docs/contracts/content-ingestion-constitution.md",
+    "schemas/document/content-import-manifest.schema.json",
+    "examples/document/minimal-content-import-manifest.json",
+    "docs/contracts/canonical-content-graph.md",
+    "docs/contracts/epub-ingestion-contract.md",
+    "docs/contracts/cross-repo-artifact-contracts.md",
+    "docs/contracts/cross-repo-artifact-inventory.md",
+    "ECOSYSTEM_MAP.md",
+    ".runtime/claims/content-ingestion-constitution-2026-05-13.json",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T14:25:00Z",
+  "updated_at": "2026-05-13T14:25:00Z",
+  "handoff": null,
+  "notes": "Doc/schema-only ingestion constitution. Scope excludes file moves, import workers, raw artifact store implementation, normalizer implementation, and gates."
+}

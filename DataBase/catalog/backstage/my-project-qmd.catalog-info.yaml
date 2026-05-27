@@ -1,0 +1,22 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: 'my-project-qmd'
+  title: 'my-project-qmd'
+  description: 'private QMD markdown search and indexing service'
+  annotations:
+    backstage.io/source-location: 'url:https://github.com/emptyinkpot/my-project-qmd'
+    emptyinkpot.io/visibility: 'private'
+    emptyinkpot.io/repository-role: 'private QMD markdown search and indexing service'
+    emptyinkpot.io/status: 'active'
+    emptyinkpot.io/preferred-source: 'true'
+    emptyinkpot.io/canonical-doc: ''
+    emptyinkpot.io/machine-readable-entry: ''
+spec:
+  type: 'library'
+  lifecycle: 'active'
+  owner: 'emptyinkpot'
+  system: 'emptyinkpot-ecosystem'
+  dependsOn:
+    - 'component:default/ContractGuard'
+    - 'component:default/DataBase'

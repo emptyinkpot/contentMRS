@@ -1,0 +1,63 @@
+﻿{
+    "generated_at":  "2026-05-10T02:52:53.0713237Z",
+    "ssh_alias":  "server-124",
+    "host":  "124.220.233.126",
+    "paths":  [
+                  {
+                      "path":  "/srv/myblog/repo",
+                      "type":  "directory",
+                      "owner":  "ubuntu",
+                      "group":  "ubuntu",
+                      "mode":  "775"
+                  },
+                  {
+                      "path":  "/srv/myblog/site",
+                      "type":  "directory",
+                      "owner":  "www-data",
+                      "group":  "www-data",
+                      "mode":  "775"
+                  },
+                  {
+                      "path":  "/srv/myblog/admin-next",
+                      "type":  "directory",
+                      "owner":  "ubuntu",
+                      "group":  "ubuntu",
+                      "mode":  "775"
+                  },
+                  {
+                      "path":  "/srv/myblog/source",
+                      "type":  "directory",
+                      "owner":  "ubuntu",
+                      "group":  "ubuntu",
+                      "mode":  "775"
+                  },
+                  {
+                      "path":  "/srv/myblog/public-data",
+                      "type":  "directory",
+                      "owner":  "ubuntu",
+                      "group":  "ubuntu",
+                      "mode":  "755"
+                  },
+                  {
+                      "path":  "/srv/multica",
+                      "type":  "directory",
+                      "owner":  "ubuntu",
+                      "group":  "ubuntu",
+                      "mode":  "777"
+                  },
+                  {
+                      "path":  "/srv/multica/agent-workspaces",
+                      "type":  "directory",
+                      "owner":  "root",
+                      "group":  "root",
+                      "mode":  "755"
+                  },
+                  {
+                      "path":  "/srv/openlist/data",
+                      "type":  "directory",
+                      "owner":  "ubuntu",
+                      "group":  "ubuntu",
+                      "mode":  "755"
+                  }
+              ]
+}

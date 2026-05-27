@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://database.tengokukk.com/schemas/document/epub-ingestion-manifest.schema.json",
+  "title": "EPUB Ingestion Manifest",
+  "description": "Manifest emitted when an EPUB source artifact is imported into DataBase CDM/CCG.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "manifestId",
+    "sourceArtifact",
+    "importer",
+    "parserRoute",
+    "packageDocument",
+    "spineItemCount",
+    "targetDocumentId",
+    "targetGraphId",
+    "targetGraphVersion",
+    "generatedAt",
+    "outputs"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "epub-ingestion.v1" },
+    "manifestId": { "$ref": "#/$defs/stableId" },
+    "sourceArtifact": { "$ref": "#/$defs/sourceArtifact" },
+    "importer": { "$ref": "#/$defs/importer" },
+    "parserRoute": {
+      "type": "string",
+      "enum": ["pandoc-json", "xhtml-hast", "hybrid"]
+    },
+    "packageDocument": { "type": "string", "minLength": 1 },
+    "navDocument": { "type": "string" },
+    "tocDocument": { "type": "string" },
+    "spineItemCount": { "type": "integer", "minimum": 0 },
+    "targetDocumentId": { "$ref": "#/$defs/stableId" },
+    "targetGraphId": { "$ref": "#/$defs/stableId" },
+    "targetGraphVersion": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "outputs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/outputArtifact" },
+      "minItems": 1
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/importWarning" },
+      "default": []
+    }
+  },
+  "$defs": {
+    "stableId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "sourceArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "format"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "format": { "type": "string", "const": "epub" },
+        "hash": { "type": "string" },
+        "sizeBytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "importer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "command": { "type": "string" }
+      }
+    },
+    "outputArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "format", "role"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "format": { "type": "string", "minLength": 1 },
+        "role": {
+          "type": "string",
+          "enum": ["cdm-document", "content-graph", "intermediate-ast", "asset-copy", "manifest", "log"]
+        },
+        "hash": { "type": "string" }
+      }
+    },
+    "importWarning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "message": { "type": "string", "minLength": 1 },
+        "sourcePath": { "type": "string" },
+        "severity": { "type": "string", "enum": ["info", "warning", "error"] }
+      }
+    }
+  }
+}

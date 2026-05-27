@@ -1,0 +1,16 @@
+{
+  "task_id": "creative-context-legacy-chapter-material-2026-05-13",
+  "title": "Expose legacy chapter generation material through DataBase creative context",
+  "agent_id": "codex",
+  "status": "active",
+  "branch": "refactor/codex/canonical-database-consumer",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "gateway/src/routes/creative.ts",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T07:34:24Z",
+  "updated_at": "2026-05-13T07:34:24Z",
+  "handoff": null,
+  "notes": "Real ContentBase generation is blocked because creative context canonical parts generated from legacy chapters expose chapterNumber/wordCount but not plot summary/body material required by generation contracts."
+}

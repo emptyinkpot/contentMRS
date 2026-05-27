@@ -1,0 +1,18 @@
+{
+  "task_id": "audit-result-write-contract-2026-05-13",
+  "title": "Add DataBase audit result write contract",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "main",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "schemas/content/",
+    "gateway/src/routes/writes.ts",
+    "gateway/scripts/generate-openapi.mjs",
+    "generated/clients/database-gateway/"
+  ],
+  "started_at": "2026-05-13T04:20:00Z",
+  "updated_at": "2026-05-13T04:40:00Z",
+  "handoff": null,
+  "notes": "Added schema-enforced record-audit-result write RPC, OpenAPI path, and generated SDK surface."
+}

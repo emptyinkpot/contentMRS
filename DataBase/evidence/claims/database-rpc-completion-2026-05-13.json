@@ -1,0 +1,19 @@
+{
+  "task_id": "database-rpc-completion-2026-05-13",
+  "title": "Complete DataBase RPC boundary through deployment and ContentBase migration",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "local",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "gateway/",
+    "schemas/",
+    "generated/clients/database-gateway/",
+    ".runtime/timeline/events.jsonl",
+    "E:/My Project/ContentBase/"
+  ],
+  "started_at": "2026-05-13T02:37:46Z",
+  "updated_at": "2026-05-13T02:54:51Z",
+  "handoff": null,
+  "notes": "Completed practical RPC boundary: production Gateway deployed and active, story-memory SQL already present, public story-memory/context routes verified, Gateway/gateway-mcp smoke passed, generated SDK builds, and ContentBase StoryStateManager now consumes story-memory through the generated SDK. README.md/project.json were not touched due active repository consolidation claim."
+}

@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-05-12T10:45:19Z",
+  "status": "pilot-benchmark-and-restic-restore-ok",
+  "server": "server-124",
+  "host": "124.220.233.126",
+  "backend": "SeaweedFS",
+  "image": "chrislusf/seaweedfs@sha256:f5515a88db87397b65b613d604d88dc9855dcca9de6d0ed5a95bf8cf5572f03c",
+  "truth_status": "non-critical pilot only",
+  "runtime_root": "/srv/database-object-store/seaweedfs",
+  "data_root": "/mnt/data/object-store/seaweedfs",
+  "rclone_remote": "seaweedfs-pilot",
+  "credential_surface": "/srv/database-object-store/seaweedfs/rclone.conf",
+  "s3_config_surface": "/srv/database-object-store/seaweedfs/s3-config.json",
+  "ports": {
+    "s3": "127.0.0.1:8333",
+    "filer": "127.0.0.1:18888",
+    "master": "127.0.0.1:9333",
+    "volume": "127.0.0.1:8080"
+  },
+  "bucket": "database-lab-artifacts",
+  "smoke_object_prefix": "smoke",
+  "checks": [
+    "rclone copy /tmp/database-object-benchmark-source seaweedfs-pilot:database-lab-artifacts/smoke --checksum",
+    "rclone check /tmp/database-object-benchmark-source seaweedfs-pilot:database-lab-artifacts/smoke --checksum",
+    "rclone lsjson seaweedfs-pilot:database-lab-artifacts/smoke --recursive",
+    "rclone copy seaweedfs-pilot:database-lab-artifacts/smoke /tmp/database-object-benchmark-restore --checksum",
+    "rclone check /tmp/database-object-benchmark-source /tmp/database-object-benchmark-restore --checksum"
+  ],
+  "benchmark_reports": [
+    "inventories/object-storage/benchmarks/20260512-103721-seaweedfs-pilot-remote.json"
+  ],
+  "result": {
+    "matching_files": 1,
+    "differences": 0,
+    "restored_matching_files": 1,
+    "benchmark_files": 24,
+    "benchmark_bytes": 4669440,
+    "benchmark_differences": 0,
+    "benchmark_restore_matching_files": 24,
+    "mnt_data_after": "40G total, 17G used, 22G available, 44% used"
+  },
+  "backup_drill": {
+    "status": "restic-restore-ok",
+    "archive": "/mnt/data/object-store/backup-repositories/seaweedfs-pilot-drill/20260512-104519-seaweedfs-data.tar.gz",
+    "entries": 118,
+    "size": "9.0M",
+    "method": "tar.gz archive of /mnt/data/object-store/seaweedfs with manifest compare and archive listing",
+    "restic": {
+      "repository": "/mnt/data/object-store/backup-repositories/restic-seaweedfs-pilot",
+      "env_surface": "/srv/database-object-store/backups/restic-seaweedfs-pilot.env",
+      "snapshot": "61e31118",
+      "files": 103,
+      "repo_size": "10M",
+      "restore_check": "manifest compare ok"
+    },
+    "note": "Tar archive and restic restore drills passed for pilot data. A remote/off-server backup target is still required before production promotion."
+  },
+  "openlist_probe": {
+    "status": "service-reachable-cli-discovered-api-token-not-usable-yet",
+    "version": "v4.2.1",
+    "official_cli": "/opt/openlist/openlist storage",
+    "admin_token_command": "/opt/openlist/openlist admin token --data /opt/openlist/data",
+    "api_probe": "GET /openlist/api/admin/storage/list returned application JSON with code 401 token is invalidated when using CLI token output.",
+    "note": "CLI supports list/delete/disable. Adding SeaweedFS S3 storage still requires a verified OpenList supported admin/API path and usable credential."
+  },
+  "open_risks": [
+    "OpenList service is reachable, but SeaweedFS S3 backend has not been mounted through OpenList yet.",
+    "Only a small benchmark corpus has been run.",
+    "Backup currently targets the same server data volume; production promotion requires off-server or independent backup storage.",
+    "SSE-S3 encryption is not configured for pilot."
+  ]
+}

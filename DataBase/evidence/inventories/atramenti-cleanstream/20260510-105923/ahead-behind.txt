@@ -1,0 +1,10 @@
+>   d9f2700 (origin/main, origin/HEAD) Merge pull request #5 from emptyinkpot/feat/project-contract-behavior-gate-v2
+|\  
+| > 22ac831 (feat/project-contract-behavior-gate-v2) docs: record replayed behavior gate delivery status
+| > 3d38fd3 fix: make diff gate powershell hook ASCII-safe
+| > 55cdb2b docs: relax project contract schema for reuse
+| > f94c38c feat: canonicalize project contract and behavior gate
+|/  
+> 8907ed0 docs: point governance copies to ContractGuard upstream (#4)
+< b66afb4 (HEAD -> main) feat: canonicalize project contract and behavior gate
+< 580d944 feat(mortis): wire servers shell and phase-1 roles

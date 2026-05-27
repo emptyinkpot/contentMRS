@@ -1,0 +1,22 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: 'my-project-database-ops-mcp'
+  title: 'my-project-database-ops-mcp'
+  description: 'database inspection MCP and paired skill docs'
+  annotations:
+    backstage.io/source-location: 'url:https://github.com/emptyinkpot/my-project-database-ops-mcp'
+    emptyinkpot.io/visibility: 'private'
+    emptyinkpot.io/repository-role: 'database inspection MCP and paired skill docs'
+    emptyinkpot.io/status: 'active'
+    emptyinkpot.io/preferred-source: 'true'
+    emptyinkpot.io/canonical-doc: ''
+    emptyinkpot.io/machine-readable-entry: ''
+spec:
+  type: 'library'
+  lifecycle: 'active'
+  owner: 'emptyinkpot'
+  system: 'emptyinkpot-ecosystem'
+  dependsOn:
+    - 'component:default/ContractGuard'
+    - 'component:default/DataBase'

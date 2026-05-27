@@ -1,0 +1,24 @@
+{
+  "task_id": "creative-fiction-preferences-2026-05-12",
+  "title": "Record creative fiction blueprint and user preferences",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "main",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "gateway/sql/003_creative_style_registry.sql",
+    "gateway/src/routes/creative.ts",
+    "gateway/src/routes.ts",
+    "gateway/src/clients/database-gateway-client.ts",
+    "services/gateway-mcp/mcp/server.mjs",
+    "gateway/API.md",
+    "gateway/openapi.yaml",
+    "README.md",
+    "project.json",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-12T01:20:00Z",
+  "updated_at": "2026-05-12T08:58:00Z",
+  "handoff": null,
+  "notes": "Completed MySQL-backed creative style truth: lexical records merged into vocabulary/banned_words, creative_style_* tables added for protocols/modules/editing steps/rules/source materials, sidecar JSON removed, Gateway and MCP contract entrypoint added. Weak lexical categories are warning signals only; structural rules remain primary gates."
+}

@@ -1,0 +1,19 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: 'code-server-workspace-infra'
+  title: 'code-server-workspace-infra'
+  description: 'remote-ide-and-shared-workspace-infra'
+  annotations:
+    backstage.io/source-location: 'url:https://github.com/emptyinkpot/code-server-workspace-infra'
+    emptyinkpot.io/visibility: 'private'
+    emptyinkpot.io/repository-role: 'remote-ide-and-shared-workspace-infra'
+    emptyinkpot.io/status: 'active'
+    emptyinkpot.io/preferred-source: 'true'
+    emptyinkpot.io/canonical-doc: ''
+    emptyinkpot.io/machine-readable-entry: ''
+spec:
+  type: 'service'
+  lifecycle: 'active'
+  owner: 'emptyinkpot'
+  system: 'emptyinkpot-ecosystem'

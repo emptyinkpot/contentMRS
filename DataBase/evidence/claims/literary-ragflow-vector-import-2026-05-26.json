@@ -1,0 +1,49 @@
+{
+  "task_id": "literary-ragflow-vector-import-2026-05-26",
+  "title": "Import Literary corpus into RAGFlow vector retrieval",
+  "agent_id": "codex",
+  "status": "active",
+  "branch": "main",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "apps/gateway/scripts/import-ragflow-literary-corpus.mjs",
+    "apps/gateway/package.json",
+    "apps/gateway/src/routes/search.ts",
+    "apps/gateway/dist/routes/search.js",
+    "README.md",
+    "docs/runtime/search-and-classification-runtime.md",
+    "search_chunks"
+  ],
+  "started_at": "2026-05-26T10:45:28Z",
+  "updated_at": "2026-05-26T13:35:00Z",
+  "handoff": {
+    "dataset": {
+      "name": "contentmrs-literary-corpus",
+      "id": "bdcc99c658f111f18aecb3d695a2553d",
+      "last_status_check": "docCount=25; statusCounts={RUNNING:17,DONE:8}; chunkCount=4567"
+    },
+    "gateway": {
+      "route": "GET /search/vector",
+      "runtime_file": "apps/gateway/dist/routes/search.js",
+      "openapi_file": "apps/gateway/openapi.yaml",
+      "default_dataset_id": "bdcc99c658f111f18aecb3d695a2553d"
+    },
+    "contentbase": {
+      "file": "ContentBase/product/novel/app/article/context-engine.ts",
+      "behavior": "loadLiteraryCorpusSearch now merges lexical /search results with RAGFlow-backed /search/vector results and gives vector items higher priority."
+    },
+    "verification": [
+      "node --check DataBase/apps/gateway/dist/routes/search.js",
+      "pnpm --dir ContentBase/product/novel run build",
+      "mocked Gateway /search/vector route smoke returned one ragflow.retrieval result",
+      "mocked ContentBase context engine smoke packed both search/vector/vec1 and search/lex1",
+      "node DataBase/apps/gateway/.runtime/verify-ragflow-literary-retrieval.mjs returned chunks for 资本, 伊朗 封锁 海峡, 奥斯曼 海峡, 三岛由纪夫"
+    ],
+    "remaining": [
+      "Keep taskexecutor running until all RAGFlow documents are DONE",
+      "Run live Gateway /search/vector smoke against the deployed Gateway after restart/deploy; local 127.0.0.1:18090 was not running during this handoff",
+      "Run full article generation acceptance with gpt-5.5 once ContentBase runtime is pointed at the updated Gateway; local 127.0.0.1:5101 was not running during this handoff"
+    ]
+  },
+  "notes": "Overlap with contentmrs-2-semantic-corpus-engine-2026-05-25 is intentional. Scope is literary corpus RAGFlow import and Gateway-backed Literary vector retrieval, not a new ContentBase side channel."
+}

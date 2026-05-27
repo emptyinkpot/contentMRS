@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://database.tengokukk.com/schemas/document/annotation-graph.schema.json",
+  "title": "Annotation Graph",
+  "description": "Annotation overlay graph for comments, highlights, reviews, editorial notes, and AI notes attached to CCG nodes or anchors.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "graphId", "annotations"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "annotation-graph.v1" },
+    "graphId": { "$ref": "#/$defs/stableId" },
+    "annotations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/annotation" },
+      "default": []
+    }
+  },
+  "$defs": {
+    "stableId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "annotation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "target", "authorId", "visibility", "content", "createdAt"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "type": { "type": "string", "enum": ["highlight", "comment", "review", "editorial_note", "ai_note", "correction_candidate"] },
+        "target": { "$ref": "#/$defs/annotationTarget" },
+        "authorId": { "$ref": "#/$defs/stableId" },
+        "visibility": { "type": "string", "enum": ["private", "public", "editorial", "shared"] },
+        "content": { "type": "object", "additionalProperties": true },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["active", "resolved", "archived"], "default": "active" },
+        "source": { "type": "string", "enum": ["human", "ai", "import", "system"] }
+      }
+    },
+    "annotationTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["targetType", "targetId"],
+      "properties": {
+        "targetType": { "type": "string", "enum": ["document", "section", "block", "inline", "anchor", "projection"] },
+        "targetId": { "$ref": "#/$defs/stableId" },
+        "selector": { "type": "object", "additionalProperties": true }
+      }
+    }
+  }
+}

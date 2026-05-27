@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "2026-05-10",
+  "sourceRepository": "https://github.com/emptyinkpot/Atramenti-Console",
+  "localSourceRoot": null,
+  "localSourceStatus": "local-checkout-deleted-2026-05-20",
+  "remoteIdeTruth": "https://github.com/emptyinkpot/code-server-workspace-infra",
+  "remoteSourceRoot": "server-170:/home/ubuntu/workspaces/Atramenti-Console",
+  "remoteSourceStatus": "verified",
+  "remoteSourceVerifiedAt": "2026-05-11T02:18:00Z",
+  "lastVerifiedSourceCommit": "a0a13cf9",
+  "purpose": "Inventory memory, database, retrieval, MCP, and skill capabilities that historically lived under Atramenti-Console so they can be integrated into the DataBase ecosystem without reviving retired local source paths.",
+  "extractionPolicy": {
+    "doNotMoveBlindly": true,
+    "reason": "Atramenti-Console is an application/control-surface repository. Its Windows checkout was cleaned, pushed, and retired on 2026-05-11; forward capability ownership now belongs to DataBase services, dedicated capability repositories, or the global Codex control plane.",
+    "safeToCopyNow": [
+      "capability inventory",
+      "architecture facts",
+      "source ownership map",
+      "memory ingestion plan",
+      "redacted risk notes"
+    ],
+    "doNotCopy": [
+      "raw credentials",
+      "tokens",
+      "cookies",
+      "private dumps",
+      "runtime caches",
+      "generated plugin caches"
+    ]
+  },
+  "capabilities": [
+    {
+      "id": "experience-manager",
+      "type": "mcp",
+      "currentPath": "codex/mcps/experience/mcp/experience-manager-mcp.mjs",
+      "pairedSkill": "codex/skills/experience-manager/SKILL.md",
+      "role": "Unified memory MCP surface for durable experience records and QMD-backed retrieval.",
+      "dataTruth": "cloud MySQL tables plus QMD mirror",
+      "splitStatus": "sanitized-imported-to-database-services",
+      "ownerRepository": "https://github.com/emptyinkpot/DataBase",
+      "ownerPath": "services/experience-manager",
+      "sourceBaselineCommit": "d9f2700e59daefb6a352c5d563f6910d652ccd0a",
+      "knownTables": [
+        "experience_records_cloud",
+        "experience_notes_cloud"
+      ],
+      "qmdCollection": "experience-manager",
+      "qmdIndex": "C:\\Users\\ASUS-KL\\.cache\\qmd\\index.sqlite",
+      "targetOwnership": {
+        "sourceCode": "DataBase/services/experience-manager",
+        "dataTopology": "DataBase",
+        "runtimeConsumer": "Mortis and Codex",
+        "contractAndGate": "ContractGuard"
+      },
+      "migrationAction": "Use the sanitized DataBase internal service as the forward memory MCP surface. Do not import Atramenti frontend or historical knowledge bundle until reviewed."
+    },
+    {
+      "id": "qmd",
+      "type": "retrieval-engine",
+      "currentPath": "codex/mcps/core/qmd",
+      "pairedSkill": "codex/skills/qmd/SKILL.md",
+      "role": "Local markdown search, BM25/vector retrieval, and experience-manager mirror index.",
+      "splitStatus": "split-and-registered",
+      "ownerRepository": "https://github.com/emptyinkpot/my-project-qmd",
+      "manualUpstreamRepo": "https://github.com/tobi/qmd",
+      "upstreamTrackingFork": "https://github.com/emptyinkpot/qmd",
+      "sourceBaselineCommit": "d9f2700e59daefb6a352c5d563f6910d652ccd0a",
+      "targetOwnership": {
+        "sourceCode": "my-project-qmd",
+        "dataTopology": "DataBase",
+        "runtimeConsumer": "Mortis, Codex, future memory-ingestion jobs"
+      },
+      "migrationAction": "Treat current Atramenti path as historical cleanstream source. Use my-project-qmd as the preferred forward source of truth."
+    },
+    {
+      "id": "database-ops-mcp",
+      "type": "mcp",
+      "currentPath": "codex/mcps/database-ops-mcp",
+      "pairedSkill": "codex/skills/plugin-database--database-ops/SKILL.md",
+      "role": "Canonical MCP entrypoint for database inspection and operational context.",
+      "compatibilityAlias": "codex/mcps/db-readonly",
+      "targetOwnership": {
+        "sourceCode": "DataBase/services/database-ops-mcp or dedicated database capability repo",
+        "dataTopology": "DataBase",
+        "runtimeConsumer": "Codex, Mortis"
+      },
+      "migrationAction": "Use the DataBase-owned service path or dedicated capability repository. Do not restore the retired Atramenti local checkout as the source path."
+    },
+    {
+      "id": "database-api",
+      "type": "product-api",
+      "currentPath": "codex/mcps/database-api",
+      "role": "Product/business API surface for controlled database resources.",
+      "targetOwnership": {
+        "sourceCode": "Atramenti or future gateway repo",
+        "dataTopology": "DataBase"
+      },
+      "migrationAction": "Keep separate from database-ops-mcp; DataBase records contracts and access policy only."
+    },
+    {
+      "id": "plan-history-recall",
+      "type": "skill",
+      "currentPath": "codex/skills/plan-history-recall",
+      "role": "Plan ledger recall, append, and optional sync into experience-manager.",
+      "targetOwnership": {
+        "sourceCode": "global Codex skills root or dedicated skills repository",
+        "memoryPolicy": "DataBase",
+        "runtimeConsumer": "Codex and Mortis"
+      },
+      "migrationAction": "Extract policy and ingestion semantics into DataBase; keep executable skill source under the global Codex skills root or a normalized skills repository."
+    },
+    {
+      "id": "memory-lancedb-pro",
+      "type": "retired-reference-skill",
+      "currentPath": "codex/skills/memory-lancedb-pro",
+      "role": "Historical/reference design for lifecycle scoring, auto recall, and memory policy.",
+      "targetOwnership": {
+        "sourceCode": "reference only",
+        "memoryPolicy": "DataBase"
+      },
+      "migrationAction": "Do not restore as live MCP. Preserve useful policy ideas in DataBase memory architecture docs."
+    }
+  ],
+  "riskRegister": [
+    {
+      "id": "ATR-MEM-001",
+      "severity": "high",
+      "surface": "codex/mcps/experience/mcp/experience-manager-mcp.mjs",
+      "finding": "Default database connection values include credential-shaped material in source.",
+      "policy": "Move credentials to environment or secret surface; DataBase may record the secret surface path but must not store the secret value.",
+      "status": "open"
+    },
+    {
+      "id": "ATR-WT-001",
+      "severity": "medium",
+      "surface": "Atramenti-Console worktree",
+      "finding": "Local worktree was previously dirty and divergent; it was cleaned, pushed, and prepared for local deletion on 2026-05-11.",
+      "policy": "Do not use E:\\My Project\\Atramenti-Console as a future capability source. Use GitHub, the remote IDE workspace, DataBase services, dedicated capability repositories, or C:\\Users\\ASUS-KL\\.codex for Codex runtime assets.",
+      "status": "closed"
+    }
+  ],
+  "targetArchitecture": {
+    "memoryTruth": "DataBase records memory schema, topology, and ingestion policy.",
+    "retrieval": "QMD remains the fast local retrieval layer; future vector storage can add Onyx/LanceDB without replacing DataBase truth.",
+    "runtime": "Mortis consumes memory through a stable MCP/API surface, not direct ad-hoc file paths.",
+    "governance": "ContractGuard checks each repository project.json and prevents mirror/legacy/source drift."
+  }
+}

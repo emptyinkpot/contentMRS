@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS database_gateway_mutations (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  idempotency_key VARCHAR(191) NOT NULL,
+  action VARCHAR(64) NOT NULL,
+  actor VARCHAR(128) NOT NULL,
+  request_id VARCHAR(191) NULL,
+  target_type VARCHAR(64) NULL,
+  target_id VARCHAR(191) NULL,
+  payload_hash CHAR(64) NOT NULL,
+  response_json JSON NULL,
+  status ENUM('started','succeeded','failed') NOT NULL,
+  error_code VARCHAR(128) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_database_gateway_mutations_idempotency_key (idempotency_key),
+  KEY idx_database_gateway_mutations_action_status (action, status),
+  KEY idx_database_gateway_mutations_target (target_type, target_id),
+  KEY idx_database_gateway_mutations_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -1,0 +1,16 @@
+{
+  "task_id": "gateway-production-stability-2026-05-13",
+  "title": "Diagnose production DataBase Gateway malformed packet failures",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "local",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "docs/gateway/database-gateway-operations.md",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T00:28:30Z",
+  "updated_at": "2026-05-13T01:03:50Z",
+  "handoff": null,
+  "notes": "Diagnosed intermittent public /inventory/tables 500 as transient MySQL read-pool connection errors; implemented one-shot retry for read helper and added /health/runtime plus /health/dependencies. Deployed to /srv/database-gateway on server-124, installed schema package dependencies under /srv/schemas/*, restarted database-gateway.service, and verified public health plus services/gateway-mcp smoke."
+}

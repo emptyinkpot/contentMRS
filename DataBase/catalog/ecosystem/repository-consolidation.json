@@ -1,0 +1,182 @@
+{
+  "schemaVersion": "2026-05-10",
+  "owner": "emptyinkpot",
+  "policy": {
+    "deleteFirst": false,
+    "archiveBeforeDelete": true,
+    "requireBackupBeforeDelete": true,
+    "requireReferenceScanBeforeArchive": true,
+    "canonicalPlan": "docs/github/repository-consolidation-plan.md"
+  },
+  "statuses": {
+    "keep-active": [
+      "DataBase",
+      "asus-kl-codex-home",
+      "ContractGuard",
+      "sub2api",
+      "mortis-multica-source",
+      "FuckVideo",
+      "code-server-workspace-infra",
+      "Atramenti-Console",
+      "my-project-qmd",
+      "qmd",
+      "my-project-database-ops-mcp"
+    ],
+    "merge-source": [
+      "my-project-ffmpeg-mcp",
+      "my-project-video-audio-mcp",
+      "my-project-yt-dlp-mcp",
+      "token-pool"
+    ],
+    "merge-target": [
+      "my-project-media-mcp",
+      "sub2api"
+    ],
+    "archive-candidate": [
+      "AstrBot",
+      "AIClient-2-API",
+      "AIClient2API-Tutorial",
+      "golutra",
+      "auto-coding-agent-demo",
+      "ai-town",
+      "ai-office",
+      "agent-office",
+      "Roo-Kit",
+      "Lex-Universalis",
+      "Parliamentary-Simulation",
+      "DataSheet",
+      "codex-crs-profile",
+      "mirror-openai-skills-vendor-imports",
+      "emptyinkpot.github.io"
+    ],
+    "delete-after-backup": [
+      "cloude-app",
+      "emptyinkpot.github.io",
+      "DataSheet",
+      "codex-crs-profile"
+    ],
+    "deleted-after-backup": [
+      "AIClient2API-Tutorial",
+      "agent-office",
+      "auto-coding-agent-demo",
+      "mortis-multica-source-legacy",
+      "mortis-multica-watch",
+      "mortis-napcat-control"
+    ],
+    "already-archived": [
+      "cloude-app"
+    ]
+  },
+  "mergePlans": [
+    {
+      "id": "media-mcp-consolidation",
+      "target": "my-project-media-mcp",
+      "sources": [
+        "my-project-ffmpeg-mcp",
+        "my-project-video-audio-mcp",
+        "my-project-yt-dlp-mcp"
+      ],
+      "status": "planned",
+      "safeOrder": [
+        "create target repository",
+        "copy each MCP into separate package directory",
+        "preserve README/RUNBOOK per source",
+        "add root project.json",
+        "update MCP configs",
+        "run smoke checks",
+        "archive source repos"
+      ]
+    },
+    {
+      "id": "ai-gateway-consolidation",
+      "target": "sub2api",
+      "sources": [
+        "token-pool",
+        "AIClient-2-API",
+        "AIClient2API-Tutorial"
+      ],
+      "status": "planned",
+      "safeOrder": [
+        "inspect token-pool for unique runtime code",
+        "move durable docs/scripts to sub2api or DataBase",
+        "keep AIClient-2-API as reference fork if useful",
+        "archive tutorial repo after content check"
+      ]
+    },
+    {
+      "id": "workspace-root-consolidation",
+      "target": "code-server-workspace-infra",
+      "secondaryTarget": "DataBase",
+      "sources": [
+        "my-project-root"
+      ],
+      "status": "planned",
+      "safeOrder": [
+        "inspect my-project-root",
+        "move workspace runtime docs to code-server-workspace-infra",
+        "move ecosystem facts to DataBase",
+        "archive my-project-root"
+      ]
+    },
+    {
+      "id": "mortis-repository-consolidation",
+      "target": "mortis-multica-source",
+      "sources": [
+        "mortis-multica-source-legacy",
+        "mortis-multica-watch",
+        "mortis-napcat-control"
+      ],
+      "status": "completed-deleted-after-backup",
+      "doc": "docs/github/mortis-repository-consolidation.md",
+      "safeOrder": [
+        "verify active runtime source maps to mortis-multica-source",
+        "cite rollback commits from legacy before archive",
+        "verify no watch workflow consumes mortis-multica-watch",
+        "migrate napcat-control into integrations/napcat-control or keep as explicit adapter repo",
+        "archive legacy/watch only after backups and references are complete"
+      ],
+      "completed": [
+        "created local and remote-ide debug branches on mortis-multica-source",
+        "migrated mortis-napcat-control into integrations/napcat-control",
+        "added docs/archive/legacy-and-watch-repositories.md in active source",
+        "marked legacy/watch/napcat-control archive-ready after backup/export",
+        "created and verified bare mirror backups under E:\\Backups\\github",
+        "archived mortis-multica-source-legacy, mortis-multica-watch, and mortis-napcat-control on GitHub",
+        "deleted mortis-multica-source-legacy, mortis-multica-watch, and mortis-napcat-control from GitHub after backup verification"
+      ],
+      "remaining": [],
+      "latestActiveCommit": "7a0636388c3163ee9ecdc889d9dd71a36d8f2ba8",
+      "archivedAt": "2026-05-11T16:34:51+08:00",
+      "deletedAt": "2026-05-11T16:39:00+08:00",
+      "backupVerifiedAt": "2026-05-11T16:33:00+08:00",
+      "backupRoot": "E:\\Backups\\github",
+      "backupMirrors": {
+        "mortis-multica-source-legacy": {
+          "path": "E:\\Backups\\github\\mortis-multica-source-legacy.git",
+          "fsck": "passed",
+          "main": "c495be267c1aca9de453c1bae888b7dd5e2c57f9"
+        },
+        "mortis-multica-watch": {
+          "path": "E:\\Backups\\github\\mortis-multica-watch.git",
+          "fsck": "passed",
+          "main": "476c3453113fe62402c4d9e3fafcdd1249e37537"
+        },
+        "mortis-napcat-control": {
+          "path": "E:\\Backups\\github\\mortis-napcat-control.git",
+          "fsck": "passed",
+          "main": "c13567db0f3f537854bd6593c3fc619b6116a14b"
+        }
+      }
+    }
+  ],
+  "doNotTouchWithoutExplicitApproval": [
+    "DataBase",
+    "sub2api",
+    "mortis-multica-source",
+    "asus-kl-codex-home",
+    "ContractGuard",
+    "code-server-workspace-infra",
+    "my-project-qmd",
+    "qmd"
+  ]
+}

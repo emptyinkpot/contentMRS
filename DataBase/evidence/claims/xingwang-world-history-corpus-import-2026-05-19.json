@@ -1,0 +1,21 @@
+{
+  "task_id": "xingwang-world-history-corpus-import-2026-05-19",
+  "title": "Import Xingwang World History as maintainable DataBase corpus",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": null,
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "apps/gateway/scripts/import-local-book-corpus.mjs",
+    "apps/gateway/package.json",
+    "apps/gateway/src/routes/evidence.ts",
+    "docs/runtime/search-and-classification-runtime.md",
+    "README.md",
+    "evidence/claims/xingwang-world-history-corpus-import-2026-05-19.json",
+    "evidence/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-19T00:00:00Z",
+  "updated_at": "2026-05-19T06:35:00Z",
+  "handoff": null,
+  "notes": "Added DataBase-owned local book corpus importer. Imported 兴亡的世界史全21卷 into literature id 72, search document sd_39c2c9980c3f294a8d808aaf44ec868cf9c8cbd5, 4041 search chunks, and 120 semantic_units. Temporary Gateway 18091 verified EvidencePack locator readback."
+}

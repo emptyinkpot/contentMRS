@@ -1,0 +1,28 @@
+{
+  "task_id": "asset-anchor-contracts-2026-05-13",
+  "title": "Define asset graph and anchor location contracts",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "docs/asset-anchor-contracts",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "docs/contracts/asset-graph-contract.md",
+    "schemas/document/asset-graph.schema.json",
+    "examples/document/minimal-asset-graph.json",
+    "docs/contracts/anchor-location-contract.md",
+    "schemas/document/anchor-location.schema.json",
+    "examples/document/minimal-anchor-location.json",
+    "docs/contracts/canonical-content-graph.md",
+    "docs/contracts/raw-artifact-store-contract.md",
+    "docs/contracts/annotation-graph-contract.md",
+    "docs/contracts/cross-repo-artifact-contracts.md",
+    "docs/contracts/cross-repo-artifact-inventory.md",
+    "ECOSYSTEM_MAP.md",
+    ".runtime/claims/asset-anchor-contracts-2026-05-13.json",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T15:10:00Z",
+  "updated_at": "2026-05-13T15:10:00Z",
+  "handoff": null,
+  "notes": "Doc/schema-only asset and anchor contracts. Scope excludes storage moves, image processing, reader UI, anchor resolver, and pagination engine."
+}

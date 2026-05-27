@@ -1,0 +1,21 @@
+{
+  "task_id": "article-acceptance-report-write-contract-2026-05-14",
+  "title": "Persist article acceptance reports through DataBase Gateway",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "refactor/codex/canonical-database-consumer",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "schemas/creative/article-acceptance-contract.ts",
+    "gateway/src/routes/writes.ts",
+    "gateway/scripts/generate-openapi.mjs",
+    "gateway/openapi.yaml",
+    "generated/clients/database-gateway/",
+    ".runtime/claims/article-acceptance-report-write-contract-2026-05-14.json",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-14T08:20:00.0000000Z",
+  "updated_at": "2026-05-14T08:30:00.0000000Z",
+  "handoff": null,
+  "notes": "Completed v1 Gateway write path. Article acceptance reports persist as canonical content prompt_context blocks attached to existing chapter content parts; style and policy truth remain DataBase creative contracts."
+}

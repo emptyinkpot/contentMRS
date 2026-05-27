@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-19T12:51:47.8357161Z",
+  "producer": {
+    "repository": "emptyinkpot/DataBase",
+    "commit": "fba8fa6ba351a0ae774dfe3f8809f1e9c38e8d4a",
+    "dirty": true,
+    "exportCommand": "scripts/boundary/export-contentbase-database-artifacts.ps1"
+  },
+  "consumer": {
+    "repository": "emptyinkpot/ContentBase",
+    "expectedPath": "vendor/database-artifacts"
+  },
+  "packages": [
+    {
+      "name": "@emptyinkpot/database-gateway-generated-client",
+      "version": "0.1.0",
+      "file": "emptyinkpot-database-gateway-generated-client-0.1.0.tgz",
+      "sha256": "e34661de35da265c212221a5e7abd28eb14d1310c38f71e277e9398ac077c077",
+      "bytes": 299886,
+      "sourcePath": "packages/database-client"
+    }
+  ]
+}

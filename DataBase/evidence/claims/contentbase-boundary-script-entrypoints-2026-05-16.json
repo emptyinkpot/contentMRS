@@ -1,0 +1,18 @@
+{
+  "task_id": "contentbase-boundary-script-entrypoints-2026-05-16",
+  "title": "Restore ContentBase boundary script entrypoints",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "local",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "scripts/export-contentbase-database-artifacts.ps1",
+    "scripts/check-contentbase-canonical-sql-boundary.ps1",
+    "evidence/claims/contentbase-boundary-script-entrypoints-2026-05-16.json",
+    "evidence/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-16T01:16:17Z",
+  "updated_at": "2026-05-16T01:27:00Z",
+  "handoff": null,
+  "notes": "Added root-level entrypoints that delegate to the canonical scripts/boundary implementations required by ContentBase structure checks. Verified via ContentBase scripts/check-product-structure.ps1."
+}

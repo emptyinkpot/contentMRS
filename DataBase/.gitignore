@@ -1,0 +1,32 @@
+# Local runtime and secret material
+apps/gateway/.runtime/
+.env
+.env.*
+!.env.example
+!**/.env.example
+evidence/object-storage-lab/
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Large/generated artifacts
+*.sql
+!apps/gateway/sql/
+!apps/gateway/sql/*.sql
+*.dump
+*.bak
+*.zip
+*.7z
+*.tar
+*.tar.gz
+
+# Node/Python/tooling
+node_modules/
+.venv/
+__pycache__/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/

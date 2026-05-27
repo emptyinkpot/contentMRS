@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "projection-package.v1",
+  "packageId": "projection.package.example.html",
+  "graphId": "graph.example.epub",
+  "graphVersionId": "graph.example.epub.v2",
+  "projectionType": "html",
+  "producer": "projection-engine-example",
+  "generatedAt": "2026-05-13T16:00:00Z",
+  "manifest": {
+    "sourceGraphVersion": "graph.example.epub.v2",
+    "inputContracts": [
+      "schemas/document/canonical-content-graph.schema.json",
+      "schemas/document/anchor-location.schema.json"
+    ]
+  },
+  "renderedContent": [
+    {
+      "path": "public-content-bundle/document.html",
+      "format": "html"
+    }
+  ],
+  "toc": [
+    {
+      "id": "toc.example.intro",
+      "title": "Introduction",
+      "level": 1,
+      "anchorId": "anchor.example.intro",
+      "children": []
+    }
+  ],
+  "anchorMap": [
+    {
+      "anchorId": "anchor.example.evidence",
+      "locator": {
+        "cssSelector": "#evidence-1"
+      }
+    }
+  ],
+  "assetMap": [
+    {
+      "assetId": "asset.example.illustration",
+      "path": "assets/illustration.png"
+    }
+  ],
+  "annotationOverlay": ["annotation.example.highlight"],
+  "searchChunks": [
+    {
+      "id": "search.example.evidence",
+      "sourceNodeId": "blk.example.evidence",
+      "anchorId": "anchor.example.evidence",
+      "text": "Evidence is a graph node target."
+    }
+  ]
+}

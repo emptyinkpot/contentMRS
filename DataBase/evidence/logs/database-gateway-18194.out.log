@@ -1,0 +1,7 @@
+database-gateway listening on http://127.0.0.1:18194
+{"level":"info","event":"request","requestId":"6a474059-8f99-4713-a8c5-0961f63a0dcd","method":"GET","path":"/health","status":200,"elapsedMs":180}
+{"level":"info","event":"request","requestId":"0cf83b8d-e744-4d99-b694-0d42b938b288","method":"POST","path":"/myblog/runtime/reader/memory","status":200,"elapsedMs":130}
+{"level":"info","event":"request","requestId":"048fbd19-0e03-4195-a396-1c9fa01a3b62","method":"GET","path":"/myblog/runtime/reader/memory","status":200,"elapsedMs":26}
+{"level":"info","event":"request","requestId":"9135c780-dcce-41c9-a156-8226173aae38","method":"POST","path":"/myblog/runtime/reader/highlights","status":200,"elapsedMs":27}
+{"level":"info","event":"request","requestId":"d22142ce-8ad0-4742-ac37-bda434652e94","method":"GET","path":"/myblog/runtime/reader/highlights","status":200,"elapsedMs":26}
+{"level":"info","event":"request","requestId":"25a095eb-bf39-45a9-878a-acecf638c87e","method":"GET","path":"/myblog/runtime/visuals/snapshot","status":200,"elapsedMs":53}

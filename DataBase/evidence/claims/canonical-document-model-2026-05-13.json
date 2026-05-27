@@ -1,0 +1,20 @@
+{
+  "task_id": "canonical-document-model-2026-05-13",
+  "title": "Define DataBase-owned Canonical Document Model",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "docs/canonical-document-model",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "docs/contracts/canonical-document-model.md",
+    "docs/contracts/cross-repo-artifact-contracts.md",
+    "docs/contracts/cross-repo-artifact-inventory.md",
+    "ECOSYSTEM_MAP.md",
+    ".runtime/claims/canonical-document-model-2026-05-13.json",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T12:45:00Z",
+  "updated_at": "2026-05-13T12:45:00Z",
+  "handoff": null,
+  "notes": "Doc-only canonical publishing AST model. Scope excludes EPUB/PDF implementation, MyBlog migration, and ContractGuard enforcement."
+}

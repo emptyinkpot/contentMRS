@@ -1,0 +1,29 @@
+{
+  "task_id": "database-infrastructure-boundary-2026-05-12",
+  "title": "Tighten DataBase gateway boundary for creative contract consumption",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "main",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "schemas/creative/README.md",
+    "docs/gateway/external-integration-contract.md",
+    "gateway/src/clients/database-gateway-client.ts",
+    "gateway/package.json",
+    "gateway/package-lock.json",
+    "gateway/README.md",
+    "gateway/openapitools.json",
+    "generated/clients/database-gateway/",
+    "services/gateway-client-adapters/myblog-adapter.ts",
+    "services/gateway-client-adapters/myblog-adapter.js",
+    "services/gateway-client-adapters/README.md",
+    "services/gateway-client-adapters/USAGE.md",
+    "README.md",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-12T02:00:12Z",
+  "updated_at": "2026-05-12T02:21:51Z",
+  "completed_at": "2026-05-12T02:21:51Z",
+  "handoff": null,
+  "notes": "Creative contract consumer boundary is documented as Gateway-only. DataBase now generates a TypeScript fetch client from gateway/openapi.yaml at generated/clients/database-gateway; ContentBase consumes that generated client by file dependency."
+}

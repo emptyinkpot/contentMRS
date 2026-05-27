@@ -1,0 +1,135 @@
+{
+  "schemaVersion": "2026-05-10",
+  "purpose": "Machine-readable registry for mature cloneable components DataBase should use instead of hand-building equivalent layers.",
+  "truthPolicy": "MySQL remains the structured truth source. Components below are admin, catalog, sync, search, retrieval, analytics, or facade projections unless explicitly promoted.",
+  "solutions": [
+    {
+      "id": "nocodb",
+      "name": "NocoDB",
+      "layer": "table-admin",
+      "status": "active",
+      "repository": "https://github.com/nocodb/nocodb",
+      "documentation": "https://nocodb.com/docs/self-hosting",
+      "databasePlacement": [
+        "docs/operations/nocodb-deployment.md",
+        "docs/storage/",
+        "services/"
+      ],
+      "role": "Practical operator-facing CRUD and source browsing",
+      "truthBoundary": "admin surface; not the canonical data owner"
+    },
+    {
+      "id": "directus",
+      "name": "Directus",
+      "layer": "admin-api",
+      "status": "fallback",
+      "repository": "https://github.com/directus/directus",
+      "documentation": "https://docs.directus.io/self-hosted/quickstart",
+      "databasePlacement": [
+        "docs/operations/directus-deployment.md",
+        "docs/gateway/"
+      ],
+      "role": "API-first admin surface when needed",
+      "truthBoundary": "fallback admin/API layer; not primary while MySQL migration constraints remain"
+    },
+    {
+      "id": "openmetadata",
+      "name": "OpenMetadata",
+      "layer": "catalog",
+      "status": "reference",
+      "repository": "https://github.com/open-metadata/OpenMetadata",
+      "documentation": "https://docs.open-metadata.org/",
+      "databasePlacement": [
+        "docs/reference-architecture/openmetadata.md",
+        "ECOSYSTEM_MAP.md",
+        "ecosystem/"
+      ],
+      "role": "Ownership, lineage, glossary, and classification model",
+      "truthBoundary": "catalog inspiration first; not deployed truth source yet"
+    },
+    {
+      "id": "airbyte",
+      "name": "Airbyte",
+      "layer": "sync",
+      "status": "candidate",
+      "repository": "https://github.com/airbytehq/airbyte",
+      "documentation": "https://docs.airbyte.com/",
+      "databasePlacement": [
+        "docs/operations/",
+        "ecosystem/"
+      ],
+      "role": "Source ingestion and replication",
+      "truthBoundary": "sync transport only; destination must be explicitly declared"
+    },
+    {
+      "id": "n8n",
+      "name": "n8n",
+      "layer": "workflow",
+      "status": "active-integration",
+      "repository": "https://github.com/n8n-io/n8n",
+      "documentation": "https://docs.n8n.io/",
+      "databasePlacement": [
+        "docs/automation/n8n.md",
+        "docs/automation/n8n-workflows.md"
+      ],
+      "role": "Operator-driven orchestration and glue automation",
+      "truthBoundary": "workflow runtime; not source of persistent domain truth"
+    },
+    {
+      "id": "meilisearch",
+      "name": "Meilisearch",
+      "layer": "keyword-search",
+      "status": "candidate",
+      "repository": "https://github.com/meilisearch/meilisearch",
+      "documentation": "https://www.meilisearch.com/docs/learn/self_hosted",
+      "databasePlacement": [
+        "docs/runtime/search-and-classification-runtime.md",
+        "schemas/search/"
+      ],
+      "role": "Fast indexed lookup",
+      "truthBoundary": "rebuildable projection; not canonical storage"
+    },
+    {
+      "id": "qdrant",
+      "name": "Qdrant",
+      "layer": "vector-search",
+      "status": "candidate",
+      "repository": "https://github.com/qdrant/qdrant",
+      "documentation": "https://qdrant.tech/",
+      "databasePlacement": [
+        "docs/runtime/database-memory-service.md",
+        "services/memory/"
+      ],
+      "role": "Semantic recall and embedding retrieval",
+      "truthBoundary": "rebuildable vector projection; not canonical storage"
+    },
+    {
+      "id": "superset",
+      "name": "Apache Superset",
+      "layer": "analytics",
+      "status": "candidate",
+      "repository": "https://github.com/apache/superset",
+      "documentation": "https://superset.apache.org/",
+      "databasePlacement": [
+        "docs/operations/",
+        "ecosystem/"
+      ],
+      "role": "Dashboards and operational reporting",
+      "truthBoundary": "reporting surface only"
+    },
+    {
+      "id": "dreamfactory",
+      "name": "DreamFactory",
+      "layer": "generated-rest",
+      "status": "blocked-for-current-mysql",
+      "repository": "https://github.com/dreamfactorysoftware/dreamfactory",
+      "documentation": "https://docs.dreamfactory.com/introduction/",
+      "databasePlacement": [
+        "docs/gateway/dreamfactory.md",
+        "docs/gateway/database-api-service-plan.md"
+      ],
+      "role": "Optional generated REST facade",
+      "truthBoundary": "facade only; usable only when database dialect constraints fit"
+    }
+  ]
+}

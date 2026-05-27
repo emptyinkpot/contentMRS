@@ -1,0 +1,19 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: 'AstrBot'
+  title: 'AstrBot'
+  description: 'forked-chat-agent-framework-reference'
+  annotations:
+    backstage.io/source-location: 'url:https://github.com/emptyinkpot/AstrBot'
+    emptyinkpot.io/visibility: 'public'
+    emptyinkpot.io/repository-role: 'forked-chat-agent-framework-reference'
+    emptyinkpot.io/status: 'reference-fork'
+    emptyinkpot.io/preferred-source: 'false'
+    emptyinkpot.io/canonical-doc: ''
+    emptyinkpot.io/machine-readable-entry: ''
+spec:
+  type: 'library'
+  lifecycle: 'reference-fork'
+  owner: 'emptyinkpot'
+  system: 'emptyinkpot-ecosystem'

@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "cdm.v1",
+  "id": "doc.example.article",
+  "type": "article",
+  "title": "Example Canonical Document",
+  "authors": [
+    {
+      "id": "person.operator",
+      "type": "person",
+      "label": "Operator"
+    }
+  ],
+  "status": "draft",
+  "sourceLineage": {
+    "sourceType": "markdown",
+    "sourceId": "vault/example.md",
+    "sourcePath": "E:/Vaults/Obsidian/example.md",
+    "sourceVersion": "manual-snapshot",
+    "producer": "manual-import"
+  },
+  "semanticTags": [
+    "example",
+    "cdm"
+  ],
+  "projectionPolicy": {
+    "allowedProjectionTypes": [
+      "html",
+      "mdx",
+      "pdf",
+      "epub",
+      "search"
+    ],
+    "publicFields": [
+      "title",
+      "sections",
+      "semanticTags"
+    ],
+    "privateByDefault": true
+  },
+  "projections": [],
+  "sections": [
+    {
+      "id": "sec.example.intro",
+      "documentId": "doc.example.article",
+      "order": 0,
+      "level": 1,
+      "title": "Introduction",
+      "semanticRole": "introduction",
+      "blocks": [
+        {
+          "id": "blk.example.intro.0",
+          "documentId": "doc.example.article",
+          "sectionId": "sec.example.intro",
+          "order": 0,
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "This block belongs to a section tree; TOC, PDF outline, EPUB nav, and HTML sidebar are projections."
+            }
+          ],
+          "layoutHints": {
+            "keepWithNext": false
+          },
+          "semanticTags": [
+            "canonical-block"
+          ]
+        }
+      ],
+      "sections": [
+        {
+          "id": "sec.example.structure",
+          "documentId": "doc.example.article",
+          "parentSectionId": "sec.example.intro",
+          "order": 0,
+          "level": 2,
+          "title": "Structure First",
+          "semanticRole": "section",
+          "blocks": [
+            {
+              "id": "blk.example.structure.0",
+              "documentId": "doc.example.article",
+              "sectionId": "sec.example.structure",
+              "order": 0,
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "A table of contents is derived by traversing sections, not by parsing heading strings."
+                }
+              ],
+              "semanticTags": [
+                "toc-projection"
+              ]
+            }
+          ],
+          "sections": []
+        }
+      ]
+    }
+  ]
+}

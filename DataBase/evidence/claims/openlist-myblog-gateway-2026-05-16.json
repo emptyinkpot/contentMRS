@@ -1,0 +1,19 @@
+{
+  "task_id": "openlist-myblog-gateway-2026-05-16",
+  "title": "Expose OpenList-backed MyBlog book runtime through DataBase Gateway",
+  "agent_id": "codex",
+  "status": "review",
+  "branch": "agent/codex/openlist-myblog-gateway",
+  "conflict_policy": "review-before-merge",
+  "claimed_paths": [
+    "gateway/src/routes/openlist.ts",
+    "gateway/src/routes/myblog.ts",
+    "gateway/sql/010_openlist_storage_topology.sql",
+    "gateway/sql/011_myblog_runtime.sql",
+    "services/openlist-adapter/"
+  ],
+  "started_at": "2026-05-16T00:00:00Z",
+  "updated_at": "2026-05-16T00:00:00Z",
+  "handoff": null,
+  "notes": "OpenList is the access projection. DataBase owns target ids and MyBlog reader runtime tables."
+}

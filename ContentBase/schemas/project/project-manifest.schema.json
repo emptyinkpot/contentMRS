@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://emptyinkpot.local/schemas/project/project-manifest.schema.json",
+  "title": "Project Manifest",
+  "type": "object",
+  "required": [
+    "name",
+    "projectName",
+    "canonicalDoc",
+    "machineReadableEntry",
+    "githubRepo",
+    "visibility",
+    "type",
+    "status",
+    "canonicalPurpose",
+    "readOrder"
+  ],
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "projectName": {
+      "type": "string"
+    },
+    "canonicalDoc": {
+      "type": "string"
+    },
+    "machineReadableEntry": {
+      "type": "string"
+    },
+    "githubRepo": {
+      "type": "string"
+    },
+    "visibility": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "script",
+        "package",
+        "client",
+        "service",
+        "project",
+        "data-infrastructure-map"
+      ]
+    },
+    "status": {
+      "type": "string"
+    },
+    "canonicalPurpose": {
+      "type": "string"
+    },
+    "owner": {
+      "type": "string"
+    },
+    "sourceOfTruth": {
+      "type": "string"
+    },
+    "runtimeLocation": {
+      "type": "string"
+    },
+    "deploymentTarget": {
+      "type": "string"
+    },
+    "consumerInterfaces": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "configurationSurfaces": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "secretSurfaces": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "verificationCommands": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "documentation": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "readOrder": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

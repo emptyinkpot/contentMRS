@@ -1,0 +1,18 @@
+{
+  "task_id": "semantic-reference-material-import-2026-05-15",
+  "title": "Import new-landlord semantic reference materials into DataBase",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "main",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "gateway/scripts/import-new-landlord-reference-materials.mjs",
+    "gateway/package.json",
+    "docs/storage/mysql-current-state.md",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-15T00:00:00Z",
+  "updated_at": "2026-05-15T00:00:00Z",
+  "handoff": null,
+  "notes": "Imported the Obsidian new-landlord aggregate into semantic_units through the canonical Gateway write facade so theory, observer, comparison, document, and literary material becomes queryable and reusable in DataBase. 26 units were written and smoke passed."
+}

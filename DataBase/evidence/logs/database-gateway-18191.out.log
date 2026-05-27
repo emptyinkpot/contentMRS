@@ -1,0 +1,11 @@
+database-gateway listening on http://127.0.0.1:18191
+{"level":"info","event":"request","requestId":"16ca5dda-8b2e-4d06-9837-38e93ff27854","method":"GET","path":"/health","status":200,"elapsedMs":123}
+{"level":"info","event":"request","requestId":"c46ac8e3-4e2f-409e-96d8-5cfcb4c93889","method":"GET","path":"/health","status":200,"elapsedMs":27}
+{"level":"info","event":"request","requestId":"4c6db0cc-8e00-40d4-9ea1-fc4ebbb7bb57","method":"GET","path":"/content/publication/accounts","status":200,"elapsedMs":28}
+{"level":"info","event":"request","requestId":"491656ee-a4a7-4be7-9db8-0ef73dd68b93","method":"GET","path":"/content/publication/publish-context","status":200,"elapsedMs":51}
+{"level":"info","event":"request","requestId":"2a6f792e-e877-483a-b39d-44a5b96553ea","method":"GET","path":"/content/publication/publish-context","status":200,"elapsedMs":54}
+{"level":"info","event":"request","requestId":"6c0bc038-c464-4903-9a99-b7712cf5b31f","method":"GET","path":"/content/publication/publish-chapter","status":200,"elapsedMs":26}
+{"level":"info","event":"request","requestId":"c8647c0f-d7e8-4552-af5c-e21e22ceb502","method":"GET","path":"/content/publication/accounts","status":200,"elapsedMs":27}
+{"level":"info","event":"request","requestId":"b3b9ca20-8315-47ee-beaa-49b626766b78","method":"GET","path":"/content/publication/publish-context","status":200,"elapsedMs":55}
+{"level":"info","event":"request","requestId":"ed59caae-6bd4-4261-88da-a88255a0ac77","method":"GET","path":"/content/publication/publish-context","status":200,"elapsedMs":52}
+{"level":"info","event":"request","requestId":"813faecc-fa4c-464f-954d-f53f4941634d","method":"GET","path":"/content/publication/publish-chapter","status":200,"elapsedMs":25}

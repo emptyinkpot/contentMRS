@@ -1,0 +1,19 @@
+{
+  "task_id": "creative-rule-as-code-2026-05-13",
+  "title": "Make creative writing rules executable contract truth",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": null,
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "schemas/creative/",
+    "gateway/src/routes/creative.ts",
+    "E:/My Project/ContentBase/product/novel/core/manuscript/content-craft/src/generation-pipeline.ts",
+    "E:/My Project/ContentBase/product/novel/core/manuscript/content-craft/src/generation-types.ts",
+    "E:/My Project/ContentBase/product/novel/tests/generation-context.test.ts"
+  ],
+  "started_at": "2026-05-13T00:00:00Z",
+  "updated_at": "2026-05-13T00:00:00Z",
+  "handoff": null,
+  "notes": "Completed Rule-as-Code convergence. DataBase schemas/creative owns executable rules and inventory; Gateway exposes generated inventory from the executable source; ContentBase quality gates run runCreativeRules() and hard-fail punctuation/ascii/euro/corpus block violations. Checks: schemas/creative typecheck/build, gateway typecheck/build/openapi/client build, ContentBase pnpm run ci."
+}

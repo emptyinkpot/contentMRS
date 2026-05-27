@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "graph-version-manifest.v1",
+  "graphId": "graph.example.epub",
+  "versionId": "graph.example.epub.v2",
+  "parentVersionId": "graph.example.epub.v1",
+  "operationIds": ["op.example.insert-illustration"],
+  "producer": "manual-edit-example",
+  "createdAt": "2026-05-13T15:35:00Z",
+  "sourceArtifacts": ["artifact.sha256.example", "artifact.sha256.example-image"],
+  "projections": [],
+  "notes": "Inserted illustration by graph edit operation; raw EPUB artifact unchanged."
+}

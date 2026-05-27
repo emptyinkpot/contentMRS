@@ -1,0 +1,21 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: 'FuckVideo'
+  title: 'FuckVideo'
+  description: 'ai-video-understanding-and-remotion-generation-application'
+  annotations:
+    backstage.io/source-location: 'url:https://github.com/emptyinkpot/FuckVideo'
+    emptyinkpot.io/visibility: 'private'
+    emptyinkpot.io/repository-role: 'ai-video-understanding-and-remotion-generation-application'
+    emptyinkpot.io/status: 'active'
+    emptyinkpot.io/preferred-source: 'true'
+    emptyinkpot.io/canonical-doc: ''
+    emptyinkpot.io/machine-readable-entry: ''
+spec:
+  type: 'library'
+  lifecycle: 'active'
+  owner: 'emptyinkpot'
+  system: 'emptyinkpot-ecosystem'
+  dependsOn:
+    - 'component:default/sub2api'

@@ -1,0 +1,27 @@
+{
+  "task_id": "schema-first-contracts-2026-05-13",
+  "title": "Make core DataBase contracts runtime-validatable",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "local",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "schemas/creative/creative-style-contract.ts",
+    "schemas/creative/package.json",
+    "schemas/creative/package-lock.json",
+    "schemas/creative/tsconfig.json",
+    "schemas/creative/dist/",
+    "schemas/creative/README.md",
+    "schemas/content/canonical-content-contract.ts",
+    "schemas/content/package.json",
+    "schemas/content/package-lock.json",
+    "schemas/content/tsconfig.json",
+    "schemas/content/dist/",
+    "schemas/content/README.md",
+    ".runtime/timeline/events.jsonl"
+  ],
+  "started_at": "2026-05-13T00:04:36Z",
+  "updated_at": "2026-05-13T00:12:00Z",
+  "handoff": null,
+  "notes": "Promote creative/content contract files from type-only declarations to Zod-first runtime validation schemas with inferred TypeScript types."
+}

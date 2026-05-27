@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://database.tengokukk.com/schemas/document/reader-runtime-state.schema.json",
+  "title": "Reader Runtime State",
+  "description": "User/session reader runtime state pointing to graph versions and anchors, not canonical document truth.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "stateId", "userId", "packageId", "graphVersionId", "currentAnchorId", "progress", "layoutProfile", "updatedAt"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "reader-runtime-state.v1" },
+    "stateId": { "$ref": "#/$defs/stableId" },
+    "userId": { "$ref": "#/$defs/stableId" },
+    "packageId": { "$ref": "#/$defs/stableId" },
+    "graphVersionId": { "$ref": "#/$defs/stableId" },
+    "currentAnchorId": { "$ref": "#/$defs/stableId" },
+    "progress": { "$ref": "#/$defs/progress" },
+    "layoutProfile": { "$ref": "#/$defs/layoutProfile" },
+    "runtimeLocations": { "type": "array", "items": { "$ref": "#/$defs/runtimeLocationRef" }, "default": [] },
+    "annotationRefs": { "type": "array", "items": { "$ref": "#/$defs/stableId" }, "default": [] },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "stableId": { "type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$" },
+    "progress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["percentage"],
+      "properties": {
+        "percentage": { "type": "number", "minimum": 0, "maximum": 1 },
+        "displayLabel": { "type": "string" }
+      }
+    },
+    "layoutProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fontScale", "lineHeight", "theme", "viewport"],
+      "properties": {
+        "fontScale": { "type": "number", "minimum": 0.1 },
+        "lineHeight": { "type": "number", "minimum": 0.1 },
+        "theme": { "type": "string" },
+        "viewport": { "type": "object", "additionalProperties": true }
+      }
+    },
+    "runtimeLocationRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["anchorId", "projectionType", "locator"],
+      "properties": {
+        "anchorId": { "$ref": "#/$defs/stableId" },
+        "projectionType": { "type": "string" },
+        "locator": { "type": "object", "additionalProperties": true }
+      }
+    }
+  }
+}

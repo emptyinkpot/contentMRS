@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://database.tengokukk.com/schemas/document/anchor-location.schema.json",
+  "title": "Anchor And Location Map",
+  "description": "Stable anchors and projection-specific runtime locations for reader annotations, highlights, progress, and pagination.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "mapId", "anchors"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "anchor-location.v1" },
+    "mapId": { "$ref": "#/$defs/stableId" },
+    "anchors": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/anchor" },
+      "default": []
+    },
+    "locations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/runtimeLocation" },
+      "default": []
+    }
+  },
+  "$defs": {
+    "stableId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "anchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "targetNodeId", "targetNodeType"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "targetNodeId": { "$ref": "#/$defs/stableId" },
+        "targetNodeType": { "type": "string", "enum": ["document", "section", "block", "inline", "asset", "evidence", "projection"] },
+        "selector": { "type": "object", "additionalProperties": true },
+        "offsets": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "start": { "type": "integer", "minimum": 0 },
+            "end": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "sourceLocator": { "type": "object", "additionalProperties": true }
+      }
+    },
+    "runtimeLocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "anchorId", "projectionType", "locator"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "anchorId": { "$ref": "#/$defs/stableId" },
+        "projectionType": { "type": "string", "enum": ["epub", "pdf", "html", "mdx", "astro", "reader_runtime", "search", "fanqie"] },
+        "locator": { "type": "object", "additionalProperties": true },
+        "generatedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

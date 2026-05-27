@@ -1,0 +1,19 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: 'agent-office'
+  title: 'agent-office'
+  description: 'research-fork'
+  annotations:
+    backstage.io/source-location: 'url:https://github.com/emptyinkpot/agent-office'
+    emptyinkpot.io/visibility: 'public'
+    emptyinkpot.io/repository-role: 'research-fork'
+    emptyinkpot.io/status: 'research'
+    emptyinkpot.io/preferred-source: 'false'
+    emptyinkpot.io/canonical-doc: ''
+    emptyinkpot.io/machine-readable-entry: ''
+spec:
+  type: 'library'
+  lifecycle: 'research'
+  owner: 'emptyinkpot'
+  system: 'emptyinkpot-ecosystem'

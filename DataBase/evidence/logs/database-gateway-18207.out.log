@@ -1,0 +1,6 @@
+database-gateway listening on http://127.0.0.1:18207
+{"level":"info","event":"request","requestId":"a2e7c50e-3605-419b-84c2-78aac023d0b1","method":"GET","path":"/evidence/search","status":200,"elapsedMs":260}
+{"level":"info","event":"request","requestId":"6929622e-f429-4c45-9e21-165ddbeeaf5d","method":"GET","path":"/content/sources","status":200,"elapsedMs":2903}
+{"level":"info","event":"request","requestId":"0a163cae-390e-43d3-9399-acf19a291547","method":"GET","path":"/evidence/search","status":200,"elapsedMs":172}
+{"level":"info","event":"request","requestId":"f9332c19-eddc-4c2a-8584-aa67df5cf7bc","method":"GET","path":"/content/sources","status":200,"elapsedMs":3375}
+{"level":"info","event":"request","requestId":"e990cd7d-65b2-441e-a2d8-1f11ed7ec54e","method":"GET","path":"/content/sources","status":200,"elapsedMs":3410}

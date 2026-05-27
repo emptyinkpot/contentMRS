@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/emptyinkpot/DataBase/schemas/agent-coordination/integration-queue.schema.json",
+  "title": "Agent Integration Queue Item",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_id",
+    "agent_id",
+    "branch",
+    "status",
+    "base",
+    "claimed_paths",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "task_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,96}$"
+    },
+    "agent_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 96
+    },
+    "branch": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "ready-for-review",
+        "changes-requested",
+        "approved",
+        "merged",
+        "abandoned"
+      ]
+    },
+    "base": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "commit": {
+      "type": ["string", "null"]
+    },
+    "claimed_paths": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 260
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "updated_at": {
+      "type": "string"
+    },
+    "integration_notes": {
+      "type": "string"
+    }
+  }
+}

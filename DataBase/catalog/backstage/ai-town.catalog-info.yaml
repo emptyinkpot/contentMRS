@@ -1,0 +1,19 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: 'ai-town'
+  title: 'ai-town'
+  description: 'manual-research-mirror'
+  annotations:
+    backstage.io/source-location: 'url:https://github.com/emptyinkpot/ai-town'
+    emptyinkpot.io/visibility: 'public'
+    emptyinkpot.io/repository-role: 'manual-research-mirror'
+    emptyinkpot.io/status: 'research'
+    emptyinkpot.io/preferred-source: 'false'
+    emptyinkpot.io/canonical-doc: ''
+    emptyinkpot.io/machine-readable-entry: ''
+spec:
+  type: 'library'
+  lifecycle: 'research'
+  owner: 'emptyinkpot'
+  system: 'emptyinkpot-ecosystem'

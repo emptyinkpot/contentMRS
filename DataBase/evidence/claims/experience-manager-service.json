@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "task_id": "experience-manager-service",
+  "title": "Import sanitized experience manager service",
+  "agent_id": "external-builder-or-active-agent",
+  "status": "active",
+  "branch": "main",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "services/experience-manager/",
+    "docs/operations/ai-memory-ingestion-roadmap.md",
+    "ecosystem/atramenti-capability-inventory.json",
+    "ecosystem/repos.json",
+    "ecosystem/supply-relationships.json",
+    "ecosystem/upstreams.json"
+  ],
+  "started_at": "2026-05-10T00:00:00Z",
+  "updated_at": "2026-05-10T00:00:00Z",
+  "handoff": null,
+  "notes": "Sanitized experience-manager service has been imported. Other agents may work in parallel on separate branches, but overlapping changes should be recorded and reviewed."
+}

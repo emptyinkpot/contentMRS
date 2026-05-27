@@ -1,0 +1,23 @@
+services:
+  directus:
+    image: directus/directus:${DIRECTUS_VERSION:-11}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${DIRECTUS_PORT:-8055}:8055"
+    environment:
+      KEY: ${KEY}
+      SECRET: ${SECRET}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      DB_CLIENT: ${DB_CLIENT:-sqlite3}
+      DB_FILENAME: ${DB_FILENAME:-/directus/database/data.db}
+      PUBLIC_URL: ${PUBLIC_URL:-http://127.0.0.1:8055}
+      DATABASE_GATEWAY_URL: ${DATABASE_GATEWAY_URL}
+      DATABASE_GATEWAY_API_KEY: ${DATABASE_GATEWAY_API_KEY}
+      CONTENTBASE_RUNTIME_URL: ${CONTENTBASE_RUNTIME_URL}
+      CONTENTBASE_RUNTIME_API_KEY: ${CONTENTBASE_RUNTIME_API_KEY}
+    volumes:
+      - ./database:/directus/database
+      - ./uploads:/directus/uploads
+      - ./extensions:/directus/extensions

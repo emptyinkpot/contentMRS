@@ -1,0 +1,24 @@
+{
+  "task_id": "semantic-reference-material-write-contract-2026-05-15",
+  "title": "Add DataBase-owned reusable reference material write contract",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "main",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "schemas/semantic/semantic-contract.ts",
+    "gateway/src/routes/semantic.ts",
+    "gateway/src/routes/writes.ts",
+    "gateway/scripts/generate-openapi.mjs",
+    "gateway/openapi.yaml",
+    "generated/clients/database-gateway/",
+    "gateway/scripts/smoke.mjs",
+    "docs/contracts/evidence-contract.md",
+    "gateway/sql/002_write_facade_permissions.sql",
+    "docs/gateway/service-accounts.md"
+  ],
+  "started_at": "2026-05-15T00:00:00Z",
+  "updated_at": "2026-05-15T00:00:00Z",
+  "handoff": null,
+  "notes": "Completed the 25-question gap for reusable theory/news/literature/observer material: DataBase stores material as semantic units with material-kind tags; ContentBase consumes via Gateway semantic contracts. Live gateway smoke passed after applying semantic table grants to database_content_rw."
+}

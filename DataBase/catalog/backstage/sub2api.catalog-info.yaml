@@ -1,0 +1,21 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: 'sub2api'
+  title: 'sub2api'
+  description: 'ai-gateway'
+  annotations:
+    backstage.io/source-location: 'url:https://github.com/emptyinkpot/sub2api'
+    emptyinkpot.io/visibility: 'public'
+    emptyinkpot.io/repository-role: 'ai-gateway'
+    emptyinkpot.io/status: 'active'
+    emptyinkpot.io/preferred-source: 'true'
+    emptyinkpot.io/canonical-doc: ''
+    emptyinkpot.io/machine-readable-entry: ''
+spec:
+  type: 'service'
+  lifecycle: 'active'
+  owner: 'emptyinkpot'
+  system: 'emptyinkpot-ecosystem'
+  dependsOn:
+    - 'component:default/FuckVideo'

@@ -1,0 +1,19 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: 'mortis-multica-source-legacy'
+  title: 'mortis-multica-source-legacy'
+  description: 'legacy-source-record'
+  annotations:
+    backstage.io/source-location: 'url:https://github.com/emptyinkpot/mortis-multica-source-legacy'
+    emptyinkpot.io/visibility: 'public'
+    emptyinkpot.io/repository-role: 'legacy-source-record'
+    emptyinkpot.io/status: 'deleted-after-backup'
+    emptyinkpot.io/preferred-source: 'false'
+    emptyinkpot.io/canonical-doc: ''
+    emptyinkpot.io/machine-readable-entry: ''
+spec:
+  type: 'library'
+  lifecycle: 'deleted-after-backup'
+  owner: 'emptyinkpot'
+  system: 'emptyinkpot-ecosystem'

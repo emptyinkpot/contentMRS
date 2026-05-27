@@ -1,0 +1,24 @@
+{
+  "task_id": "article-reference-usage-report-2026-05-14",
+  "title": "Add DataBase article reference usage report write contract",
+  "agent_id": "codex",
+  "status": "completed",
+  "branch": "main",
+  "conflict_policy": "coordinate-on-overlap",
+  "claimed_paths": [
+    "schemas/creative/article-reference-usage-report.ts",
+    "schemas/creative/index.ts",
+    "gateway/src/routes/writes.ts",
+    "gateway/scripts/generate-openapi.mjs",
+    "gateway/openapi.yaml",
+    "generated/clients/database-gateway/",
+    "gateway/scripts/smoke.mjs",
+    "E:/My Project/ContentBase/product/novel/app/api-content-runtime.ts",
+    "E:/My Project/ContentBase/product/novel/app/article-runtime.ts",
+    "E:/My Project/ContentBase/product/novel/tests/content-runtime-api.test.ts"
+  ],
+  "started_at": "2026-05-14T14:24:59.5661570Z",
+  "updated_at": "2026-05-14T15:20:00.0000000Z",
+  "handoff": null,
+  "notes": "Added DataBase-owned article-reference-usage-report.v1 contract, Gateway write facade route, generated OpenAPI/client method, Gateway smoke readback coverage, and ContentBase consumer integration behind explicit recordReferenceUsageReport. Live keyed Gateway smoke passed on local 127.0.0.1:18090 after restarting the canonical node dist/index.js runtime with existing DataBase secrets; smoke wrote and read back the article reference usage prompt_context block from canonical content_blocks."
+}

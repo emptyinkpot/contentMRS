@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://database.tengokukk.com/schemas/document/graph-version-manifest.schema.json",
+  "title": "Graph Version Manifest",
+  "description": "Version manifest for a DataBase-owned Canonical Content Graph version.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "graphId", "versionId", "operationIds", "producer", "createdAt"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "graph-version-manifest.v1" },
+    "graphId": { "$ref": "#/$defs/stableId" },
+    "versionId": { "$ref": "#/$defs/stableId" },
+    "parentVersionId": { "$ref": "#/$defs/stableId" },
+    "operationIds": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/stableId" },
+      "default": []
+    },
+    "producer": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "sourceArtifacts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/stableId" },
+      "default": []
+    },
+    "projections": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/projectionRef" },
+      "default": []
+    },
+    "notes": { "type": "string" }
+  },
+  "$defs": {
+    "stableId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "projectionRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectionId", "projectionType"],
+      "properties": {
+        "projectionId": { "$ref": "#/$defs/stableId" },
+        "projectionType": { "type": "string", "enum": ["epub", "pdf", "html", "mdx", "astro", "fanqie", "print", "search", "semantic_chunks", "toc", "reader_runtime"] },
+        "path": { "type": "string" }
+      }
+    }
+  }
+}

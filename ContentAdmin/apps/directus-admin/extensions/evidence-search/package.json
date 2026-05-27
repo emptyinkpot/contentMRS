@@ -1,0 +1,25 @@
+{
+  "name": "directus-extension-endpoint-evidence-search",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "directus:extension": {
+    "type": "endpoint",
+    "path": "dist/index.js",
+    "source": "src/index.ts",
+    "host": "^11.0.0"
+  },
+  "scripts": {
+    "build": "directus-extension build",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@emptyinkpot/content-admin-contentbase-sdk-adapter": "workspace:*",
+    "@emptyinkpot/content-admin-database-sdk-adapter": "workspace:*"
+  },
+  "devDependencies": {
+    "@directus/extensions-sdk": "^17.1.4",
+    "@types/node": "^22.15.29",
+    "typescript": "^5.8.3"
+  }
+}
