@@ -1229,6 +1229,57 @@ export function contentRoutes({ pool }: RouteDependencies) {
     });
   });
 
+  app.get("/content/literature/stats", async (c) => {
+    const rows = await query<{ id: number; title: string; author: string; category: string; charCount: number; source: string; updated_at: string }[]>(
+      pool,
+      `
+      SELECT id, title, author, category, CHAR_LENGTH(content) AS charCount, source, updated_at
+      FROM literature
+      ORDER BY CHAR_LENGTH(content) DESC, id DESC
+      `,
+      []
+    );
+
+    let totalChars = 0;
+    const byCategory: Record<string, { count: number; chars: number }> = {};
+    const titles: string[] = [];
+    const fingerprints = new Map<string, number[]>();
+
+    for (const row of rows) {
+      totalChars += row.charCount;
+      const cat = row.category || "uncategorized";
+      if (!byCategory[cat]) byCategory[cat] = { count: 0, chars: 0 };
+      byCategory[cat].count++;
+      byCategory[cat].chars += row.charCount;
+      titles.push(row.title || "");
+    }
+
+    const duplicateTitles = titles.filter((t, i) => t && titles.indexOf(t) !== i);
+    const emptyCount = rows.filter(r => r.charCount < 100).length;
+
+    return c.json({
+      count: rows.length,
+      totalChars,
+      byCategory,
+      duplicateTitles: [...new Set(duplicateTitles)],
+      duplicateRate: rows.length > 0 ? `${((duplicateTitles.length / rows.length) * 100).toFixed(1)}%` : "0%",
+      completeness: {
+        withContent: rows.length - emptyCount,
+        empty: emptyCount,
+        rate: rows.length > 0 ? `${(((rows.length - emptyCount) / rows.length) * 100).toFixed(1)}%` : "0%",
+      },
+      items: rows.map(r => ({
+        id: r.id,
+        title: r.title,
+        author: r.author,
+        category: r.category,
+        charCount: r.charCount,
+        source: r.source,
+      })),
+      requestId: c.get("requestId"),
+    });
+  });
+
   app.get("/content/state-machine/transitions", async (c) => {
     const limit = clampLimit(c.req.query("limit") || null, 200, 500);
     const rows = await query<StateTransitionRow[]>(
