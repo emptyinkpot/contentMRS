@@ -63,8 +63,242 @@ function chunkSource(chunk: RagflowChunk): string {
   return Array.isArray(doc) ? doc.filter(Boolean).join(" / ") : String(doc || "");
 }
 
+interface SemanticUnitRow {
+  id: string;
+  source_id: string | null;
+  source_title: string;
+  source_author: string | null;
+  source_locator: string | null;
+  excerpt: string;
+  summary: string | null;
+}
+
+interface VocabularyHit {
+  id: number | string;
+  content: string;
+  type: string;
+  category: string;
+  note: string | null;
+}
+
+interface UnifiedResult {
+  id: string;
+  text: string;
+  title: string;
+  source: string;
+  provider: "ragflow" | "semantic_units" | "vocabulary";
+  score: number;
+  metadata: Record<string, unknown>;
+}
+
+function scoreText(text: string, tokens: string[]): number {
+  const normalized = text.toLowerCase();
+  let score = 0;
+  for (const token of tokens) {
+    if (normalized.includes(token.toLowerCase())) score += 10;
+  }
+  score += Math.min(5, Math.floor(text.length / 200));
+  return score;
+}
+
 export function searchRoutes({ pool, config }: RouteDependencies) {
   const app = new Hono<AppBindings>();
+
+  app.get("/search/unified", async (c) => {
+    const q = (c.req.query("q") || "").trim();
+    const limit = clampLimit(c.req.query("limit") || null, 20, 100);
+    const sourceIds = listParam(c.req.query("sourceIds"));
+    const includeVocabulary = !["0", "false", "no", "off"].includes(
+      String(c.req.query("includeVocabulary") || "true").toLowerCase()
+    );
+
+    if (!q) {
+      return c.json({
+        query: q,
+        count: 0,
+        providers: [],
+        results: [],
+        requestId: c.get("requestId"),
+      });
+    }
+
+    const tokens = q
+      .split(/[\s,，、]+/)
+      .map((t) => t.trim())
+      .filter((t) => t.length >= 2)
+      .slice(0, 10);
+    const like = `%${q}%`;
+    const results: UnifiedResult[] = [];
+    const providers: string[] = [];
+    const errors: string[] = [];
+
+    // 1. RAGFlow vector retrieval
+    const ragflowDatasetIds = listParam(
+      c.req.query("ragflowDatasetIds") ||
+        process.env.DATABASE_LITERARY_RAGFLOW_DATASET_IDS ||
+        LITERARY_RAGFLOW_DATASET_ID
+    );
+
+    const ragflowPromise = (async () => {
+      if (
+        !config?.evidenceRagflow?.baseUrl ||
+        !config?.evidenceRagflow?.apiKey ||
+        !ragflowDatasetIds.length
+      ) {
+        return;
+      }
+      try {
+        const endpoint = `${config.evidenceRagflow.baseUrl.replace(/\/+$/, "")}/api/v1/retrieval`;
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            accept: "application/json",
+            "content-type": "application/json",
+            authorization: `Bearer ${config.evidenceRagflow.apiKey}`,
+          },
+          body: JSON.stringify({
+            question: q,
+            dataset_ids: ragflowDatasetIds,
+            page: 1,
+            page_size: Math.min(limit, 30),
+            similarity_threshold: 0.05,
+            vector_similarity_weight: 0.35,
+            top_k: 64,
+            keyword: true,
+            highlight: false,
+          }),
+          signal: AbortSignal.timeout(15000),
+        });
+        if (!response.ok) {
+          errors.push(`ragflow: HTTP ${response.status}`);
+          return;
+        }
+        const payload = (await response.json()) as RagflowRetrievalResponse;
+        const chunks = Array.isArray(payload?.data?.chunks) ? payload.data!.chunks! : [];
+        providers.push("ragflow");
+        for (const chunk of chunks) {
+          const text = chunkText(chunk);
+          if (!text) continue;
+          results.push({
+            id: `ragflow:${chunk.document_id || ""}:${results.length}`,
+            text: text.slice(0, 800),
+            title: chunkSource(chunk),
+            source: String(chunk.document_id || ""),
+            provider: "ragflow",
+            score: Number(chunk.similarity || chunk.score || chunk.vector_similarity || 0) * 100,
+            metadata: {
+              documentId: chunk.document_id || chunk.doc_id,
+              documentName: chunk.document_name || chunk.doc_name,
+              similarity: chunk.similarity,
+              vectorSimilarity: chunk.vector_similarity,
+            },
+          });
+        }
+      } catch (err) {
+        errors.push(`ragflow: ${err instanceof Error ? err.message : "unknown"}`);
+      }
+    })();
+
+    // 2. semantic_units keyword search
+    const semanticPromise = (async () => {
+      try {
+        const likeTerms = [q, ...tokens].filter((t) => t.length >= 2).slice(0, 6);
+        const textWhere = likeTerms
+          .map(() => "(u.source_title LIKE ? OR u.summary LIKE ? OR u.excerpt LIKE ?)")
+          .join(" OR ");
+        const textParams = likeTerms.flatMap((term) => [`%${term}%`, `%${term}%`, `%${term}%`]);
+        const sourceWhere = sourceIds.length
+          ? `AND u.source_id IN (${sourceIds.map(() => "?").join(", ")})`
+          : "";
+        const rows = await query<SemanticUnitRow[]>(
+          pool,
+          `
+          SELECT u.id, u.source_id, u.source_title, u.source_author, u.source_locator, u.excerpt, u.summary
+          FROM semantic_units u
+          WHERE u.status = 'active'
+            ${sourceWhere}
+            AND (${textWhere})
+          ORDER BY u.updated_at DESC
+          LIMIT ?
+          `,
+          [...sourceIds, ...textParams, Math.min(limit * 2, 60)]
+        );
+        providers.push("semantic_units");
+        for (const row of rows) {
+          const text = [row.summary, row.excerpt].filter(Boolean).join("\n").trim();
+          if (!text) continue;
+          results.push({
+            id: `semantic:${row.id}`,
+            text: text.slice(0, 800),
+            title: row.source_title || "",
+            source: row.source_id || row.id,
+            provider: "semantic_units",
+            score: scoreText(text, tokens),
+            metadata: {
+              semanticUnitId: row.id,
+              sourceAuthor: row.source_author,
+              sourceLocator: row.source_locator,
+            },
+          });
+        }
+      } catch (err) {
+        errors.push(`semantic_units: ${err instanceof Error ? err.message : "unknown"}`);
+      }
+    })();
+
+    // 3. vocabulary keyword search
+    const vocabularyPromise = (async () => {
+      if (!includeVocabulary) return;
+      try {
+        const rows = await query<VocabularyHit[]>(
+          pool,
+          `
+          SELECT id, content, type, category, note
+          FROM vocabulary
+          WHERE content LIKE ? OR note LIKE ?
+          ORDER BY id DESC
+          LIMIT ?
+          `,
+          [like, like, Math.min(limit, 30)]
+        );
+        if (rows.length) providers.push("vocabulary");
+        for (const row of rows) {
+          const text = [row.content, row.note].filter(Boolean).join(" — ");
+          results.push({
+            id: `vocab:${row.id}`,
+            text,
+            title: row.content,
+            source: `${row.type}/${row.category}`,
+            provider: "vocabulary",
+            score: scoreText(text, tokens) * 0.6,
+            metadata: {
+              vocabularyId: row.id,
+              type: row.type,
+              category: row.category,
+            },
+          });
+        }
+      } catch (err) {
+        errors.push(`vocabulary: ${err instanceof Error ? err.message : "unknown"}`);
+      }
+    })();
+
+    await Promise.all([ragflowPromise, semanticPromise, vocabularyPromise]);
+
+    const ranked = results
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
+
+    return c.json({
+      query: q,
+      count: ranked.length,
+      totalCandidates: results.length,
+      providers,
+      ...(errors.length ? { errors } : {}),
+      results: ranked,
+      requestId: c.get("requestId"),
+    });
+  });
 
   app.get("/search", async (c) => {
     const q = (c.req.query("q") || "").trim();

@@ -589,6 +589,74 @@ $env:DATA_CURATION_MODEL = "glm-4-flash"
 - `docs/operations/sub2api-data-curation-consumer.md`
 - `schemas/data-curation/knowledge-label.schema.json`
 
+## ContentMRS Corpus 统一检索架构
+
+所有供 ContentBase 写文章时检索的语料，必须最终进入 RAGFlow 向量索引，通过 `GET /evidence/search` 统一出口。不允许出现"数据存了但检索不到"的死数据。
+
+### 数据流水线（唯一路径）
+
+```text
+原始来源（EPUB/PDF/Markdown/手动录入）
+  ↓
+literature 表（MySQL 全文存储，长期真源）
+  ↓
+切 chunk → search_chunks 表（MySQL 持久化）
+  ↓
+RAGFlow 向量索引（embedding + retrieval）
+  ↓
+GET /evidence/search（ContentBase 唯一检索入口）
+```
+
+### 当前表职责
+
+| 表 | 职责 | 检索方式 | 状态 |
+|---|---|---|---|
+| `literature` | 全文书籍/文档存储（长期真源） | 不直接检索，作为 chunk 源 | ✅ 77条, 20.6M chars |
+| `search_documents` | 文档元数据索引 | RAGFlow dataset 映射 | ✅ 48 docs |
+| `search_chunks` | 文本切块（800字/块） | RAGFlow 向量检索 | ✅ 124K chunks |
+| `semantic_units` | 高质量语义卡片 | 关键词+语义混合 | ✅ 256条 |
+| `vocabulary` | 词汇表 | 关键词匹配 | ✅ 3548条 |
+| `creative_style_modules` | 风格模块 | 结构化读取 | ✅ 74条 |
+| `creative_author_techniques` | 作者技法 | 结构化读取 | ✅ 12条 |
+
+### 索引规则
+
+1. **literature → RAGFlow 是必须的**：任何写入 `literature` 的内容，必须随后切 chunk 并索引到 RAGFlow。脚本入口：`apps/gateway/scripts/index-literature-to-ragflow.py --apply`
+2. **RAGFlow dataset 唯一**：所有文学语料进入 `contentmrs-literary-corpus`（id: `bdcc99c658f111f18aecb3d695a2553d`）。不允许按书/按类型拆出新 dataset。
+3. **ContentBase 不直连 MySQL**：ContentBase 只通过 Gateway API 获取 EvidencePack，不读 literature 表、不读 search_chunks 表。
+4. **不允许新建并行检索层**：不允许在 ContentBase 侧、Obsidian 侧、或任何消费方建立第二份向量索引或本地 chunk 缓存。
+
+### 待完成
+
+- [x] `literature` 表中 33 本有内容的书 → 切 chunk → 上传 RAGFlow 建立向量索引（32,451 chunks）
+- [ ] 7 本扫描版 PDF（资治通鉴、马克思恩格斯等）需要 OCR 后重新导入
+- [x] 4 本 MOBI/AZW3（全唐诗上/下、鲜花盛开的森林、夏目漱石四部曲）calibre 转换后导入完成
+- [x] Gateway 加 `/search/unified` 端点：一次请求同时查 RAGFlow + semantic_units + vocabulary
+- [ ] ContentBase context-engine 改为调用统一端点
+
+### 导入脚本
+
+```powershell
+# 批量导入书籍到 literature 表
+cd "E:\My Project\ContentMRS\DataBase\apps\gateway"
+node scripts/batch-import-literature.mjs --apply
+
+# 将 literature 内容索引到 RAGFlow（切 chunk + 向量化）
+python scripts/index-literature-to-ragflow.py --apply
+
+# 导入 baseline 文章为语义素材 + 词汇
+node scripts/import-baseline-articles-as-corpus.mjs
+```
+
+### 禁止事项
+
+- 禁止在 ContentBase 产品仓库里保存书籍文本、chunk 缓存或本地向量索引
+- 禁止绕过 Gateway 直连 MySQL 读取 literature/search_chunks
+- 禁止按书/按作者/按题材拆出多个 RAGFlow dataset（统一用 `contentmrs-literary-corpus`）
+- 禁止把 `knowledge_import_items` 当作检索源——它是待清理的遗留数据，有价值的应并入 literature
+
+---
+
 ## Callable Search Runtime
 
 统一查询入口：

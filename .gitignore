@@ -13,6 +13,8 @@ deploy.env
 .env
 .runtime/local.env
 DataBase/apps/gateway/.env
+DataBase/apps/gateway/scripts/import-remaining.sh
+DataBase/apps/gateway/scripts/index-literature-ragflow.log
 
 # Aider
 .aider*
