@@ -1,8 +1,22 @@
 # ContentMRS
 
-ContentMRS 是内容生产模块工作区。根目录只负责入口、索引和边界说明，不承载运行时、不拥有数据库、不直接生成正文。
+ContentMRS 是一个**被 AI agent 调用的生成引擎**。它不是面向人的交互界面——人与 AI（如 Codex、Claude）对话，AI 决定何时调用 ContentMRS 生成内容。
 
-唯一目标：
+```text
+用户 ↔ AI Agent（对话、讨论、决策）
+             │
+             │ 确定了要写什么之后
+             ▼
+        ContentMRS API（生成引擎）
+             │
+             ▼
+           成品
+```
+
+ContentMRS 接受软参数（topic、方向性描述、体裁暗示、长度期望），返回带有个人风格烙印的成品。
+理解用户意图的是 AI Agent，不是 ContentMRS。ContentMRS 只负责出活。
+
+## 唯一目标
 
 ```text
 为单一 Writer 准备高密度、高价值上下文，然后生成并保存正文。
