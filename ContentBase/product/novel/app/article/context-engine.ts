@@ -89,11 +89,15 @@ export async function buildArticleContextEngine(input: {
     Math.min(DEFAULT_CONTEXT_CHAR_BUDGET, Math.floor(contextTokenBudget * 0.8)),
   );
 
+  const genre = detectGenre(input.request);
+  const retrievalLimits = GENRE_RETRIEVAL_LIMITS[genre];
+
   const evidencePack = await loadEvidencePack({
     gatewayUrl,
     query,
     request: input.request,
     warnings,
+    realityLimit: retrievalLimits.reality,
   });
   assertEvidencePack(evidencePack);
 
@@ -101,6 +105,7 @@ export async function buildArticleContextEngine(input: {
     gatewayUrl,
     query,
     request: input.request,
+    limits: retrievalLimits,
   });
   const contextItems = [
     ...normalizeEvidencePackChunks(evidencePack),
@@ -109,8 +114,6 @@ export async function buildArticleContextEngine(input: {
   if (!contextItems.length) {
     throw new Error('Reality required: EvidencePack returned zero usable Reality chunks');
   }
-
-  const genre = detectGenre(input.request);
   const ranked = rankAndDedupe(contextItems, input.topic);
   const rerankerConfig = getRerankerConfig();
   const authorStateText = rerankerConfig ? await loadAuthorStateText(gatewayUrl) : '';
@@ -185,16 +188,17 @@ async function loadCorpusItems(input: {
   gatewayUrl: string;
   query: string;
   request: ContextEngineRequest;
+  limits: RetrievalLimits;
 }): Promise<ContextItem[]> {
   const evidenceQuery = readObject(input.request.evidenceQuery);
   if (evidenceQuery.requireCorpus === false || input.request.requireCorpus === false) {
     return [];
   }
   const [semantic, vocabulary, corpusContract, literature, authorProfile] = await Promise.all([
-    getJson(input.gatewayUrl, '/semantic/units', { search: input.query, limit: '80' }, 'semantic corpus', [], DEFAULT_EVIDENCE_TIMEOUT_MS),
-    getJson(input.gatewayUrl, '/vocabulary/search', { q: input.query, limit: '100' }, 'lexicon corpus', [], DEFAULT_EVIDENCE_TIMEOUT_MS),
+    getJson(input.gatewayUrl, '/semantic/units', { search: input.query, limit: String(input.limits.semantic) }, 'semantic corpus', [], DEFAULT_EVIDENCE_TIMEOUT_MS),
+    getJson(input.gatewayUrl, '/vocabulary/search', { q: input.query, limit: String(input.limits.lexicon) }, 'lexicon corpus', [], DEFAULT_EVIDENCE_TIMEOUT_MS),
     getJson(input.gatewayUrl, '/creative/style-contract', { protocol: String(evidenceQuery.protocol || input.request.protocol || 'immersive_historical_synthetic_narrative') }, 'corpus contract', [], DEFAULT_EVIDENCE_TIMEOUT_MS),
-    getJson(input.gatewayUrl, '/content/literature', { search: input.query, limit: '80' }, 'literary corpus', [], DEFAULT_EVIDENCE_TIMEOUT_MS),
+    getJson(input.gatewayUrl, '/content/literature', { search: input.query, limit: String(input.limits.literary) }, 'literary corpus', [], DEFAULT_EVIDENCE_TIMEOUT_MS),
     getJson(input.gatewayUrl, '/creative/author-profile', {}, 'author corpus', [], DEFAULT_EVIDENCE_TIMEOUT_MS),
   ]);
   const literaryCorpusItems = await loadLiteraryCorpusSearch(input.gatewayUrl, input.query);
@@ -213,6 +217,7 @@ async function loadEvidencePack(input: {
   query: string;
   request: ContextEngineRequest;
   warnings: string[];
+  realityLimit: number;
 }): Promise<Record<string, any>> {
   const evidenceQuery = readObject(input.request.evidenceQuery);
   const datasetIds = Array.isArray(evidenceQuery.ragflowDatasetIds)
@@ -221,7 +226,7 @@ async function loadEvidencePack(input: {
   const params: Record<string, string> = {
     q: input.query,
     query: input.query,
-    limit: String(readNumber(evidenceQuery.perQueryLimit || evidenceQuery.limit || input.request.evidenceLimit, DEFAULT_REALITY_LIMIT)),
+    limit: String(readNumber(evidenceQuery.perQueryLimit || evidenceQuery.limit || input.request.evidenceLimit, input.realityLimit)),
     rounds: String(readNumber(evidenceQuery.rounds || input.request.evidenceRounds, 8)),
     includeWeb: String(evidenceQuery.includeWeb !== false),
     includeRagflow: String(evidenceQuery.includeRagflow !== false),
@@ -609,6 +614,21 @@ function formatUnknownRecord(value: unknown): string {
 }
 
 type Genre = 'historical_commentary' | 'reality_commentary' | 'narrative' | 'essay';
+
+type RetrievalLimits = {
+  reality: number;
+  semantic: number;
+  lexicon: number;
+  literary: number;
+  structure: number;
+};
+
+const GENRE_RETRIEVAL_LIMITS: Record<Genre, RetrievalLimits> = {
+  historical_commentary: { reality: 80,  semantic: 100, lexicon: 80,  literary: 120, structure: 50 },
+  reality_commentary:    { reality: 160, semantic: 60,  lexicon: 100, literary: 60,  structure: 30 },
+  narrative:             { reality: 40,  semantic: 80,  lexicon: 80,  literary: 150, structure: 60 },
+  essay:                 { reality: 100, semantic: 80,  lexicon: 100, literary: 100, structure: 40 },
+};
 
 const GENRE_BUDGETS: Record<Genre, Record<string, number>> = {
   historical_commentary: { reality: 15, literary: 20, semantic: 15, lexicon: 15, structure: 10, author: 25 },

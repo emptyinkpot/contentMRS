@@ -61,6 +61,11 @@ const server = http.createServer(async (req, res) => {
       writeJson(res, 200, { success: true, data });
       return;
     }
+    if (url.pathname === '/api/corpus/diagnostics' && req.method === 'GET') {
+      const data = await corpusDiagnostics();
+      writeJson(res, 200, { success: true, data });
+      return;
+    }
     if (url.pathname === '/' && req.method === 'GET') {
       writeText(res, 200, 'ContentBase Corpus runtime');
       return;
@@ -175,6 +180,166 @@ async function callSingleWriter(prompt, settings) {
       baseUrl,
       usage: payload?.usage || null,
       finishedAt: new Date().toISOString(),
+    },
+  };
+}
+
+async function corpusDiagnostics() {
+  const gatewayUrl = String(process.env.DATABASE_GATEWAY_URL || '').trim().replace(/\/+$/, '');
+  const apiKey = String(process.env.DATABASE_GATEWAY_API_KEY || '').trim();
+  if (!gatewayUrl) {
+    return { error: 'DATABASE_GATEWAY_URL not configured', channels: {} };
+  }
+
+  const headers = apiKey ? { authorization: `Bearer ${apiKey}` } : {};
+
+  async function gw(path, label, timeoutMs = 15000) {
+    try {
+      const r = await fetch(`${gatewayUrl}${path}`, { headers, signal: AbortSignal.timeout(timeoutMs) });
+      if (!r.ok) return { error: `${label}: HTTP ${r.status}` };
+      return await r.json();
+    } catch (e) {
+      return { error: `${label}: ${e.message}` };
+    }
+  }
+
+  const [tables, health, ragflow, semanticFull, vocabSample] = await Promise.all([
+    gw('/inventory/tables', 'inventory'),
+    gw('/health', 'health'),
+    gw('/health/ragflow?retrieval=true&q=测试', 'ragflow', 8000),
+    gw('/semantic/units?search=&limit=300', 'semantic-full'),
+    gw('/vocabulary/search?q=&limit=5', 'vocabulary-sample'),
+  ]);
+
+  const tableMap = {};
+  if (Array.isArray(tables?.tables)) {
+    for (const t of tables.tables) tableMap[t.name] = t;
+  }
+
+  const searchChunks = tableMap['search_chunks'] || {};
+  const searchDocuments = tableMap['search_documents'] || {};
+  const semanticUnitsTable = tableMap['semantic_units'] || {};
+  const vocabTable = tableMap['vocabulary'] || {};
+  const litTable = tableMap['literature'] || {};
+
+  // Literature stats from table inventory (full fetch too slow over tunnel)
+  const litCount = litTable.approximateRows || 0;
+  const litDataBytes = litTable.dataBytes || 0;
+  const litEstimatedChars = Math.round(litDataBytes * 0.82);
+
+  // Semantic units analysis
+  const semItems = Array.isArray(semanticFull?.units) ? semanticFull.units : [];
+  let semTotalChars = 0;
+  const semByKind = {};
+  for (const item of semItems) {
+    const chars = (item.excerpt || '').length + (item.summary || '').length;
+    semTotalChars += chars;
+    const kind = item.materialKind || 'unknown';
+    if (!semByKind[kind]) semByKind[kind] = { count: 0, chars: 0 };
+    semByKind[kind].count++;
+    semByKind[kind].chars += chars;
+  }
+
+  // Vocabulary analysis
+  const vocabItems = Array.isArray(vocabSample?.results || vocabSample?.vocabulary) ? (vocabSample.results || vocabSample.vocabulary) : [];
+  const vocabCount = vocabTable.approximateRows || 0;
+
+  const docCount = searchDocuments.approximateRows || 0;
+  const chunkCount = searchChunks.approximateRows || 0;
+  const avgChunksPerDoc = docCount > 0 ? Math.round(chunkCount / docCount) : 0;
+
+  const channels = {
+    literary: {
+      source: 'search_chunks + search/vector (RAGFlow)',
+      documents: docCount,
+      chunks: chunkCount,
+      avgChunksPerDocument: avgChunksPerDoc,
+      dataBytes: searchChunks.dataBytes || 0,
+      dataMB: Math.round((searchChunks.dataBytes || 0) / 1048576),
+      ragflowStatus: health?.optionalDownstreams?.ragflow || 'unknown',
+      ragflowRetrieval: ragflow?.ok ? 'ok' : (ragflow?.error || 'unavailable'),
+      ragflowChunks: ragflow?.retrieval?.chunkCount ?? null,
+    },
+    semantic: {
+      source: 'semantic_units',
+      units: semanticUnitsTable.approximateRows || 0,
+      totalChars: semTotalChars,
+      byMaterialKind: semByKind,
+    },
+    lexicon: {
+      source: 'vocabulary + creative lexicon',
+      terms: vocabTable.approximateRows || 0,
+      dataBytes: vocabTable.dataBytes || 0,
+    },
+    structure: {
+      source: 'creative_style_modules + editing_steps + quality_rules',
+      modules: (tableMap['creative_style_modules'] || {}).approximateRows || 0,
+      editingSteps: (tableMap['creative_editing_steps'] || {}).approximateRows || 0,
+      qualityRules: (tableMap['creative_quality_rules'] || {}).approximateRows || 0,
+    },
+    author: {
+      source: 'creative_author_techniques + author_interest_clusters',
+      techniques: (tableMap['creative_author_techniques'] || {}).approximateRows || 0,
+      interestClusters: (tableMap['author_interest_clusters'] || {}).approximateRows || 0,
+    },
+    reality: {
+      source: 'evidence/search (web + ragflow retrieval)',
+      note: 'dynamic per-query, not pre-indexed',
+    },
+  };
+
+  const totalDataMB = Math.round(
+    ((searchChunks.dataBytes || 0) + (semanticUnitsTable.dataBytes || 0) +
+     (vocabTable.dataBytes || 0) + (litTable.dataBytes || 0)) / 1048576
+  );
+
+  const rerankerActive = Boolean(process.env.DASHSCOPE_API_KEY);
+
+  return {
+    generatedAt: new Date().toISOString(),
+    gateway: {
+      url: gatewayUrl,
+      mysql: health?.checks?.mysql || 'unknown',
+      ragflow: health?.optionalDownstreams?.ragflow || 'unknown',
+    },
+    summary: {
+      totalDocuments: docCount,
+      totalChunks: chunkCount,
+      totalDataMB,
+      literatureItems: litCount,
+      literatureDataMB: Math.round(litDataBytes / 1048576),
+      literatureEstimatedChars: litEstimatedChars,
+      semanticUnits: semanticUnitsTable.approximateRows || 0,
+      semanticTotalChars: semTotalChars,
+      vocabularyTerms: vocabCount,
+      rerankerActive,
+      rerankerKeepRatio: rerankerActive ? Number(process.env.CONTENTBASE_RERANKER_KEEP_RATIO || 0.65) : null,
+    },
+    quality: {
+      completeness: {
+        ragDocuments: docCount,
+        ragChunks: chunkCount,
+        avgChunksPerDocument: avgChunksPerDoc,
+        literatureItems: litCount,
+        semanticUnits: semItems.length,
+        vocabularyTerms: vocabCount,
+        semanticCoverage: semItems.length > 0 ? 'active' : 'empty',
+        vocabularyCoverage: vocabItems.length > 0 ? 'active' : 'empty',
+        structureModules: (tableMap['creative_style_modules'] || {}).approximateRows || 0,
+        authorTechniques: (tableMap['creative_author_techniques'] || {}).approximateRows || 0,
+      },
+      note: 'Duplication analysis requires deep scan (GET /api/corpus/diagnostics/deep)',
+    },
+    literature: {
+      totalItems: litCount,
+      estimatedTotalChars: litEstimatedChars,
+      dataMB: Math.round(litDataBytes / 1048576),
+    },
+    channels,
+    writer: {
+      model: process.env.CONTENTBASE_LLM_MODEL || 'not configured',
+      baseUrl: process.env.CONTENTBASE_LLM_BASE_URL ? '***configured***' : 'not configured',
+      apiKey: process.env.CONTENTBASE_LLM_API_KEY ? '***configured***' : 'not configured',
     },
   };
 }
