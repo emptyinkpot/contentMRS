@@ -108,9 +108,14 @@ export async function buildArticleContextEngine(input: {
     throw new Error('Reality required: EvidencePack returned zero usable Reality chunks');
   }
 
-  const packed = packCorpusContext({
-    items: rankAndDedupe(contextItems, input.topic),
+  const genre = detectGenre(input.request);
+  const ranked = rankAndDedupe(contextItems, input.topic);
+  const filtered = contaminationFilter(ranked);
+  const diverse = injectDiversity(filtered);
+  const packed = composeByBudget({
+    items: diverse,
     charBudget: contextCharBudget,
+    genre,
   });
   if (!packed.items.length) {
     throw new Error('Corpus Context required: packed context is empty');
@@ -591,6 +596,103 @@ function formatUnknownRecord(value: unknown): string {
     return [primary, secondary, extra].map((item) => String(item || '').trim()).filter(Boolean).join(' - ') || JSON.stringify(record);
   }
   return String(value || '').trim();
+}
+
+type Genre = 'historical_commentary' | 'reality_commentary' | 'narrative' | 'essay';
+
+const GENRE_BUDGETS: Record<Genre, Record<string, number>> = {
+  historical_commentary: { reality: 15, literary: 20, semantic: 15, lexicon: 15, structure: 10, author: 25 },
+  reality_commentary:    { reality: 30, literary: 10, semantic: 15, lexicon: 12, structure: 8, author: 25 },
+  narrative:             { reality: 10, literary: 35, semantic: 15, lexicon: 15, structure: 15, author: 10 },
+  essay:                 { reality: 20, literary: 20, semantic: 15, lexicon: 15, structure: 10, author: 20 },
+};
+
+function detectGenre(request: ContextEngineRequest): Genre {
+  const hint = String(request.genre || request.genreHint || request.type || '').toLowerCase();
+  if (/histor|历史/.test(hint)) return 'historical_commentary';
+  if (/novel|fiction|小说|叙事|narrative/.test(hint)) return 'narrative';
+  if (/reality|现实|时事|news/.test(hint)) return 'reality_commentary';
+  if (/essay|散文|文案|short/.test(hint)) return 'essay';
+  const protocol = String(request.protocol || '').toLowerCase();
+  if (/historical/.test(protocol)) return 'historical_commentary';
+  if (/narrative|novel/.test(protocol)) return 'narrative';
+  return 'essay';
+}
+
+function contaminationFilter(items: ContextItem[]): ContextItem[] {
+  return items.filter((item) => {
+    const text = item.text.toLowerCase();
+    const title = (item.title || '').toLowerCase();
+    const url = (item.url || '').toLowerCase();
+    if (item.text.length < 15) return false;
+    if (/^(首页|导航|关于我们|联系方式|copyright|all rights|cookie|privacy policy)/i.test(item.text)) return false;
+    if (/seo|广告|推广|点击这里|免费领取|限时优惠/.test(text)) return false;
+    if (/(百家号|搜狐号|头条号|企鹅号)/.test(title + url)) return false;
+    if (item.channel === 'reality' && item.text.length < 40 && !/\d/.test(item.text)) return false;
+    return true;
+  });
+}
+
+function injectDiversity(items: ContextItem[]): ContextItem[] {
+  const channelSeen = new Map<string, Set<string>>();
+  const result: ContextItem[] = [];
+  for (const item of items) {
+    const ch = item.channel;
+    if (!channelSeen.has(ch)) channelSeen.set(ch, new Set());
+    const seen = channelSeen.get(ch)!;
+    const sourceKey = String(item.source || item.title || '').trim().toLowerCase().slice(0, 60);
+    const sameSourceCount = [...seen].filter((k) => k === sourceKey).length;
+    if (sameSourceCount >= 5) continue;
+    seen.add(sourceKey);
+    result.push(item);
+  }
+  return result;
+}
+
+function composeByBudget(input: {
+  items: ContextItem[];
+  charBudget: number;
+  genre: Genre;
+}) {
+  const budgetPct = GENRE_BUDGETS[input.genre];
+  const channels: ContextItem['channel'][] = ['reality', 'literary', 'semantic', 'lexicon', 'structure', 'author'];
+  const channelBudgets = Object.fromEntries(
+    channels.map((ch) => [ch, Math.floor(input.charBudget * (budgetPct[ch] || 10) / 100)])
+  );
+  const channelItems = Object.fromEntries(channels.map((ch) => [ch, [] as ContextItem[]]));
+  const channelUsed = Object.fromEntries(channels.map((ch) => [ch, 0]));
+
+  for (const item of input.items) {
+    const ch = item.channel;
+    const normalized = { ...item, text: normalizeText(item.text) };
+    if (!normalized.text) continue;
+    const serialized = serializeItem(normalized, 1);
+    if (channelUsed[ch] + serialized.length > channelBudgets[ch] && channelUsed[ch] > 0) continue;
+    channelItems[ch].push(normalized);
+    channelUsed[ch] += serialized.length;
+  }
+
+  const packed = channels.flatMap((ch) => channelItems[ch]);
+  let totalUsed = packed.reduce((sum, item, i) => sum + serializeItem(item, i + 1).length, 0);
+
+  // Second pass: fill remaining budget with overflow from any channel
+  if (totalUsed < input.charBudget * 0.85) {
+    for (const item of input.items) {
+      if (packed.includes(item)) continue;
+      const normalized = { ...item, text: normalizeText(item.text) };
+      if (!normalized.text) continue;
+      const serialized = serializeItem(normalized, packed.length + 1);
+      if (totalUsed + serialized.length > input.charBudget) continue;
+      packed.push(normalized);
+      totalUsed += serialized.length;
+    }
+  }
+
+  return {
+    items: packed,
+    contextChars: packed.reduce((sum, item, index) => sum + serializeItem(item, index + 1).length, 0),
+    sections: buildSections(packed),
+  };
 }
 
 function packCorpusContext(input: {
