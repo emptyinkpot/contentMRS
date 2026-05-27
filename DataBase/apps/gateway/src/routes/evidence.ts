@@ -467,7 +467,7 @@ async function searchWebEvidence(input: {
       accept: "application/json",
       "X-Request-Id": input.requestId,
     },
-    signal: AbortSignal.timeout(12000),
+    signal: AbortSignal.timeout(30000),
   });
   if (!response.ok) {
     throw new HttpError(503, "web_evidence_search_failed", `web evidence provider failed: HTTP ${response.status}`);
@@ -800,7 +800,9 @@ function appendRagflowChunks(input: {
     if (!text) return;
     const sourceId = toStableId(["ragflow", datasetId, documentId || title]);
     const chunkId = toStableId(["ragflow", item.id || index, documentId || datasetId]);
-    const score = Number.isFinite(Number(item.similarity)) ? Number(item.similarity) : input.chunks.length - index;
+    const rawSim = Number.isFinite(Number(item.similarity)) ? Number(item.similarity) : (input.chunks.length - index) / input.chunks.length;
+    // Scale 0-1 similarity to match DB token-overlap scoring range (0-100)
+    const score = Math.round(rawSim * 100);
     if (!input.sourceById.has(sourceId)) {
       input.sourceById.set(sourceId, {
         id: sourceId,
