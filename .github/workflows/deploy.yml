@@ -27,9 +27,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd DataBase/apps/gateway && pnpm install --frozen-lockfile
-          cd ../web-evidence-provider && pnpm install --frozen-lockfile
-          cd ../../../ContentBase/product/novel && pnpm install --frozen-lockfile
+          cd DataBase/apps/gateway && pnpm install --no-frozen-lockfile
+          cd ../web-evidence-provider && pnpm install --no-frozen-lockfile
+          cd ../../../ContentBase/product/novel && pnpm install --no-frozen-lockfile
 
       - name: Build Gateway
         run: cd DataBase/apps/gateway && npm run build
