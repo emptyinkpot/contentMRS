@@ -85,6 +85,20 @@ const DEFAULT_CONTEXT_CHAR_BUDGET = 80000;
 const DEFAULT_REALITY_LIMIT = 160;
 const DEFAULT_EVIDENCE_TIMEOUT_MS = 240000;
 
+const RAGFLOW_DATASETS = {
+  literaryCorpus: 'bdcc99c658f111f18aecb3d695a2553d',
+  essay: 'eb927cf6550211f1b2958f4a76330bcc',
+  film: 'eb7df254550211f1b2958f4a76330bcc',
+  xingwang: 'eb8a1250550211f1b2958f4a76330bcc',
+} as const;
+
+const GENRE_RAGFLOW_DATASETS: Record<Genre, string[]> = {
+  historical_commentary: [RAGFLOW_DATASETS.literaryCorpus, RAGFLOW_DATASETS.essay],
+  reality_commentary:    [RAGFLOW_DATASETS.literaryCorpus, RAGFLOW_DATASETS.essay],
+  narrative:             [RAGFLOW_DATASETS.literaryCorpus, RAGFLOW_DATASETS.film],
+  essay:                 [RAGFLOW_DATASETS.literaryCorpus, RAGFLOW_DATASETS.essay],
+};
+
 export async function buildArticleContextEngine(input: {
   request: ContextEngineRequest;
   topic: string;
@@ -112,6 +126,7 @@ export async function buildArticleContextEngine(input: {
     request: input.request,
     warnings,
     realityLimit: retrievalLimits.reality,
+    genre,
   });
   assertEvidencePack(evidencePack);
 
@@ -243,11 +258,12 @@ async function loadEvidencePack(input: {
   request: ContextEngineRequest;
   warnings: string[];
   realityLimit: number;
+  genre: Genre;
 }): Promise<Record<string, any>> {
   const evidenceQuery = readObject(input.request.evidenceQuery);
   const datasetIds = Array.isArray(evidenceQuery.ragflowDatasetIds)
     ? evidenceQuery.ragflowDatasetIds.map(String).filter(Boolean)
-    : [];
+    : GENRE_RAGFLOW_DATASETS[input.genre] || [];
   const params: Record<string, string> = {
     q: input.query,
     query: input.query,
@@ -659,6 +675,15 @@ function injectDiversity(items: ContextItem[]): ContextItem[] {
   return result;
 }
 
+const CHANNEL_MIN_ITEMS: Record<string, number> = {
+  reality: 3,
+  literary: 3,
+  semantic: 2,
+  lexicon: 5,
+  structure: 2,
+  author: 2,
+};
+
 function composeByBudget(input: {
   items: ContextItem[];
   charBudget: number;
@@ -672,7 +697,29 @@ function composeByBudget(input: {
   const channelItems = Object.fromEntries(channels.map((ch) => [ch, [] as ContextItem[]]));
   const channelUsed = Object.fromEntries(channels.map((ch) => [ch, 0]));
 
+  // Pass 1: guarantee minimum items per channel regardless of budget
+  const itemsByChannel = Object.fromEntries(channels.map((ch) => [ch, [] as ContextItem[]]));
   for (const item of input.items) {
+    const normalized = { ...item, text: normalizeText(item.text) };
+    if (!normalized.text) continue;
+    itemsByChannel[item.channel]?.push(normalized);
+  }
+  const guaranteedSet = new Set<ContextItem>();
+  for (const ch of channels) {
+    const minItems = CHANNEL_MIN_ITEMS[ch] || 2;
+    const available = itemsByChannel[ch];
+    for (let i = 0; i < Math.min(minItems, available.length); i++) {
+      const item = available[i];
+      const serialized = serializeItem(item, 1);
+      channelItems[ch].push(item);
+      channelUsed[ch] += serialized.length;
+      guaranteedSet.add(item);
+    }
+  }
+
+  // Pass 2: fill remaining budget per channel
+  for (const item of input.items) {
+    if (guaranteedSet.has(item)) continue;
     const ch = item.channel;
     const normalized = { ...item, text: normalizeText(item.text) };
     if (!normalized.text) continue;
@@ -685,7 +732,7 @@ function composeByBudget(input: {
   const packed = channels.flatMap((ch) => channelItems[ch]);
   let totalUsed = packed.reduce((sum, item, i) => sum + serializeItem(item, i + 1).length, 0);
 
-  // Second pass: fill remaining budget with overflow from any channel
+  // Pass 3: fill remaining budget with overflow from any channel
   if (totalUsed < input.charBudget * 0.85) {
     for (const item of input.items) {
       if (packed.includes(item)) continue;

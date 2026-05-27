@@ -347,6 +347,30 @@ sentence hit
   -> document expansion
 ```
 
+### RAGFlow Dataset 自动路由
+
+Context-engine 根据 genre 自动选择搜索哪些 RAGFlow dataset，不依赖调用方手动传 ID。
+
+| Dataset | ID | 内容 | Chunks |
+|---|---|---|---:|
+| contentmrs-literary-corpus | bdcc99c6... | 书籍、历史文献、文学材料 | 74,949 |
+| contentmrs-essay-evidence | eb927cf6... | 散文/评论类证据 | 798 |
+| contentmrs-film-evidence | eb7df254... | 影视相关材料 | 1 |
+| contentmrs-xingwang-evidence | eb8a1250... | 星网专题材料 | 1 |
+
+Genre → Dataset 路由表：
+
+| Genre | 搜索的 Datasets |
+|---|---|
+| historical_commentary | literary-corpus + essay |
+| reality_commentary | literary-corpus + essay |
+| narrative | literary-corpus + film |
+| essay | literary-corpus + essay |
+
+literary-corpus 始终参与搜索——它是最大的知识库（74,949 chunks），覆盖历史、文学、社会学等领域。
+
+调用方仍可通过 `evidenceQuery.ragflowDatasetIds` 显式覆盖自动路由。
+
 ## Hybrid Retrieval
 
 最终召回分数：
@@ -379,23 +403,35 @@ topic embedding
 
 ## 召回预算
 
-召回预算按 topic profile 动态分配。
+召回预算按 genre 自动分配。Genre 由 `detectGenre()` 从请求参数自动推断。
 
-| 类型 | Reality | Data | Commentary | History | Literature | Lexicon | Structure | Author |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| 现实评论 | 30 | 15 | 20 | 10 | 10 | 7 | 5 | 3 |
-| 历史评论 | 10 | 5 | 15 | 30 | 20 | 10 | 7 | 3 |
-| 文学化现实评论 | 20 | 10 | 15 | 15 | 20 | 10 | 5 | 5 |
+### Genre 检测
 
-初始召回规模建议：
+| 请求参数匹配 | Genre |
+|---|---|
+| `histor` / `历史` | historical_commentary |
+| `novel` / `fiction` / `小说` / `叙事` / `narrative` | narrative |
+| `reality` / `现实` / `时事` / `news` | reality_commentary |
+| `essay` / `散文` / `文案` / `short` | essay |
+| 无匹配（默认） | essay |
 
-| 通道 | 规模 |
-|---|---:|
-| Reality | 50-100 chunks |
-| Commentary | 30-80 chunks |
-| Literature | 100-300 semantic units |
-| Lexicon | 500-2000 tiny units |
-| Structure | 20-50 patterns |
+### 检索限额（每通道最大 item 数）
+
+| Genre | reality | semantic | lexicon | literary | structure |
+|---|---:|---:|---:|---:|---:|
+| historical_commentary | 80 | 30 | 40 | 20 | 20 |
+| reality_commentary | 160 | 20 | 50 | 10 | 15 |
+| narrative | 40 | 30 | 40 | 30 | 25 |
+| essay | 100 | 30 | 50 | 20 | 20 |
+
+### Composition 预算（char 百分比）
+
+| Genre | reality | literary | semantic | lexicon | structure | author |
+|---|---:|---:|---:|---:|---:|---:|
+| historical_commentary | 35% | 25% | 10% | 12% | 8% | 10% |
+| reality_commentary | 40% | 20% | 10% | 12% | 8% | 10% |
+| narrative | 20% | 30% | 15% | 12% | 13% | 10% |
+| essay | 35% | 25% | 10% | 12% | 8% | 10% |
 
 策略：
 
@@ -432,6 +468,33 @@ normalize
 | pack | 用高价值材料填满模型上下文 |
 
 `contamination filter` 是 context hygiene，不是文章 gate。
+
+### 通道硬配额
+
+`composeByBudget` 使用三阶段分配策略，防止大通道挤死小通道：
+
+```text
+Pass 1: 每通道最低保底（无视预算百分比）
+Pass 2: 剩余空间按 genre 百分比分配
+Pass 3: 总预算未满 85% 时，溢出填充
+```
+
+最低保底项数：
+
+| 通道 | 最低保底 |
+|---|---:|
+| reality | 3 |
+| literary | 3 |
+| semantic | 2 |
+| lexicon | 5 |
+| structure | 2 |
+| author | 2 |
+
+效果：即使 semantic 通道有大量旧提示词拆解物，lexicon、structure 等小通道也不会被挤到 0。
+
+### Reranker Reality 豁免
+
+Embedding reranker 按 cosine similarity 淘汰低分项时，Reality 通道的 items 被豁免——它们是事实骨架，不应与文学材料竞争相似度分数。
 
 ## Generation Physics
 
@@ -578,6 +641,12 @@ Writer 只写一次。
 Single Writer
 ```
 
+### Reality Gate
+
+硬门禁：最终 packed context 中必须至少有 1 条 reality channel item（≥500 chars）。如果 Reality 全被淘汰，生成直接报错，不会产出缺乏事实基础的文章。
+
+这是唯一允许中断生成的质量门禁。
+
 不允许：
 
 - evaluator runtime
@@ -593,6 +662,7 @@ Single Writer
 
 - topic 为空
 - retrieval/runtime API 不可用
+- Reality Gate 失败（零 reality items 存活）
 - 模型没有返回正文
 - 存储失败
 
@@ -725,69 +795,77 @@ cd DataBase/apps/gateway && pnpm dev # Gateway dev server :18090
 
 ---
 
+## API 端点
 
+### ContentBase (:5111)
 
-### P0：旧提示词拆解入库
-
-将手工时期的写作提示词（`E:\My Project\之前的给ai生成文章的提示词`）拆解为可被检索召回的 semantic units，入库 DataBase。
-
-旧提示词本质是一份手工 Composition Layer，包含：
-
-| 旧提示词板块 | 拆解目标 | 入库形态 |
+| 端点 | 方法 | 用途 |
 |---|---|---|
-| 板块五：词汇库 | Lexicon chunks | 小粒度 chunk（词组/短语级），带 domain + tone metadata |
-| 板块六：引用/化用素材库 | Literary + Allusion chunks | 每条引用独立 chunk，带 source + era + stance + 适用情境 |
-| 板块四：比喻系统 | Rhetoric chunks | 按比喻类型（水文/建筑/机械/神学/戏剧）分类标注 |
-| 板块三：结构模块（起承转合路径） | Structure chunks | 每种结构路径一个 chunk，带体裁适用标注 |
-| 板块一：思想底色 + 视角 | Author State seed vectors | 转为 author-conditioned rerank 的 query seeds |
-| 板块二：叙事技法 | 保留在 Writer prompt | 不入库，作为 Writer 的基础能力描述 |
-| 板块四：禁令 | Composition negative bias | 不作为硬规则，转为 retrieval 时的负向权重信号 |
+| `/api/content/runtime/generate/article` | POST | 生成文章（主入口） |
+| `/api/corpus/diagnostics` | GET | 语料检索诊断 |
+| `/api/health` | GET | 健康检查 |
 
-原则：
-- 不全量塞进 RAGFlow。RAGFlow 管长文档（书、报告）；细粒度 semantic unit 在 DataBase 自有向量索引
-- 不把规则写死在 prompt 里。禁令变成 retrieval bias，让 Writer 的语言宇宙里自然没有那些东西
-- 入库后可被 Retrieval 按 topic 自动召回，不需要每次手动选材
+生成请求参数：
 
-### P1：Composition Layer 实体化
-
-当前 Composition 几乎不存在——检索结果直接拼进 prompt。需要实现完整的 composition 步骤：
-
-```text
-Retrieval 返回 ~200 chunks
-  → 按类型分组（FACT / DATA / COMMENTARY / ALLUSION / STYLE / LEXICON / STRUCTURE / AUTHOR）
-  → 按 topic profile 分配预算
-  → 去重 + contamination filter
-  → diversity injection
-  → 按固定顺序打包成最终 context
-  → 交给 Writer
+```json
+{
+  "topic": "满洲人征服中国的历史悖论",
+  "genre": "historical_commentary",
+  "targetWordCount": 800,
+  "evidenceQuery": {
+    "includeWeb": true,
+    "includeRagflow": true,
+    "ragflowDatasetIds": ["..."]
+  }
+}
 ```
 
-预算表按体裁自动切换：
+### DataBase Gateway (:18090)
 
-| 体裁 | Reality | Commentary | Allusion | Literary | Lexicon | Structure |
-|---|---:|---:|---:|---:|---:|---:|
-| 历史评论 | 15% | 15% | 25% | 20% | 15% | 10% |
-| 现实评论 | 30% | 25% | 15% | 10% | 12% | 8% |
-| 小说/叙事 | 10% | 5% | 20% | 35% | 15% | 15% |
-| 文案/短文 | 20% | 15% | 20% | 20% | 15% | 10% |
+| 路由 | 用途 |
+|---|---|
+| `/evidence/search` | 证据搜索（Web + RAGFlow 混合） |
+| `/semantic/units` | Semantic unit 检索 |
+| `/vocabulary/search` | 词汇库检索 |
+| `/content/literature` | 文学语料检索 |
+| `/creative/style-contract` | 风格契约 |
+| `/creative/author-profile` | 作者画像 |
+| `/health/ragflow` | RAGFlow 健康检查 |
 
-### P2：Author State 从规则变成 retrieval signal
+### Web Evidence Provider (:19091)
 
-Author State 不应该是 system prompt 里的硬规则（"你必须文白夹杂"），应该是：
+| 端点 | 用途 |
+|---|---|
+| `/search` | Tavily Web 搜索 |
+| `/health` | 健康检查 |
 
-- 一组 embedding 坐标，代表品味偏好
-- Retrieval 时用 author state 做 rerank（已有 author-conditioned rerank 概念，需落地）
-- 效果：Composition 自然召回大量符合品味的样本，Writer 在这个语言宇宙里自然写成那样
-- 体裁通用：同一个 author state，写评论时召回评论类材料，写小说时召回叙事类材料
+---
 
-### P3：体裁通用性
+## 实现状态
 
-同一个 pipeline 支持评论、小说、文案，不分叉 Writer：
+### 已完成
 
-- Retrieval 感知体裁意图 → 调整召回类型比例
-- Composition 按体裁切换预算表
-- Writer prompt 不变 → 体裁由上下文决定，不由 instruction 决定
-- AI Agent 传入的软参数里包含体裁暗示，ContentMRS 自动路由到对应的 retrieval + composition 策略
+| 能力 | 状态 | 说明 |
+|---|---|---|
+| Composition Layer | ✅ 完成 | 完整 pipeline：normalize → contamination filter → dedupe → rank → budget → diversity → pack |
+| Genre 自动检测 | ✅ 完成 | 4 种体裁，驱动检索限额和预算分配 |
+| Author-conditioned Rerank | ✅ 完成 | reranker.ts：embedding cosine similarity + author state 加权 |
+| 体裁通用性 | ✅ 完成 | 同一 pipeline 支持评论/小说/文案，genre 驱动 retrieval + composition |
+| RAGFlow Dataset 自动路由 | ✅ 完成 | 根据 genre 自动选择搜索哪些 dataset |
+| 通道硬配额 | ✅ 完成 | 每通道最低保底 + 百分比分配 + 溢出填充 |
+| Reality Gate | ✅ 完成 | 硬门禁：至少 1 条 reality item 存活 |
+| Reranker Reality 豁免 | ✅ 完成 | Reality items 不参与 cosine similarity 淘汰 |
+| Web Evidence Provider | ✅ 完成 | Tavily 搜索 + 全文抓取 |
+| 旧提示词拆解（部分） | ✅ 部分完成 | semantic_units 已入库可检索 |
+
+### 待完成
+
+| 能力 | 说明 |
+|---|---|
+| 词汇库充实 | Lexicon 通道当前对多数 topic 返回 0 条——需要灌入词汇材料 |
+| RAGFlow 小数据集充实 | film-evidence、xingwang-evidence 各只有 1 chunk |
+| semantic_units 分级 | 旧提示词拆解物需区分"通用写作指导"和"topic-specific 材料"，降低通用类权重 |
+| Report/Data Page Resolver | 把 evidence 粒度从 host/page 提升到 document/data |
 
 ### 架构约束
 
