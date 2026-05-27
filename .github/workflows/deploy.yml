@@ -25,20 +25,21 @@ jobs:
         with:
           version: 9
 
-      - name: Install dependencies
+      - name: Install and build internal packages
         run: |
-          cd DataBase/apps/gateway && pnpm install --no-frozen-lockfile
-          cd ../web-evidence-provider && pnpm install --no-frozen-lockfile
-          cd ../../../ContentBase/product/novel && pnpm install --no-frozen-lockfile
+          cd DataBase/packages/schemas/content && pnpm install --no-frozen-lockfile && pnpm run build
+          cd ../creative && pnpm install --no-frozen-lockfile && pnpm run build
+          cd ../semantic && pnpm install --no-frozen-lockfile && pnpm run build
+          cd ../../../services/openlist-adapter && pnpm install --no-frozen-lockfile && pnpm run build
 
-      - name: Build Gateway
-        run: cd DataBase/apps/gateway && npm run build
+      - name: Install and build Gateway
+        run: cd DataBase/apps/gateway && pnpm install --no-frozen-lockfile && pnpm run build
 
-      - name: Build Web Evidence Provider
-        run: cd DataBase/apps/web-evidence-provider && pnpm run build
+      - name: Install and build Web Evidence Provider
+        run: cd DataBase/apps/web-evidence-provider && pnpm install --no-frozen-lockfile && pnpm run build
 
-      - name: Build ContentBase
-        run: cd ContentBase/product/novel && pnpm run build
+      - name: Install and build ContentBase
+        run: cd ContentBase/product/novel && pnpm install --no-frozen-lockfile && pnpm run build
 
       - name: Prepare deploy artifacts
         run: |
