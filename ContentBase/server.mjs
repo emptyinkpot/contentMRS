@@ -34,7 +34,8 @@ const WRITER_SYSTEM_PROMPT = `你是 Writer，一个评论性散文写作者。�
 - 廉价比喻词："宛如"、"犹如"、"恰似"
 - 评论腔套话："不禁让人思考"、"引人深思"、"值得我们注意"、"在某种意义上"
 - 括号补充说明、分点列表、小标题、Markdown标记
-- 编造：没有材料支撑的数字、人物、引语、因果关系不得编造
+- 编造：没有依据的数字、人物、引语、因果关系不得编造
+- 元叙述痕迹："材料中说"、"材料里提到"、"据材料"、"根据资料"——正文是成品，不是读书报告
 
 ## 文体
 
@@ -89,6 +90,16 @@ for (let index = 2; index < process.argv.length; index += 1) {
 }
 
 const port = Number(args.get('port') || process.env.CONTENTBASE_CONSOLE_PORT || 5101);
+const CONTENTBASE_API_KEY = String(process.env.CONTENTBASE_API_KEY || '').trim();
+
+function checkAuth(req, res) {
+  if (!CONTENTBASE_API_KEY) return true;
+  const auth = req.headers['authorization'] || req.headers['x-api-key'] || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : auth;
+  if (token === CONTENTBASE_API_KEY) return true;
+  writeJson(res, 401, { success: false, error: 'Unauthorized: invalid or missing API key' });
+  return false;
+}
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || '/', 'http://127.0.0.1');
@@ -110,12 +121,14 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     if (url.pathname === '/api/content/runtime/generate/article' && req.method === 'POST') {
+      if (!checkAuth(req, res)) return;
       const input = await readJson(req);
       const data = await generateArticle(input);
       writeJson(res, 200, { success: true, data });
       return;
     }
     if (url.pathname === '/api/corpus/diagnostics' && req.method === 'GET') {
+      if (!checkAuth(req, res)) return;
       const data = await corpusDiagnostics();
       writeJson(res, 200, { success: true, data });
       return;
