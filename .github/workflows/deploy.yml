@@ -1,0 +1,112 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  SERVER_HOST: ${{ secrets.SERVER_HOST }}
+  SERVER_USER: ${{ secrets.SERVER_USER }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: |
+          cd DataBase/apps/gateway && pnpm install --frozen-lockfile
+          cd ../web-evidence-provider && pnpm install --frozen-lockfile
+          cd ../../../ContentBase/product/novel && pnpm install --frozen-lockfile
+
+      - name: Build Gateway
+        run: cd DataBase/apps/gateway && npm run build
+
+      - name: Build Web Evidence Provider
+        run: cd DataBase/apps/web-evidence-provider && pnpm run build
+
+      - name: Build ContentBase
+        run: cd ContentBase/product/novel && pnpm run build
+
+      - name: Prepare deploy artifacts
+        run: |
+          mkdir -p artifacts/gateway artifacts/web-evidence artifacts/contentbase
+
+          # Gateway
+          cp -r DataBase/apps/gateway/dist artifacts/gateway/
+          cp -r DataBase/apps/gateway/config artifacts/gateway/
+
+          # Web Evidence Provider
+          cp -r DataBase/apps/web-evidence-provider/dist artifacts/web-evidence/
+          cp DataBase/apps/web-evidence-provider/package.json artifacts/web-evidence/
+
+          # ContentBase
+          cp ContentBase/server.mjs artifacts/contentbase/
+          cp ContentBase/package.json artifacts/contentbase/
+          mkdir -p artifacts/contentbase/product/novel
+          cp -r ContentBase/product/novel/dist artifacts/contentbase/product/novel/
+          if [ -d ContentBase/vendor ]; then
+            cp -r ContentBase/vendor artifacts/contentbase/
+          fi
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy Gateway
+        run: |
+          SSH="ssh -i ~/.ssh/deploy_key $SERVER_USER@$SERVER_HOST"
+          SCP="scp -i ~/.ssh/deploy_key"
+
+          $SSH "mkdir -p /srv/database-gateway/.backups && cp -a /srv/database-gateway/dist /srv/database-gateway/.backups/dist-\$(date +%Y%m%d%H%M%S) 2>/dev/null || true"
+          $SCP -r artifacts/gateway/dist "$SERVER_USER@$SERVER_HOST:/srv/database-gateway/"
+          $SCP -r artifacts/gateway/config "$SERVER_USER@$SERVER_HOST:/srv/database-gateway/"
+          $SSH "sudo systemctl restart database-gateway"
+
+      - name: Deploy Web Evidence Provider
+        run: |
+          SSH="ssh -i ~/.ssh/deploy_key $SERVER_USER@$SERVER_HOST"
+          SCP="scp -i ~/.ssh/deploy_key"
+
+          $SCP -r artifacts/web-evidence/dist "$SERVER_USER@$SERVER_HOST:/srv/web-evidence-provider/"
+          $SCP artifacts/web-evidence/package.json "$SERVER_USER@$SERVER_HOST:/srv/web-evidence-provider/"
+          $SSH "cd /srv/web-evidence-provider && npm install --omit=dev 2>/dev/null || true"
+          $SSH "sudo systemctl restart web-evidence-provider"
+
+      - name: Deploy ContentBase
+        run: |
+          SSH="ssh -i ~/.ssh/deploy_key $SERVER_USER@$SERVER_HOST"
+          SCP="scp -i ~/.ssh/deploy_key"
+
+          $SSH "mkdir -p /srv/contentbase/.backups && cp -a /srv/contentbase/current/server.mjs /srv/contentbase/.backups/server.mjs.\$(date +%Y%m%d%H%M%S) 2>/dev/null || true"
+          $SCP artifacts/contentbase/server.mjs "$SERVER_USER@$SERVER_HOST:/srv/contentbase/current/"
+          $SCP artifacts/contentbase/package.json "$SERVER_USER@$SERVER_HOST:/srv/contentbase/current/"
+          $SCP -r artifacts/contentbase/product/novel/dist "$SERVER_USER@$SERVER_HOST:/srv/contentbase/current/product/novel/"
+          if [ -d artifacts/contentbase/vendor ]; then
+            $SCP -r artifacts/contentbase/vendor "$SERVER_USER@$SERVER_HOST:/srv/contentbase/current/"
+          fi
+          $SSH "cd /srv/contentbase/current && npm install --omit=dev 2>/dev/null || true"
+          $SSH "sudo systemctl restart contentbase"
+
+      - name: Smoke test
+        run: |
+          SSH="ssh -i ~/.ssh/deploy_key $SERVER_USER@$SERVER_HOST"
+          sleep 3
+          $SSH "curl -sf http://127.0.0.1:18090/ > /dev/null && echo 'Gateway: OK' || echo 'Gateway: FAIL'"
+          $SSH "curl -sf http://127.0.0.1:5111/api/health > /dev/null && echo 'ContentBase: OK' || echo 'ContentBase: FAIL'"
+          $SSH "curl -sf http://127.0.0.1:19091/health > /dev/null && echo 'WebEvidence: OK' || echo 'WebEvidence: FAIL'"
