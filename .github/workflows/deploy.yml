@@ -25,13 +25,6 @@ jobs:
         with:
           version: 9
 
-      - name: Install and build internal packages
-        run: |
-          cd DataBase/packages/schemas/content && pnpm install --no-frozen-lockfile && pnpm run build
-          cd ../creative && pnpm install --no-frozen-lockfile && pnpm run build
-          cd ../semantic && pnpm install --no-frozen-lockfile && pnpm run build
-          cd ../../../services/openlist-adapter && pnpm install --no-frozen-lockfile && pnpm run build
-
       - name: Install and build Gateway
         run: cd DataBase/apps/gateway && pnpm install --no-frozen-lockfile && pnpm run build
 

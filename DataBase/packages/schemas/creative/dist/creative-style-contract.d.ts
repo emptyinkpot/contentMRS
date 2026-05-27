@@ -1,0 +1,591 @@
+import { z } from "zod";
+export declare const DEFAULT_CREATIVE_PROTOCOL_ID = "immersive_historical_synthetic_narrative";
+export declare const CreativeAuthorProfileSchema: z.ZodObject<{
+    id: z.ZodString;
+    stance: z.ZodString;
+    voice: z.ZodArray<z.ZodString>;
+    narrativeTechniques: z.ZodArray<z.ZodString>;
+    preferredDiction: z.ZodArray<z.ZodString>;
+    rejectedDiction: z.ZodArray<z.ZodString>;
+    qualityNorthStar: z.ZodString;
+}, z.core.$strip>;
+export type CreativeAuthorProfile = z.infer<typeof CreativeAuthorProfileSchema>;
+export declare const CreativeWritingTaskTypeSchema: z.ZodObject<{
+    id: z.ZodString;
+    name: z.ZodString;
+    goal: z.ZodString;
+    requiredInputs: z.ZodArray<z.ZodString>;
+    qualitySignals: z.ZodArray<z.ZodString>;
+}, z.core.$strip>;
+export type CreativeWritingTaskType = z.infer<typeof CreativeWritingTaskTypeSchema>;
+export declare const CreativeInterestClusterSchema: z.ZodObject<{
+    id: z.ZodString;
+    name: z.ZodString;
+    terms: z.ZodArray<z.ZodString>;
+    appliesTo: z.ZodArray<z.ZodString>;
+}, z.core.$strip>;
+export type CreativeInterestCluster = z.infer<typeof CreativeInterestClusterSchema>;
+export declare const CreativeLexiconLifecycleSchema: z.ZodObject<{
+    activeSource: z.ZodString;
+    candidateSource: z.ZodString;
+    promotionRule: z.ZodString;
+    learningEvents: z.ZodString;
+}, z.core.$strip>;
+export type CreativeLexiconLifecycle = z.infer<typeof CreativeLexiconLifecycleSchema>;
+export declare const CreativeConceptualEntrySchema: z.ZodObject<{
+    id: z.ZodString;
+    name: z.ZodString;
+    mechanism: z.ZodString;
+    entrySources: z.ZodArray<z.ZodString>;
+    forbiddenOpening: z.ZodString;
+    preferredOpening: z.ZodString;
+}, z.core.$strip>;
+export type CreativeConceptualEntry = z.infer<typeof CreativeConceptualEntrySchema>;
+export declare const CreativeArticleProcessPlanSchema: z.ZodObject<{
+    series: z.ZodOptional<z.ZodString>;
+    episode: z.ZodOptional<z.ZodString>;
+    timeBoundary: z.ZodOptional<z.ZodString>;
+    viewpointBoundary: z.ZodOptional<z.ZodString>;
+    knowledgeBoundary: z.ZodOptional<z.ZodString>;
+    sceneEntrances: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    eventSequence: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    narrativeMoves: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    imageMotifs: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    pacingRules: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    dictionRules: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    forbiddenMoves: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    endingHook: z.ZodOptional<z.ZodString>;
+    required: z.ZodOptional<z.ZodBoolean>;
+}, z.core.$catchall<z.ZodUnknown>>;
+export type CreativeArticleProcessPlan = z.infer<typeof CreativeArticleProcessPlanSchema>;
+export declare const CreativeArticleAuthorialConstitutionSchema: z.ZodObject<{
+    coreLaw: z.ZodOptional<z.ZodString>;
+    cannotDo: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    blockers: z.ZodOptional<z.ZodArray<z.ZodString>>;
+}, z.core.$catchall<z.ZodUnknown>>;
+export type CreativeArticleAuthorialConstitution = z.infer<typeof CreativeArticleAuthorialConstitutionSchema>;
+export declare const CreativeArticleNarrativeProtocolSchema: z.ZodObject<{
+    required: z.ZodOptional<z.ZodBoolean>;
+    perspective: z.ZodOptional<z.ZodObject<{
+        mode: z.ZodOptional<z.ZodString>;
+        rules: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        prohibitions: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    }, z.core.$catchall<z.ZodUnknown>>>;
+    ideologicalBlend: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        name: z.ZodOptional<z.ZodString>;
+        ratio: z.ZodOptional<z.ZodNumber>;
+        keywords: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    }, z.core.$catchall<z.ZodUnknown>>>>;
+    characterMotivationEngine: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    narrativeGoal: z.ZodOptional<z.ZodString>;
+    narrativeDevices: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    persuasionStrategy: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    ironyMethods: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    structureLogic: z.ZodOptional<z.ZodObject<{
+        opening: z.ZodOptional<z.ZodString>;
+        development: z.ZodOptional<z.ZodString>;
+        ending: z.ZodOptional<z.ZodString>;
+    }, z.core.$catchall<z.ZodUnknown>>>;
+    lexicalSystem: z.ZodOptional<z.ZodObject<{
+        prioritySource: z.ZodOptional<z.ZodString>;
+        preferredVocabulary: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        contextualVocabulary: z.ZodOptional<z.ZodArray<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
+        contextualRules: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        bannedTerms: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    }, z.core.$catchall<z.ZodUnknown>>>;
+    rhetoricalSystem: z.ZodOptional<z.ZodObject<{
+        metaphorSources: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        metaphorStyle: z.ZodOptional<z.ZodString>;
+        bannedMetaphors: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    }, z.core.$catchall<z.ZodUnknown>>>;
+    sourceUse: z.ZodOptional<z.ZodObject<{
+        quotationSources: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        referenceAnchors: z.ZodOptional<z.ZodArray<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
+        citationRules: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    }, z.core.$catchall<z.ZodUnknown>>>;
+    corePrinciples: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    formatProhibitions: z.ZodOptional<z.ZodArray<z.ZodString>>;
+}, z.core.$catchall<z.ZodUnknown>>;
+export type CreativeArticleNarrativeProtocol = z.infer<typeof CreativeArticleNarrativeProtocolSchema>;
+export declare const CreativeStyleProtocolPayloadSchema: z.ZodObject<{
+    ideologicalBlend: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodNumber>>;
+    narrativeGoal: z.ZodOptional<z.ZodString>;
+    macroMicroLine: z.ZodOptional<z.ZodString>;
+    authorProfile: z.ZodOptional<z.ZodObject<{
+        id: z.ZodString;
+        stance: z.ZodString;
+        voice: z.ZodArray<z.ZodString>;
+        narrativeTechniques: z.ZodArray<z.ZodString>;
+        preferredDiction: z.ZodArray<z.ZodString>;
+        rejectedDiction: z.ZodArray<z.ZodString>;
+        qualityNorthStar: z.ZodString;
+    }, z.core.$strip>>;
+    writingTaskTypes: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        name: z.ZodString;
+        goal: z.ZodString;
+        requiredInputs: z.ZodArray<z.ZodString>;
+        qualitySignals: z.ZodArray<z.ZodString>;
+    }, z.core.$strip>>>;
+    interestClusters: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        name: z.ZodString;
+        terms: z.ZodArray<z.ZodString>;
+        appliesTo: z.ZodArray<z.ZodString>;
+    }, z.core.$strip>>>;
+    lexiconLifecycle: z.ZodOptional<z.ZodObject<{
+        activeSource: z.ZodString;
+        candidateSource: z.ZodString;
+        promotionRule: z.ZodString;
+        learningEvents: z.ZodString;
+    }, z.core.$strip>>;
+    conceptualEntry: z.ZodOptional<z.ZodObject<{
+        id: z.ZodString;
+        name: z.ZodString;
+        mechanism: z.ZodString;
+        entrySources: z.ZodArray<z.ZodString>;
+        forbiddenOpening: z.ZodString;
+        preferredOpening: z.ZodString;
+    }, z.core.$strip>>;
+    processPlan: z.ZodOptional<z.ZodObject<{
+        series: z.ZodOptional<z.ZodString>;
+        episode: z.ZodOptional<z.ZodString>;
+        timeBoundary: z.ZodOptional<z.ZodString>;
+        viewpointBoundary: z.ZodOptional<z.ZodString>;
+        knowledgeBoundary: z.ZodOptional<z.ZodString>;
+        sceneEntrances: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        eventSequence: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        narrativeMoves: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        imageMotifs: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        pacingRules: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        dictionRules: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        forbiddenMoves: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        endingHook: z.ZodOptional<z.ZodString>;
+        required: z.ZodOptional<z.ZodBoolean>;
+    }, z.core.$catchall<z.ZodUnknown>>>;
+    narrativeProtocol: z.ZodOptional<z.ZodObject<{
+        required: z.ZodOptional<z.ZodBoolean>;
+        perspective: z.ZodOptional<z.ZodObject<{
+            mode: z.ZodOptional<z.ZodString>;
+            rules: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            prohibitions: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        }, z.core.$catchall<z.ZodUnknown>>>;
+        ideologicalBlend: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            name: z.ZodOptional<z.ZodString>;
+            ratio: z.ZodOptional<z.ZodNumber>;
+            keywords: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        }, z.core.$catchall<z.ZodUnknown>>>>;
+        characterMotivationEngine: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        narrativeGoal: z.ZodOptional<z.ZodString>;
+        narrativeDevices: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        persuasionStrategy: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        ironyMethods: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        structureLogic: z.ZodOptional<z.ZodObject<{
+            opening: z.ZodOptional<z.ZodString>;
+            development: z.ZodOptional<z.ZodString>;
+            ending: z.ZodOptional<z.ZodString>;
+        }, z.core.$catchall<z.ZodUnknown>>>;
+        lexicalSystem: z.ZodOptional<z.ZodObject<{
+            prioritySource: z.ZodOptional<z.ZodString>;
+            preferredVocabulary: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            contextualVocabulary: z.ZodOptional<z.ZodArray<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
+            contextualRules: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            bannedTerms: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        }, z.core.$catchall<z.ZodUnknown>>>;
+        rhetoricalSystem: z.ZodOptional<z.ZodObject<{
+            metaphorSources: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            metaphorStyle: z.ZodOptional<z.ZodString>;
+            bannedMetaphors: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        }, z.core.$catchall<z.ZodUnknown>>>;
+        sourceUse: z.ZodOptional<z.ZodObject<{
+            quotationSources: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            referenceAnchors: z.ZodOptional<z.ZodArray<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
+            citationRules: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        }, z.core.$catchall<z.ZodUnknown>>>;
+        corePrinciples: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        formatProhibitions: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    }, z.core.$catchall<z.ZodUnknown>>>;
+    authorialConstitution: z.ZodOptional<z.ZodObject<{
+        coreLaw: z.ZodOptional<z.ZodString>;
+        cannotDo: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        blockers: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    }, z.core.$catchall<z.ZodUnknown>>>;
+}, z.core.$catchall<z.ZodUnknown>>;
+export type CreativeStyleProtocolPayload = z.infer<typeof CreativeStyleProtocolPayloadSchema>;
+export declare const CreativeContractProtocolSchema: z.ZodObject<{
+    id: z.ZodString;
+    name: z.ZodString;
+    domain: z.ZodString;
+    perspectiveRule: z.ZodString;
+    toneRule: z.ZodString;
+    executionRule: z.ZodString;
+    payload: z.ZodObject<{
+        ideologicalBlend: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodNumber>>;
+        narrativeGoal: z.ZodOptional<z.ZodString>;
+        macroMicroLine: z.ZodOptional<z.ZodString>;
+        authorProfile: z.ZodOptional<z.ZodObject<{
+            id: z.ZodString;
+            stance: z.ZodString;
+            voice: z.ZodArray<z.ZodString>;
+            narrativeTechniques: z.ZodArray<z.ZodString>;
+            preferredDiction: z.ZodArray<z.ZodString>;
+            rejectedDiction: z.ZodArray<z.ZodString>;
+            qualityNorthStar: z.ZodString;
+        }, z.core.$strip>>;
+        writingTaskTypes: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            name: z.ZodString;
+            goal: z.ZodString;
+            requiredInputs: z.ZodArray<z.ZodString>;
+            qualitySignals: z.ZodArray<z.ZodString>;
+        }, z.core.$strip>>>;
+        interestClusters: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            name: z.ZodString;
+            terms: z.ZodArray<z.ZodString>;
+            appliesTo: z.ZodArray<z.ZodString>;
+        }, z.core.$strip>>>;
+        lexiconLifecycle: z.ZodOptional<z.ZodObject<{
+            activeSource: z.ZodString;
+            candidateSource: z.ZodString;
+            promotionRule: z.ZodString;
+            learningEvents: z.ZodString;
+        }, z.core.$strip>>;
+        conceptualEntry: z.ZodOptional<z.ZodObject<{
+            id: z.ZodString;
+            name: z.ZodString;
+            mechanism: z.ZodString;
+            entrySources: z.ZodArray<z.ZodString>;
+            forbiddenOpening: z.ZodString;
+            preferredOpening: z.ZodString;
+        }, z.core.$strip>>;
+        processPlan: z.ZodOptional<z.ZodObject<{
+            series: z.ZodOptional<z.ZodString>;
+            episode: z.ZodOptional<z.ZodString>;
+            timeBoundary: z.ZodOptional<z.ZodString>;
+            viewpointBoundary: z.ZodOptional<z.ZodString>;
+            knowledgeBoundary: z.ZodOptional<z.ZodString>;
+            sceneEntrances: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            eventSequence: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            narrativeMoves: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            imageMotifs: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            pacingRules: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            dictionRules: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            forbiddenMoves: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            endingHook: z.ZodOptional<z.ZodString>;
+            required: z.ZodOptional<z.ZodBoolean>;
+        }, z.core.$catchall<z.ZodUnknown>>>;
+        narrativeProtocol: z.ZodOptional<z.ZodObject<{
+            required: z.ZodOptional<z.ZodBoolean>;
+            perspective: z.ZodOptional<z.ZodObject<{
+                mode: z.ZodOptional<z.ZodString>;
+                rules: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                prohibitions: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            }, z.core.$catchall<z.ZodUnknown>>>;
+            ideologicalBlend: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                name: z.ZodOptional<z.ZodString>;
+                ratio: z.ZodOptional<z.ZodNumber>;
+                keywords: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            }, z.core.$catchall<z.ZodUnknown>>>>;
+            characterMotivationEngine: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            narrativeGoal: z.ZodOptional<z.ZodString>;
+            narrativeDevices: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            persuasionStrategy: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            ironyMethods: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            structureLogic: z.ZodOptional<z.ZodObject<{
+                opening: z.ZodOptional<z.ZodString>;
+                development: z.ZodOptional<z.ZodString>;
+                ending: z.ZodOptional<z.ZodString>;
+            }, z.core.$catchall<z.ZodUnknown>>>;
+            lexicalSystem: z.ZodOptional<z.ZodObject<{
+                prioritySource: z.ZodOptional<z.ZodString>;
+                preferredVocabulary: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                contextualVocabulary: z.ZodOptional<z.ZodArray<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
+                contextualRules: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                bannedTerms: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            }, z.core.$catchall<z.ZodUnknown>>>;
+            rhetoricalSystem: z.ZodOptional<z.ZodObject<{
+                metaphorSources: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                metaphorStyle: z.ZodOptional<z.ZodString>;
+                bannedMetaphors: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            }, z.core.$catchall<z.ZodUnknown>>>;
+            sourceUse: z.ZodOptional<z.ZodObject<{
+                quotationSources: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                referenceAnchors: z.ZodOptional<z.ZodArray<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
+                citationRules: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            }, z.core.$catchall<z.ZodUnknown>>>;
+            corePrinciples: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            formatProhibitions: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        }, z.core.$catchall<z.ZodUnknown>>>;
+        authorialConstitution: z.ZodOptional<z.ZodObject<{
+            coreLaw: z.ZodOptional<z.ZodString>;
+            cannotDo: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            blockers: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        }, z.core.$catchall<z.ZodUnknown>>>;
+    }, z.core.$catchall<z.ZodUnknown>>;
+}, z.core.$strip>;
+export type CreativeContractProtocol = z.infer<typeof CreativeContractProtocolSchema>;
+export declare const CreativeContractModuleSchema: z.ZodObject<{
+    code: z.ZodString;
+    parentCode: z.ZodString;
+    category: z.ZodString;
+    name: z.ZodString;
+    moduleKind: z.ZodString;
+    description: z.ZodString;
+    payload: z.ZodUnknown;
+}, z.core.$strip>;
+export type CreativeContractModule = z.infer<typeof CreativeContractModuleSchema>;
+export declare const CreativeContractEditingStepSchema: z.ZodObject<{
+    stepOrder: z.ZodNumber;
+    name: z.ZodString;
+    taskSummary: z.ZodString;
+    requiredReport: z.ZodUnknown;
+    hardRules: z.ZodUnknown;
+}, z.core.$strip>;
+export type CreativeContractEditingStep = z.infer<typeof CreativeContractEditingStepSchema>;
+export declare const CreativeContractQualityRuleSchema: z.ZodObject<{
+    id: z.ZodString;
+    ruleType: z.ZodString;
+    severity: z.ZodString;
+    ruleText: z.ZodString;
+    checkHint: z.ZodString;
+}, z.core.$strip>;
+export type CreativeContractQualityRule = z.infer<typeof CreativeContractQualityRuleSchema>;
+export declare const CreativeContractSourceMaterialSchema: z.ZodObject<{
+    id: z.ZodString;
+    category: z.ZodString;
+    title: z.ZodString;
+    useCase: z.ZodString;
+    payload: z.ZodUnknown;
+}, z.core.$strip>;
+export type CreativeContractSourceMaterial = z.infer<typeof CreativeContractSourceMaterialSchema>;
+export declare const CreativeContractVocabularyTermSchema: z.ZodObject<{
+    word: z.ZodString;
+    content: z.ZodString;
+    type: z.ZodString;
+    category: z.ZodString;
+    tags: z.ZodUnknown;
+    note: z.ZodString;
+}, z.core.$strip>;
+export type CreativeContractVocabularyTerm = z.infer<typeof CreativeContractVocabularyTermSchema>;
+export declare const CreativeContractBannedTermSchema: z.ZodObject<{
+    word: z.ZodString;
+    content: z.ZodString;
+    type: z.ZodString;
+    category: z.ZodString;
+    reason: z.ZodString;
+    replacement: z.ZodString;
+    alternative: z.ZodString;
+}, z.core.$strip>;
+export type CreativeContractBannedTerm = z.infer<typeof CreativeContractBannedTermSchema>;
+export declare const CreativeWritingTechniqueSchema: z.ZodObject<{
+    id: z.ZodString;
+    name: z.ZodString;
+    layer: z.ZodString;
+    description: z.ZodString;
+    mechanism: z.ZodString;
+    suitableFor: z.ZodArray<z.ZodString>;
+    avoidWhen: z.ZodArray<z.ZodString>;
+    promptInstruction: z.ZodString;
+    qualityCheck: z.ZodString;
+    status: z.ZodString;
+}, z.core.$strip>;
+export type CreativeWritingTechnique = z.infer<typeof CreativeWritingTechniqueSchema>;
+export declare const CreativeAuthorTechniqueSchema: z.ZodObject<{
+    authorProfileId: z.ZodString;
+    techniqueId: z.ZodString;
+    weight: z.ZodNumber;
+    priority: z.ZodString;
+    taskTypes: z.ZodArray<z.ZodString>;
+    trigger: z.ZodString;
+    constraint: z.ZodString;
+    status: z.ZodString;
+}, z.core.$strip>;
+export type CreativeAuthorTechnique = z.infer<typeof CreativeAuthorTechniqueSchema>;
+export declare const CreativeStyleContractSchema: z.ZodObject<{
+    protocol: z.ZodObject<{
+        id: z.ZodString;
+        name: z.ZodString;
+        domain: z.ZodString;
+        perspectiveRule: z.ZodString;
+        toneRule: z.ZodString;
+        executionRule: z.ZodString;
+        payload: z.ZodObject<{
+            ideologicalBlend: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodNumber>>;
+            narrativeGoal: z.ZodOptional<z.ZodString>;
+            macroMicroLine: z.ZodOptional<z.ZodString>;
+            authorProfile: z.ZodOptional<z.ZodObject<{
+                id: z.ZodString;
+                stance: z.ZodString;
+                voice: z.ZodArray<z.ZodString>;
+                narrativeTechniques: z.ZodArray<z.ZodString>;
+                preferredDiction: z.ZodArray<z.ZodString>;
+                rejectedDiction: z.ZodArray<z.ZodString>;
+                qualityNorthStar: z.ZodString;
+            }, z.core.$strip>>;
+            writingTaskTypes: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodString;
+                name: z.ZodString;
+                goal: z.ZodString;
+                requiredInputs: z.ZodArray<z.ZodString>;
+                qualitySignals: z.ZodArray<z.ZodString>;
+            }, z.core.$strip>>>;
+            interestClusters: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                id: z.ZodString;
+                name: z.ZodString;
+                terms: z.ZodArray<z.ZodString>;
+                appliesTo: z.ZodArray<z.ZodString>;
+            }, z.core.$strip>>>;
+            lexiconLifecycle: z.ZodOptional<z.ZodObject<{
+                activeSource: z.ZodString;
+                candidateSource: z.ZodString;
+                promotionRule: z.ZodString;
+                learningEvents: z.ZodString;
+            }, z.core.$strip>>;
+            conceptualEntry: z.ZodOptional<z.ZodObject<{
+                id: z.ZodString;
+                name: z.ZodString;
+                mechanism: z.ZodString;
+                entrySources: z.ZodArray<z.ZodString>;
+                forbiddenOpening: z.ZodString;
+                preferredOpening: z.ZodString;
+            }, z.core.$strip>>;
+            processPlan: z.ZodOptional<z.ZodObject<{
+                series: z.ZodOptional<z.ZodString>;
+                episode: z.ZodOptional<z.ZodString>;
+                timeBoundary: z.ZodOptional<z.ZodString>;
+                viewpointBoundary: z.ZodOptional<z.ZodString>;
+                knowledgeBoundary: z.ZodOptional<z.ZodString>;
+                sceneEntrances: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                eventSequence: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                narrativeMoves: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                imageMotifs: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                pacingRules: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                dictionRules: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                forbiddenMoves: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                endingHook: z.ZodOptional<z.ZodString>;
+                required: z.ZodOptional<z.ZodBoolean>;
+            }, z.core.$catchall<z.ZodUnknown>>>;
+            narrativeProtocol: z.ZodOptional<z.ZodObject<{
+                required: z.ZodOptional<z.ZodBoolean>;
+                perspective: z.ZodOptional<z.ZodObject<{
+                    mode: z.ZodOptional<z.ZodString>;
+                    rules: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                    prohibitions: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                }, z.core.$catchall<z.ZodUnknown>>>;
+                ideologicalBlend: z.ZodOptional<z.ZodArray<z.ZodObject<{
+                    name: z.ZodOptional<z.ZodString>;
+                    ratio: z.ZodOptional<z.ZodNumber>;
+                    keywords: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                }, z.core.$catchall<z.ZodUnknown>>>>;
+                characterMotivationEngine: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                narrativeGoal: z.ZodOptional<z.ZodString>;
+                narrativeDevices: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                persuasionStrategy: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                ironyMethods: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                structureLogic: z.ZodOptional<z.ZodObject<{
+                    opening: z.ZodOptional<z.ZodString>;
+                    development: z.ZodOptional<z.ZodString>;
+                    ending: z.ZodOptional<z.ZodString>;
+                }, z.core.$catchall<z.ZodUnknown>>>;
+                lexicalSystem: z.ZodOptional<z.ZodObject<{
+                    prioritySource: z.ZodOptional<z.ZodString>;
+                    preferredVocabulary: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                    contextualVocabulary: z.ZodOptional<z.ZodArray<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
+                    contextualRules: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                    bannedTerms: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                }, z.core.$catchall<z.ZodUnknown>>>;
+                rhetoricalSystem: z.ZodOptional<z.ZodObject<{
+                    metaphorSources: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                    metaphorStyle: z.ZodOptional<z.ZodString>;
+                    bannedMetaphors: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                }, z.core.$catchall<z.ZodUnknown>>>;
+                sourceUse: z.ZodOptional<z.ZodObject<{
+                    quotationSources: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                    referenceAnchors: z.ZodOptional<z.ZodArray<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
+                    citationRules: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                }, z.core.$catchall<z.ZodUnknown>>>;
+                corePrinciples: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                formatProhibitions: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            }, z.core.$catchall<z.ZodUnknown>>>;
+            authorialConstitution: z.ZodOptional<z.ZodObject<{
+                coreLaw: z.ZodOptional<z.ZodString>;
+                cannotDo: z.ZodOptional<z.ZodArray<z.ZodString>>;
+                blockers: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            }, z.core.$catchall<z.ZodUnknown>>>;
+        }, z.core.$catchall<z.ZodUnknown>>;
+    }, z.core.$strip>;
+    modules: z.ZodArray<z.ZodObject<{
+        code: z.ZodString;
+        parentCode: z.ZodString;
+        category: z.ZodString;
+        name: z.ZodString;
+        moduleKind: z.ZodString;
+        description: z.ZodString;
+        payload: z.ZodUnknown;
+    }, z.core.$strip>>;
+    editingSteps: z.ZodArray<z.ZodObject<{
+        stepOrder: z.ZodNumber;
+        name: z.ZodString;
+        taskSummary: z.ZodString;
+        requiredReport: z.ZodUnknown;
+        hardRules: z.ZodUnknown;
+    }, z.core.$strip>>;
+    qualityRules: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        ruleType: z.ZodString;
+        severity: z.ZodString;
+        ruleText: z.ZodString;
+        checkHint: z.ZodString;
+    }, z.core.$strip>>;
+    sourceMaterials: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        category: z.ZodString;
+        title: z.ZodString;
+        useCase: z.ZodString;
+        payload: z.ZodUnknown;
+    }, z.core.$strip>>;
+    techniques: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        name: z.ZodString;
+        layer: z.ZodString;
+        description: z.ZodString;
+        mechanism: z.ZodString;
+        suitableFor: z.ZodArray<z.ZodString>;
+        avoidWhen: z.ZodArray<z.ZodString>;
+        promptInstruction: z.ZodString;
+        qualityCheck: z.ZodString;
+        status: z.ZodString;
+    }, z.core.$strip>>;
+    authorTechniques: z.ZodArray<z.ZodObject<{
+        authorProfileId: z.ZodString;
+        techniqueId: z.ZodString;
+        weight: z.ZodNumber;
+        priority: z.ZodString;
+        taskTypes: z.ZodArray<z.ZodString>;
+        trigger: z.ZodString;
+        constraint: z.ZodString;
+        status: z.ZodString;
+    }, z.core.$strip>>;
+    lexicon: z.ZodObject<{
+        preferred: z.ZodArray<z.ZodObject<{
+            word: z.ZodString;
+            content: z.ZodString;
+            type: z.ZodString;
+            category: z.ZodString;
+            tags: z.ZodUnknown;
+            note: z.ZodString;
+        }, z.core.$strip>>;
+        banned: z.ZodArray<z.ZodObject<{
+            word: z.ZodString;
+            content: z.ZodString;
+            type: z.ZodString;
+            category: z.ZodString;
+            reason: z.ZodString;
+            replacement: z.ZodString;
+            alternative: z.ZodString;
+        }, z.core.$strip>>;
+    }, z.core.$strip>;
+}, z.core.$strip>;
+export type CreativeStyleContract = z.infer<typeof CreativeStyleContractSchema>;
+export declare function parseCreativeStyleContract(value: unknown): CreativeStyleContract;

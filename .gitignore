@@ -3,6 +3,9 @@ node_modules/
 
 # Runtime & build artifacts
 dist/
+# Exception: internal schema/contract packages (source deleted, dist is the artifact)
+!DataBase/packages/schemas/*/dist/
+!DataBase/services/openlist-adapter/dist/
 
 # Large binary archives
 *.tar
