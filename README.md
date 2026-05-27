@@ -16,6 +16,103 @@ ContentMRS 是一个**被 AI agent 调用的生成引擎**。它不是面向人�
 ContentMRS 接受软参数（topic、方向性描述、体裁暗示、长度期望），返回带有个人风格烙印的成品。
 理解用户意图的是 AI Agent，不是 ContentMRS。ContentMRS 只负责出活。
 
+## 调用指南（给 AI Agent）
+
+### 端点
+
+```
+POST http://124.220.233.126:5111/api/content/runtime/generate/article
+Content-Type: application/json
+```
+
+### 最简请求（只需 topic）
+
+```json
+{
+  "topic": "你想让它写的主题"
+}
+```
+
+这就够了。系统会自动：检测体裁 → 搜索 Web 证据 + RAGFlow 文档库 → 组装上下文 → 生成文章。
+
+### 完整参数
+
+```json
+{
+  "topic": "满洲人征服中国的历史悖论",
+  "genre": "historical_commentary",
+  "targetWordCount": 800,
+  "protocol": "immersive_historical_synthetic_narrative",
+  "evidenceQuery": {
+    "includeWeb": true,
+    "includeRagflow": true,
+    "webQueries": ["满洲入关 历史", "清朝建立 女真"],
+    "ragflowDatasetIds": ["bdcc99c658f111f18aecb3d695a2553d"]
+  },
+  "settings": {
+    "model": "gpt-5.5",
+    "temperature": 0.4,
+    "maxTokens": 4096
+  }
+}
+```
+
+| 参数 | 必填 | 说明 |
+|---|---|---|
+| `topic` | ✅ | 文章主题，中文自然语言 |
+| `genre` | 否 | 体裁暗示：`historical_commentary` / `reality_commentary` / `narrative` / `essay`。不传则自动从 topic 推断，默认 essay |
+| `targetWordCount` | 否 | 目标字数，默认 2400 |
+| `protocol` | 否 | 写作协议名（影响 style-contract 检索） |
+| `evidenceQuery.includeWeb` | 否 | 是否搜索 Web 证据，默认 true |
+| `evidenceQuery.includeRagflow` | 否 | 是否搜索 RAGFlow 文档库，默认 true |
+| `evidenceQuery.webQueries` | 否 | 额外的 Web 搜索关键词（补充自动生成的 query） |
+| `evidenceQuery.ragflowDatasetIds` | 否 | 指定搜索哪些 RAGFlow dataset（不传则按 genre 自动路由） |
+| `settings.model` | 否 | Writer 模型，默认读服务器环境变量 |
+| `settings.temperature` | 否 | 生成温度，默认 0.4 |
+| `settings.maxTokens` | 否 | 最大输出 token，默认 4096 |
+
+### 响应格式
+
+```json
+{
+  "success": true,
+  "data": {
+    "draft": {
+      "body": "生成的文章正文（纯文本，无 markdown）",
+      "modelInvocation": {
+        "provider": "openai-compatible",
+        "model": "gpt-5.5",
+        "usage": { "prompt_tokens": 54000, "completion_tokens": 1600, "total_tokens": 55600 }
+      }
+    },
+    "context": {
+      "evidence": { "pack": { "...": "证据包原始数据" } },
+      "diagnostics": {
+        "contextChars": 70000,
+        "packedCounts": { "reality": 9, "literary": 16, "semantic": 16, "structure": 5, "author": 4 }
+      }
+    }
+  }
+}
+```
+
+失败时：
+
+```json
+{
+  "success": false,
+  "error": "错误信息"
+}
+```
+
+### 注意事项
+
+- 请求超时建议设 **3 分钟**（证据搜索 + LLM 生成需要时间）
+- `data.draft.body` 是最终成品，直接使用即可
+- `data.context.diagnostics` 是调试信息，正常使用不需要关注
+- 不需要传 API key（服务内部已配置 LLM 和搜索凭据）
+- 如果返回 `"error": "Reality required: ..."` 说明该 topic 没有找到足够的事实材料，可以换个更具体的 topic 或补充 `webQueries`
+
 ## 唯一目标
 
 ```text
@@ -795,32 +892,18 @@ cd DataBase/apps/gateway && pnpm dev # Gateway dev server :18090
 
 ---
 
-## API 端点
+## 内部技术细节（以下内容面向开发者，非调用方）
 
-### ContentBase (:5111)
+### 服务端口
 
-| 端点 | 方法 | 用途 |
+| 服务 | 端口 | 用途 |
 |---|---|---|
-| `/api/content/runtime/generate/article` | POST | 生成文章（主入口） |
-| `/api/corpus/diagnostics` | GET | 语料检索诊断 |
-| `/api/health` | GET | 健康检查 |
+| ContentBase | :5111 | 生成引擎（主入口） |
+| DataBase Gateway | :18090 | 所有数据出口（证据、语料、风格） |
+| Web Evidence Provider | :19091 | Tavily Web 搜索 |
+| RAGFlow | :9380 | 文档向量检索 |
 
-生成请求参数：
-
-```json
-{
-  "topic": "满洲人征服中国的历史悖论",
-  "genre": "historical_commentary",
-  "targetWordCount": 800,
-  "evidenceQuery": {
-    "includeWeb": true,
-    "includeRagflow": true,
-    "ragflowDatasetIds": ["..."]
-  }
-}
-```
-
-### DataBase Gateway (:18090)
+### Gateway 内部路由
 
 | 路由 | 用途 |
 |---|---|
@@ -831,13 +914,6 @@ cd DataBase/apps/gateway && pnpm dev # Gateway dev server :18090
 | `/creative/style-contract` | 风格契约 |
 | `/creative/author-profile` | 作者画像 |
 | `/health/ragflow` | RAGFlow 健康检查 |
-
-### Web Evidence Provider (:19091)
-
-| 端点 | 用途 |
-|---|---|
-| `/search` | Tavily Web 搜索 |
-| `/health` | 健康检查 |
 
 ---
 
