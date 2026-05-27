@@ -825,7 +825,7 @@ function buildWriterPrompt(input: {
     '禁止使用"不禁让人思考"、"引人深思"、"值得我们注意"、"我们应当"、"在某种意义上"、"在一定程度上"、"从某种角度来看"这类评论腔套话。',
     '禁止用括号、冒号、破折号引出长段补充说明。需要补充就另起一句。',
     '段落要有呼吸感：不要每段都同样长。允许出现两三句话的短段落用来收束或转折。',
-    `字数硬约束：正文总字数必须控制在 ${input.targetWordCount} 字上下浮动 15% 以内（即 ${Math.round(input.targetWordCount * 0.85)}-${Math.round(input.targetWordCount * 1.15)} 字）。超出则必须删减，不足则需扩写。宁可收紧论证也不要注水。`,
+    `字数要求：正文不得少于 ${input.targetWordCount} 字。可以超出，鼓励写长写透，但不得注水重复。宁可多展开一层论证、多一个微观细节，也不要为凑字数而堆砌同义句。`,
     hasOnlyReality(input.sections)
       ? '注意：本次只有 Reality/Web 事实材料，无其他 Corpus。输出必须收窄为简短分析短文，不得写长篇文学性或地缘政治叙事。'
       : '',
