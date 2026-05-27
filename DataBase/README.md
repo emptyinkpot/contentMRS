@@ -44,6 +44,7 @@ GitHub 仓库顶部标签栏不能自定义新增 `API`、`ARCHITECTURE` 这类�
 | 运行服务地址 | [docs/runtime/service-addresses.md](./docs/runtime/service-addresses.md) | 当前各服务地址和入口。 |
 | 搜索与分类运行时 | [docs/runtime/search-and-classification-runtime.md](./docs/runtime/search-and-classification-runtime.md) | search_documents/search_chunks 等检索投影说明。 |
 | 本地大书资料库导入 | [docs/runtime/search-and-classification-runtime.md](./docs/runtime/search-and-classification-runtime.md#local-book-corpus-import) | 将 Obsidian/OpenList 中的大书 Markdown 正规化为 DataBase-owned literature、search chunks 和 semantic material，供 ContentBase EvidencePack 检索。 |
+| Corpus Ops 模块 | [apps/gateway/ops/corpus/README.md](./apps/gateway/ops/corpus/README.md) | 语料导入、OCR、RAGFlow 索引、检索 smoke、baseline 回灌的可复用操作模块。 |
 | Memory Service | [docs/runtime/database-memory-service.md](./docs/runtime/database-memory-service.md) | DataBase Memory Service 的设计。 |
 | Gateway MCP Adapter | [services/gateway-mcp/README.md](./services/gateway-mcp/README.md) | 把现有 HTTP Gateway 包装成 MCP tools，不直连 MySQL。 |
 | Agent 工作流 | [AGENT_WORKFLOW.md](./AGENT_WORKFLOW.md) | claims、integration queue、timeline 使用方式。 |
@@ -639,13 +640,13 @@ GET /evidence/search（ContentBase 唯一检索入口）
 ```powershell
 # 批量导入书籍到 literature 表
 cd "E:\My Project\ContentMRS\DataBase\apps\gateway"
-node scripts/batch-import-literature.mjs --apply
+pnpm run corpus:import:books -- --apply
 
 # 将 literature 内容索引到 RAGFlow（切 chunk + 向量化）
-python scripts/index-literature-to-ragflow.py --apply
+pnpm run corpus:index:ragflow -- --apply
 
 # 导入 baseline 文章为语义素材 + 词汇
-node scripts/import-baseline-articles-as-corpus.mjs
+pnpm run corpus:import:baseline-articles
 ```
 
 ### 禁止事项
