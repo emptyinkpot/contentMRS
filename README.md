@@ -647,54 +647,72 @@ Dify = UI / trigger / polling
 
 ## 下一阶段优先级
 
-### P0：Native Chinese Syntax Corpus
+### P0：旧提示词拆解入库
 
-最高收益是建立真正自然的中文语言运动语料。
+将手工时期的写作提示词（`E:\My Project\之前的给ai生成文章的提示词`）拆解为可被检索召回的 semantic units，入库 DataBase。
 
-不要模仿作者，只抽：
+旧提示词本质是一份手工 Composition Layer，包含：
 
-- syntax
-- rhythm
-- cadence
-- 压缩方式
-- 非对称句法
-- 冷推进
-- 白话气流
+| 旧提示词板块 | 拆解目标 | 入库形态 |
+|---|---|---|
+| 板块五：词汇库 | Lexicon chunks | 小粒度 chunk（词组/短语级），带 domain + tone metadata |
+| 板块六：引用/化用素材库 | Literary + Allusion chunks | 每条引用独立 chunk，带 source + era + stance + 适用情境 |
+| 板块四：比喻系统 | Rhetoric chunks | 按比喻类型（水文/建筑/机械/神学/戏剧）分类标注 |
+| 板块三：结构模块（起承转合路径） | Structure chunks | 每种结构路径一个 chunk，带体裁适用标注 |
+| 板块一：思想底色 + 视角 | Author State seed vectors | 转为 author-conditioned rerank 的 query seeds |
+| 板块二：叙事技法 | 保留在 Writer prompt | 不入库，作为 Writer 的基础能力描述 |
+| 板块四：禁令 | Composition negative bias | 不作为硬规则，转为 retrieval 时的负向权重信号 |
 
-Rhythm Corpus、Symbolic Pressure 都先归入 Native Chinese Syntax Corpus，不单独扩成新的 runtime。
+原则：
+- 不全量塞进 RAGFlow。RAGFlow 管长文档（书、报告）；细粒度 semantic unit 在 DataBase 自有向量索引
+- 不把规则写死在 prompt 里。禁令变成 retrieval bias，让 Writer 的语言宇宙里自然没有那些东西
+- 入库后可被 Retrieval 按 topic 自动召回，不需要每次手动选材
 
-### P1：Reality Thickness
+### P1：Composition Layer 实体化
 
-加厚现实骨架：
+当前 Composition 几乎不存在——检索结果直接拼进 prompt。需要实现完整的 composition 步骤：
 
 ```text
-Search
-  -> URL Expansion
-  -> Full-text Fetch
-  -> Content Extraction
-  -> Parent-child Retrieval
-  -> Temporary Reality Corpus
+Retrieval 返回 ~200 chunks
+  → 按类型分组（FACT / DATA / COMMENTARY / ALLUSION / STYLE / LEXICON / STRUCTURE / AUTHOR）
+  → 按 topic profile 分配预算
+  → 去重 + contamination filter
+  → diversity injection
+  → 按固定顺序打包成最终 context
+  → 交给 Writer
 ```
 
-重点：
+预算表按体裁自动切换：
 
-- 全文抓取
-- 长报告
-- 深度行业材料
-- 高质量新闻正文
-- RAGFlow parent expansion
-- 当前事实和历史事实的更厚上下文
+| 体裁 | Reality | Commentary | Allusion | Literary | Lexicon | Structure |
+|---|---:|---:|---:|---:|---:|---:|
+| 历史评论 | 15% | 15% | 25% | 20% | 15% | 10% |
+| 现实评论 | 30% | 25% | 15% | 10% | 12% | 8% |
+| 小说/叙事 | 10% | 5% | 20% | 35% | 15% | 15% |
+| 文案/短文 | 20% | 15% | 20% | 20% | 15% | 10% |
 
-### P2：Composition Intelligence
+### P2：Author State 从规则变成 retrieval signal
 
-继续增强资料册编排：
+Author State 不应该是 system prompt 里的硬规则（"你必须文白夹杂"），应该是：
 
-- 分层召回后的重排
-- 不同材料之间的比例控制
-- 现实和文学的距离控制
-- 长上下文 packing
-- topic profile 自动选择
-- diversity injection
-- soft pressure
+- 一组 embedding 坐标，代表品味偏好
+- Retrieval 时用 author state 做 rerank（已有 author-conditioned rerank 概念，需落地）
+- 效果：Composition 自然召回大量符合品味的样本，Writer 在这个语言宇宙里自然写成那样
+- 体裁通用：同一个 author state，写评论时召回评论类材料，写小说时召回叙事类材料
 
-Context Audit 只作为 Composition Intelligence 的观测面，不单独扩成业务主线。
+### P3：体裁通用性
+
+同一个 pipeline 支持评论、小说、文案，不分叉 Writer：
+
+- Retrieval 感知体裁意图 → 调整召回类型比例
+- Composition 按体裁切换预算表
+- Writer prompt 不变 → 体裁由上下文决定，不由 instruction 决定
+- AI Agent 传入的软参数里包含体裁暗示，ContentMRS 自动路由到对应的 retrieval + composition 策略
+
+### 架构约束
+
+- RAGFlow 只管长文档检索（书、报告、历史全文）
+- DataBase 自有向量索引管细粒度 semantic unit（词汇、比喻、结构、引用）
+- 不全量 RAGFlow：细粒度 chunk 不适合 RAGFlow 的 parent-child 检索模型
+- 最大瓶颈是 Corpus 精细度 + Composition 层厚度，不是 Writer，不是 RAGFlow
+- 旧提示词的价值在于材料（词汇、引用、比喻），不在于规则（禁令）
