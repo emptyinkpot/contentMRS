@@ -219,6 +219,7 @@ function loadRuntimeEnv() {
     process.env.CONTENTMRS_LOCAL_ENV || '',
     homeDir ? path.join(homeDir, '.codex-secrets', 'sub2api', 'consumers', 'contentmrs-novel.env') : '',
     homeDir ? path.join(homeDir, '.codex-secrets', 'contentmrs', 'sub2api-novel.env') : '',
+    homeDir ? path.join(homeDir, '.codex-secrets', 'dashscope', 'api.env') : '',
   ].filter(Boolean);
   for (const envPath of envPaths) {
     if (!fs.existsSync(envPath)) continue;

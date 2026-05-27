@@ -1,3 +1,5 @@
+import { getRerankerConfig, rerankByEmbedding } from './reranker';
+
 export type ContextEngineRequest = Record<string, any>;
 
 export type ContextItem = {
@@ -110,7 +112,14 @@ export async function buildArticleContextEngine(input: {
 
   const genre = detectGenre(input.request);
   const ranked = rankAndDedupe(contextItems, input.topic);
-  const filtered = contaminationFilter(ranked);
+  const rerankerConfig = getRerankerConfig();
+  const reranked = rerankerConfig
+    ? await rerankByEmbedding(input.topic, ranked, rerankerConfig)
+    : ranked;
+  if (rerankerConfig && reranked.length < ranked.length) {
+    warnings.push(`reranker: kept ${reranked.length}/${ranked.length} items (${Math.round(reranked.length / ranked.length * 100)}%)`);
+  }
+  const filtered = contaminationFilter(reranked);
   const diverse = injectDiversity(filtered);
   const packed = composeByBudget({
     items: diverse,
