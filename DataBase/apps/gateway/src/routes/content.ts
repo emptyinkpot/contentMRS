@@ -1206,14 +1206,14 @@ export function contentRoutes({ pool }: RouteDependencies) {
     const params: (string | number)[] = [];
 
     if (search) {
-      where.push("(title LIKE ? OR author LIKE ? OR content LIKE ?)");
+      where.push("(title LIKE ? OR author LIKE ? OR category LIKE ?)");
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
     const rows = await query<LiteratureRow[]>(
       pool,
       `
-      SELECT id, title, author, category, content, source, updated_at, created_at
+      SELECT id, title, author, category, LEFT(content, 3000) AS content, source, updated_at, created_at
       FROM literature
       ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
       ORDER BY updated_at DESC, id DESC

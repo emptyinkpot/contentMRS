@@ -29,7 +29,8 @@ export function vocabularyRoutes({ pool }: RouteDependencies) {
       `
       SELECT id, content, type, category, note, created_at, updated_at
       FROM vocabulary
-      WHERE content LIKE ? OR type LIKE ? OR category LIKE ? OR note LIKE ?
+      WHERE (content LIKE ? OR type LIKE ? OR category LIKE ? OR note LIKE ?)
+        AND category != 'baseline-article'
       ORDER BY id DESC
       LIMIT ?
       `,
