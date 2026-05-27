@@ -39,7 +39,13 @@ export async function rerankByEmbedding(
 ): Promise<ContextItem[]> {
   if (items.length <= 3) return items;
 
-  const keepCount = Math.max(3, Math.ceil(items.length * (config.keepRatio || DEFAULT_KEEP_RATIO)));
+  // Reality items are exempt from reranker elimination — factual backbone must survive
+  const realityItems = items.filter(item => item.channel === 'reality');
+  const rerankable = items.filter(item => item.channel !== 'reality');
+
+  if (rerankable.length <= 3) return items;
+
+  const keepCount = Math.max(3, Math.ceil(rerankable.length * (config.keepRatio || DEFAULT_KEEP_RATIO)));
   const queryEmbedding = await embedSingle(query, config);
   if (!queryEmbedding) return items;
 
@@ -47,15 +53,15 @@ export async function rerankByEmbedding(
     ? await embedSingle(authorStateText.slice(0, MAX_TEXT_CHARS), config)
     : null;
 
-  const texts = items.map(item => truncateForEmbedding(item.text, item.title));
+  const texts = rerankable.map(item => truncateForEmbedding(item.text, item.title));
   const embeddings = await embedBatch(texts, config);
-  if (!embeddings || embeddings.length !== items.length) return items;
+  if (!embeddings || embeddings.length !== rerankable.length) return items;
 
   const topicWeight = config.topicWeight ?? DEFAULT_TOPIC_WEIGHT;
   const authorWeight = authorEmbedding ? (config.authorWeight ?? DEFAULT_AUTHOR_WEIGHT) : 0;
   const totalWeight = authorEmbedding ? topicWeight + authorWeight : 1;
 
-  const scored = items.map((item, i) => {
+  const scored = rerankable.map((item, i) => {
     const topicSim = cosineSimilarity(queryEmbedding, embeddings[i]);
     const authorSim = authorEmbedding ? cosineSimilarity(authorEmbedding, embeddings[i]) : 0;
     const blended = (topicSim * topicWeight + authorSim * authorWeight) / totalWeight;
@@ -63,7 +69,7 @@ export async function rerankByEmbedding(
   });
 
   scored.sort((a, b) => b.similarity - a.similarity);
-  return scored.slice(0, keepCount).map(s => s.item);
+  return [...realityItems, ...scored.slice(0, keepCount).map(s => s.item)];
 }
 
 export async function loadAuthorStateText(gatewayUrl: string): Promise<string> {

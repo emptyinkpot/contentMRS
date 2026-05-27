@@ -63,8 +63,25 @@ export type ContextEngineResult = {
   };
 };
 
-const DEFAULT_CONTEXT_TOKEN_BUDGET = 850000;
-const DEFAULT_CONTEXT_CHAR_BUDGET = 900000;
+const MODEL_CONTEXT_WINDOWS: Record<string, number> = {
+  'gpt-4o': 128000,
+  'gpt-4o-mini': 128000,
+  'gpt-4.1': 1000000,
+  'gpt-4.1-mini': 1000000,
+  'gpt-4.1-nano': 1000000,
+  'gpt-5.5': 200000,
+  'claude-sonnet-4-5-20250514': 200000,
+  'claude-opus-4-7': 200000,
+  'deepseek-chat': 64000,
+  'deepseek-reasoner': 64000,
+};
+const DEFAULT_MODEL_CONTEXT_WINDOW = 128000;
+const CONTEXT_UTILIZATION_RATIO = 0.25;
+const SYSTEM_PROMPT_RESERVE = 3000;
+const OUTPUT_TOKEN_RESERVE = 8000;
+
+const DEFAULT_CONTEXT_TOKEN_BUDGET = 57000;
+const DEFAULT_CONTEXT_CHAR_BUDGET = 80000;
 const DEFAULT_REALITY_LIMIT = 160;
 const DEFAULT_EVIDENCE_TIMEOUT_MS = 240000;
 
@@ -80,13 +97,10 @@ export async function buildArticleContextEngine(input: {
     throw new Error('Reality required: DATABASE_GATEWAY_URL is not configured');
   }
 
-  const contextTokenBudget = readNumber(
-    input.request.contextTokenBudget || input.request.settings?.contextTokenBudget,
-    DEFAULT_CONTEXT_TOKEN_BUDGET,
-  );
+  const contextTokenBudget = computeContextTokenBudget(input.request);
   const contextCharBudget = readNumber(
     input.request.contextCharBudget || input.request.settings?.contextCharBudget,
-    Math.min(DEFAULT_CONTEXT_CHAR_BUDGET, Math.floor(contextTokenBudget * 0.8)),
+    Math.min(DEFAULT_CONTEXT_CHAR_BUDGET, Math.floor(contextTokenBudget * 3.2)),
   );
 
   const genre = detectGenre(input.request);
@@ -107,14 +121,17 @@ export async function buildArticleContextEngine(input: {
     request: input.request,
     limits: retrievalLimits,
   });
+  const evidenceItems = normalizeEvidencePackChunks(evidencePack);
   const contextItems = [
-    ...normalizeEvidencePackChunks(evidencePack),
+    ...evidenceItems,
     ...corpusItems,
   ];
   if (!contextItems.length) {
     throw new Error('Reality required: EvidencePack returned zero usable Reality chunks');
   }
+  const stageCountsRaw = countChannels(contextItems);
   const ranked = rankAndDedupe(contextItems, input.topic);
+  const stageCountsRanked = countChannels(ranked);
   const rerankerConfig = getRerankerConfig();
   const authorStateText = rerankerConfig ? await loadAuthorStateText(gatewayUrl) : '';
   const reranked = rerankerConfig
@@ -123,8 +140,11 @@ export async function buildArticleContextEngine(input: {
   if (rerankerConfig && reranked.length < ranked.length) {
     warnings.push(`reranker: kept ${reranked.length}/${ranked.length} items (${Math.round(reranked.length / ranked.length * 100)}%)`);
   }
+  const stageCountsReranked = countChannels(reranked);
   const filtered = contaminationFilter(reranked);
+  const stageCountsFiltered = countChannels(filtered);
   const diverse = injectDiversity(filtered);
+  const stageCountsDiverse = countChannels(diverse);
   const packed = composeByBudget({
     items: diverse,
     charBudget: contextCharBudget,
@@ -132,6 +152,14 @@ export async function buildArticleContextEngine(input: {
   });
   if (!packed.items.length) {
     throw new Error('Corpus Context required: packed context is empty');
+  }
+  const packedCounts = countChannels(packed.items);
+  const packedChars = countCharsByChannel(packed.items);
+  if ((packedCounts.reality || 0) < 1) {
+    throw new Error(`Reality required: zero Reality items survived context packing. Stage trace: evidence=${evidenceItems.length}(reality:${stageCountsRaw.reality||0}), ranked=${ranked.length}(reality:${stageCountsRanked.reality||0}), reranked=${reranked.length}(reality:${stageCountsReranked.reality||0}), filtered=${filtered.length}(reality:${stageCountsFiltered.reality||0}), diverse=${diverse.length}(reality:${stageCountsDiverse.reality||0}), packed=${packed.items.length}(reality:${packedCounts.reality||0}), charBudget=${contextCharBudget}`);
+  }
+  if ((packedChars.reality || 0) < 500) {
+    warnings.push('Reality thin: packed Reality < 500 chars, Writer output should stay narrow');
   }
 
   const prompt = buildWriterPrompt({
@@ -142,9 +170,6 @@ export async function buildArticleContextEngine(input: {
     contextChars: packed.contextChars,
     sections: packed.sections,
   });
-
-  const packedCounts = countChannels(packed.items);
-  const packedChars = countCharsByChannel(packed.items);
 
   return {
     prompt,
@@ -489,86 +514,41 @@ function normalizeLiteratureItems(payload: Record<string, any>): ContextItem[] {
 }
 
 async function loadLiteraryCorpusSearch(gatewayUrl: string, query: string): Promise<ContextItem[]> {
-  const terms = splitSearchTermsChinese(query);
-  const lexicalTerms = terms.slice(0, 12);
-  const searches: Promise<Record<string, any>>[] = [];
-
-  if (lexicalTerms.length) {
-    // Search each term with higher limit for better lexical coverage.
-    const perTerm = Math.max(10, Math.floor(80 / lexicalTerms.length));
-    searches.push(...lexicalTerms.map(term =>
-      getJson(gatewayUrl, '/search', { q: term, limit: String(perTerm) }, `literary corpus search [${term}]`, [], DEFAULT_EVIDENCE_TIMEOUT_MS)
-    ));
-  }
-
   const vectorQuery = String(query || '').trim();
-  if (vectorQuery) {
-    searches.push(getJson(
-      gatewayUrl,
-      '/search/vector',
-      { q: vectorQuery, limit: '24' },
-      'literary corpus vector search',
-      [],
-      DEFAULT_EVIDENCE_TIMEOUT_MS,
-    ));
-  }
+  if (!vectorQuery) return [];
 
-  if (!searches.length) return [];
+  // Style pool: vector search only, capped at 5 items as topic-aware supplement.
+  // The main literary material comes from /content/literature and style-contract.
+  const payload = await getJson(
+    gatewayUrl,
+    '/search/vector',
+    { q: vectorQuery, limit: '5' },
+    'literary corpus vector search',
+    [],
+    DEFAULT_EVIDENCE_TIMEOUT_MS,
+  );
 
-  const responses = await Promise.all(searches);
-  const seen = new Set<string>();
+  const results = Array.isArray(payload.results) ? payload.results : [];
   const items: ContextItem[] = [];
-  for (const payload of responses) {
-    const results = Array.isArray(payload.results) ? payload.results : [];
-    const isVectorPayload = String(payload.provider || '').includes('ragflow');
-    for (const item of results) {
-      const text = String(item.snippet || item.chunk_text || item.content || '').trim();
-      if (!text || text.length < 20) continue;
-      const documentId = String(item.document_id || item.documentId || '').trim();
-      const chunkIndex = item.chunk_index ?? item.chunkIndex ?? '';
-      const sourceId = String(item.source_id || item.sourceId || '').trim();
-      const key = `${isVectorPayload ? 'vector' : 'lexical'}:${documentId || sourceId}:${chunkIndex}:${text.slice(0, 80)}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      items.push({
-        channel: 'literary',
-        title: String(item.title || item.source || '').trim() || undefined,
-        source: `${isVectorPayload ? 'search/vector' : 'search'}/${documentId || sourceId}`,
-        text,
-        priority: isVectorPayload ? 125 : 110,
-        metadata: {
-          provider: isVectorPayload ? 'database.literary_corpus_vector' : 'database.literary_corpus_search',
-          documentId,
-          sourceId,
-          chunkIndex,
-          score: item.score,
-        },
-      });
-    }
+  for (const item of results) {
+    const text = String(item.snippet || item.chunk_text || item.content || '').trim();
+    if (!text || text.length < 80) continue;
+    items.push({
+      channel: 'literary',
+      title: String(item.title || item.source || '').trim() || undefined,
+      source: `search/vector/${String(item.document_id || item.documentId || '').trim()}`,
+      text,
+      priority: 125,
+      metadata: {
+        provider: 'database.literary_corpus_vector',
+        documentId: item.document_id || item.documentId,
+        score: item.score,
+      },
+    });
   }
   return items;
 }
 
-/** Split a Chinese query into searchable terms using jieba segmentation */
-function splitSearchTermsChinese(value: string): string[] {
-  const raw = String(value || '').trim();
-  if (!raw) return [];
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const jieba = require('jieba-wasm');
-    const words: string[] = jieba.cut(raw, true);
-    const terms = words
-      .map((w: string) => w.trim())
-      .filter((w: string) => w.length >= 2 && !/^[\s,，。；;:：、|/\\()[\]{}"'""''的了是在和与对]+$/.test(w));
-    return [...new Set(terms)].slice(0, 16);
-  } catch {
-    // Fallback: split by punctuation/whitespace, keep tokens >= 2 chars
-    return raw
-      .split(/[\s,，。；;:：、|/\\()[\]{}"'""'']+/)
-      .filter(p => p.length >= 2)
-      .slice(0, 12);
-  }
-}
 
 function classifyMaterialKind(value: string): ContextItem['channel'] | undefined {
   const normalized = value.toLowerCase();
@@ -624,17 +604,17 @@ type RetrievalLimits = {
 };
 
 const GENRE_RETRIEVAL_LIMITS: Record<Genre, RetrievalLimits> = {
-  historical_commentary: { reality: 80,  semantic: 100, lexicon: 80,  literary: 120, structure: 50 },
-  reality_commentary:    { reality: 160, semantic: 60,  lexicon: 100, literary: 60,  structure: 30 },
-  narrative:             { reality: 40,  semantic: 80,  lexicon: 80,  literary: 150, structure: 60 },
-  essay:                 { reality: 100, semantic: 80,  lexicon: 100, literary: 100, structure: 40 },
+  historical_commentary: { reality: 80,  semantic: 30, lexicon: 40,  literary: 20, structure: 20 },
+  reality_commentary:    { reality: 160, semantic: 20, lexicon: 50,  literary: 10, structure: 15 },
+  narrative:             { reality: 40,  semantic: 30, lexicon: 40,  literary: 30, structure: 25 },
+  essay:                 { reality: 100, semantic: 30, lexicon: 50,  literary: 20, structure: 20 },
 };
 
 const GENRE_BUDGETS: Record<Genre, Record<string, number>> = {
-  historical_commentary: { reality: 15, literary: 20, semantic: 15, lexicon: 15, structure: 10, author: 25 },
-  reality_commentary:    { reality: 30, literary: 10, semantic: 15, lexicon: 12, structure: 8, author: 25 },
-  narrative:             { reality: 10, literary: 35, semantic: 15, lexicon: 15, structure: 15, author: 10 },
-  essay:                 { reality: 20, literary: 20, semantic: 15, lexicon: 15, structure: 10, author: 20 },
+  historical_commentary: { reality: 35, literary: 25, semantic: 10, lexicon: 12, structure: 8, author: 10 },
+  reality_commentary:    { reality: 40, literary: 20, semantic: 10, lexicon: 12, structure: 8, author: 10 },
+  narrative:             { reality: 20, literary: 30, semantic: 15, lexicon: 12, structure: 13, author: 10 },
+  essay:                 { reality: 35, literary: 25, semantic: 10, lexicon: 12, structure: 8, author: 10 },
 };
 
 function detectGenre(request: ContextEngineRequest): Genre {
@@ -944,23 +924,25 @@ function classifyCorpusChannel(input: {
   title?: string;
   sourceId?: string;
 }): ContextItem['channel'] {
+  const provider = String(input.metadata.provider || input.chunk.provider || input.source.provider || '').toLowerCase();
+  const sourceTable = String(input.metadata.sourceTable || input.chunk.sourceTable || input.source.sourceTable || '').toLowerCase();
+  const sourceId = String(input.sourceId || '').toLowerCase();
+
+  // Evidence items: web search results and RAGFlow document chunks are always Reality
+  if (provider === 'web.search' || sourceId.startsWith('web__')) return 'reality';
+  if (provider.startsWith('ragflow') || sourceTable === 'search_chunks') return 'reality';
+
   const hay = [
-    input.chunk.provider,
     input.chunk.sourceProvider,
     input.chunk.sourceType,
-    input.chunk.sourceTable,
     input.chunk.collection,
     input.chunk.datasetId,
     input.chunk.datasetName,
-    input.source.provider,
     input.source.sourceType,
-    input.source.sourceTable,
     input.source.collection,
     input.source.datasetId,
     input.source.datasetName,
-    input.metadata.provider,
     input.metadata.sourceType,
-    input.metadata.sourceTable,
     input.metadata.collection,
     input.metadata.collectionName,
     input.metadata.datasetId,
@@ -1008,6 +990,15 @@ function normalizeWebQueries(value: unknown): string[] {
 function readContextQuery(request: ContextEngineRequest, topic: string): string {
   const evidenceQuery = readObject(request.evidenceQuery);
   return String(evidenceQuery.query || request.searchQuery || request.query || topic).trim() || topic;
+}
+
+function computeContextTokenBudget(request: ContextEngineRequest): number {
+  const explicit = request.contextTokenBudget || request.settings?.contextTokenBudget;
+  if (explicit && Number(explicit) > 0) return Math.min(Number(explicit), 120000);
+  const model = String(request.model || process.env.CONTENTBASE_LLM_MODEL || process.env.SUB2API_NOVEL_MODEL || '').trim();
+  const window = MODEL_CONTEXT_WINDOWS[model] || DEFAULT_MODEL_CONTEXT_WINDOW;
+  const usable = Math.floor(window * CONTEXT_UTILIZATION_RATIO) - SYSTEM_PROMPT_RESERVE - OUTPUT_TOKEN_RESERVE;
+  return Math.max(20000, Math.min(usable, 120000));
 }
 
 function readObject(value: unknown): Record<string, any> {

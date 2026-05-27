@@ -346,26 +346,75 @@ Layer 7: Author
 5. Multi-term hit bonus in ranking (2+ hits = +15, 3+ hits = +30)
 6. RAGFlow-backed `/search/vector` Gateway route for `contentmrs-literary-corpus`
 7. ContentBase context packing now merges LIKE and vector Literary results, with vector items prioritized above lexical hits
+8. **Token budget reform**: dynamic from model context window (×0.45), default 57K tokens, hard cap 120K. Eliminates 850K hardcode that caused 524 errors.
+9. **Post-packing Reality gate**: generation fails closed if zero Reality items survive context packing. Enforces README hard boundary at the packed-result level, not just API-response level.
+10. **Literary channel reform**: removed per-term lexical flooding (12 terms × N results). Now vector-only with limit 5 as topic-aware supplement. Main literary material comes from `/content/literature` and style-contract. Prevents literary channel from drowning Reality.
 
-### Retrieval Improvements (planned)
+### Retrieval Architecture Reform
 
-1. **Complete full RAGFlow indexing** — continue monitoring `contentmrs-literary-corpus` until all uploaded documents finish parsing and then upload any remaining book chunks not yet present in the dataset.
-2. **Query expansion** — use the topic + Reality material to generate secondary search terms that capture related themes not present in the original query.
-3. **Cross-encoder reranking** — after retrieval, use a lightweight model to score each chunk's actual relevance to the article topic, dropping noise before packing.
-4. **Diverse sampling** — for literary corpus, always include a small set of high-quality prose samples regardless of topic match, ensuring style reference is never zero.
+Core principle: **美来自固定的风格锚点，事实来自少量深度材料。** 广撒网策略同时稀释美和淹没事实。
+
+#### Literary Channel: Style Pool, Not Topic Search
+
+Literary 的检索维度是句法密度、意象浓度、段落节奏——跟文章主题无关。一段三岛由纪夫写樱花的文字对满洲征服文章的文体价值，远超一段平庸的满洲史料。
+
+规则：
+- Literary 不再用 topic query 搜索。
+- 预先标注一批高质量段落作为 style exemplars，按写作协议（immersive_historical 等）调取固定 3-5 段范本。
+- 允许少量 topic-aware literary 补充（上限 5 条），但主体是固定风格池。
+- Literary 的价值是"怎么写"，不是"写什么"。
+
+#### Reality Channel: Deep Not Wide
+
+现在 evidence search 返回大量浅层 300 字摘要。历史题目需要的不是 50 条 snippet，而是 3-5 条 2000 字的深度段落。
+
+规则：
+- Reality 优先返回长文本（fullText >= 1200 chars）。
+- 短摘要（< 400 chars）仅作为补充，不计入 Reality 主体。
+- RAGFlow 向量检索必须参与 Reality 构建（历史/文学题目的事实来源）。
+- Reality 为空时生成必须 fail closed（post-packing gate，不仅是 API response gate）。
+
+#### Lexicon/Structure/Author: Cacheable Fixed Channels
+
+这三个 channel 跟 topic 基本无关——禁用词表、句式偏好、作者人格不因写满洲还是弗洛伊德而变。
+
+规则：
+- Lexicon/Structure/Author 可缓存，不必每次 API 调用。
+- 优先从本地缓存或 system prompt 固定段读取。
+- 仅当 style-contract 版本变更时重新拉取。
+
+#### Token Budget: Dynamic, Not Hardcoded
+
+规则：
+- Token budget 从 Writer model 的实际 context window 反推。
+- 公式：`usable_budget = model_context_window × 0.45 - system_prompt_tokens - output_reserve`
+- 禁止硬编码超过任何已知模型窗口的数字。
+- 上限 45-50% 窗口利用率。原因：lost-in-the-middle 效应、成本线性增长、材料稀释。
+- 预算收紧后靠 reranker 质量取胜，不靠数量。
+
+#### Post-Packing Reality Gate
+
+`assertEvidencePack` 只验证 API 返回了数据。必须在 `composeByBudget` 之后加第二道门禁：
+
+```text
+if packed Reality items == 0 → fail closed
+if packed Reality chars < 500 → warn "Reality thin, Writer output must stay narrow"
+```
 
 ### Budget Allocation Target
 
 ```text
-Reality:   30-40k chars (factual floor, non-negotiable)
-Literary:  30-50k chars (style reference, should be largest corpus channel)
-Semantic:  3-5k chars
-Lexicon:   10-15k chars (compressed, only critical rules)
-Structure: 5-8k chars
-Author:    7-10k chars
+Total usable: model_context × 0.45 (e.g. 128K × 0.45 ≈ 57K tokens ≈ 45K chars)
+
+Reality:   35% of usable budget (deep factual material, non-negotiable)
+Literary:  25% of usable budget (style exemplars, fixed pool + minimal topic supplement)
+Semantic:  10% of usable budget
+Lexicon:   12% of usable budget (compressed, only critical rules)
+Structure: 8% of usable budget
+Author:    10% of usable budget
 ```
 
-Literary corpus should be the largest non-Reality channel. It provides the prose DNA that distinguishes output from generic LLM text.
+Literary 是最大的非 Reality channel，但它的内容是精选的风格范本，不是主题搜索的洪水。
 
 ## Root Files
 

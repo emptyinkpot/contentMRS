@@ -645,7 +645,87 @@ Dify = UI / trigger / polling
 控制 Writer 所处的语言宇宙。
 ```
 
-## 下一阶段优先级
+## 部署架构
+
+### 系统拓扑
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  Production Server (腾讯云 CVM)                               │
+│                                                               │
+│  ┌──────────────┐       ┌──────────────────┐                 │
+│  │ ContentBase  │──────▶│ DataBase Gateway  │                 │
+│  │ :5111        │       │ :18090            │                 │
+│  │ Writer 调用   │       │ 所有数据出口       │                 │
+│  └──────┬───────┘       └───┬──────┬───────┘                 │
+│         │                   │      │                          │
+│         ▼                   ▼      ▼                          │
+│  ┌────────────┐     ┌─────────┐ ┌──────────────────┐        │
+│  │ sub2api    │     │ RAGFlow │ │ Web Evidence     │        │
+│  │ (外部 LLM) │     │ :9380   │ │ Provider :19091  │        │
+│  └────────────┘     └────┬────┘ └───────┬──────────┘        │
+│                           │              │                    │
+│                           ▼              ▼                    │
+│                     ┌──────────┐  ┌───────────┐              │
+│                     │DashScope │  │ Tavily    │              │
+│                     │Embedding │  │ Web Search│              │
+│                     └──────────┘  └───────────┘              │
+│                                                               │
+│  ┌─────────────────────────────────────┐                     │
+│  │ MySQL (腾讯云 CloudBase)             │                     │
+│  └─────────────────────────────────────┘                     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 外部依赖
+
+| 类别 | 服务商 | 用途 | 可替换为 |
+|------|--------|------|----------|
+| 云服务器 | 腾讯云 CVM | 跑所有后端 | 任何 Linux VPS |
+| MySQL | 腾讯云 CloudBase | 数据存储 | 任何 MySQL 8.0+ |
+| Writer LLM | sub2api → OpenAI | 文章生成 (gpt-5.5) | 任何 OpenAI 兼容 API |
+| Embedding | 阿里云 DashScope | 向量化检索 (text-embedding-v3) | 任何 RAGFlow 支持的 embedding |
+| Web 搜索 | Tavily | Reality 事实检索 | 任何搜索 API |
+| 向量引擎 | RAGFlow (self-hosted) | 文档向量检索 | — |
+
+### 配置模板
+
+所有配置集中在 `.env.template`。部署时复制为 `.env` 填入实际值：
+
+```bash
+cp .env.template .env
+# 编辑 .env 填入你的 API keys 和服务器信息
+```
+
+详见 [.env.template](.env.template)。
+
+### 部署命令
+
+```powershell
+# 部署全部服务
+powershell scripts/deploy.ps1
+
+# 只部署某个服务
+powershell scripts/deploy.ps1 -Target gateway
+powershell scripts/deploy.ps1 -Target contentbase
+powershell scripts/deploy.ps1 -Target web-evidence
+```
+
+部署流程：本机 build → scp 编译产物到服务器 → restart systemd。
+服务器上不维护源码，只跑编译后的 JS。
+
+### 本地开发
+
+```bash
+cd ContentBase && pnpm dev          # ContentBase dev server :5101
+cd DataBase/apps/gateway && pnpm dev # Gateway dev server :18090
+```
+
+本机通过 `~/.codex-secrets/` 下的 .env 文件自动加载凭据，无需手动配置。
+
+---
+
+
 
 ### P0：旧提示词拆解入库
 

@@ -9,20 +9,27 @@ const __dirname = path.dirname(__filename);
 const require = createRequire(import.meta.url);
 
 process.env.CONTENTBASE_WORKSPACE_ROOT ||= __dirname;
-process.env.TS_NODE_TRANSPILE_ONLY = '1';
-process.env.TS_NODE_SKIP_PROJECT = '1';
-process.env.TS_NODE_COMPILER_OPTIONS = JSON.stringify({
-  module: 'CommonJS',
-  moduleResolution: 'Node',
-  esModuleInterop: true,
-  allowSyntheticDefaultImports: true,
-  target: 'ES2020',
-  resolveJsonModule: true,
-  ignoreDeprecations: '6.0',
-});
 
-require('ts-node/register/transpile-only');
-const { buildArticleContextEngine } = require('./product/novel/app/article/context-engine.ts');
+// Production: load compiled JS. Development: use ts-node for live TS.
+let buildArticleContextEngine;
+const compiledPath = path.join(__dirname, 'product', 'novel', 'dist', 'product', 'novel', 'app', 'article', 'context-engine.js');
+if (fs.existsSync(compiledPath)) {
+  ({ buildArticleContextEngine } = require(compiledPath));
+} else {
+  process.env.TS_NODE_TRANSPILE_ONLY = '1';
+  process.env.TS_NODE_SKIP_PROJECT = '1';
+  process.env.TS_NODE_COMPILER_OPTIONS = JSON.stringify({
+    module: 'CommonJS',
+    moduleResolution: 'Node',
+    esModuleInterop: true,
+    allowSyntheticDefaultImports: true,
+    target: 'ES2020',
+    resolveJsonModule: true,
+    ignoreDeprecations: '6.0',
+  });
+  require('ts-node/register/transpile-only');
+  ({ buildArticleContextEngine } = require('./product/novel/app/article/context-engine.ts'));
+}
 
 loadRuntimeEnv();
 
