@@ -14,7 +14,7 @@ const TOPICS_PATH = resolve(__dirname, 'topics.json');
 const SCORECARD_PATH = resolve(__dirname, 'scorecard.jsonl');
 const BODIES_DIR = resolve(__dirname, 'bodies');
 const COOLDOWN_MS = 30_000;
-const REQUEST_TIMEOUT_MS = 180_000;
+const REQUEST_TIMEOUT_MS = 300_000;
 
 const args = process.argv.slice(2);
 const baseUrl = getArg(args, '--base-url') || 'http://127.0.0.1:5101';

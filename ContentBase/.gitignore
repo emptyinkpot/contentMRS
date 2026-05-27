@@ -18,6 +18,8 @@ cookies-accounts/
 data/
 product/novel/runtime-artifacts/
 product/novel/runs/
+product/novel/baseline/bodies/
+product/novel/baseline/run.log
 product/novel/frontend/pages/novel/assets/
 
 .git-disabled-root-backup-*/
