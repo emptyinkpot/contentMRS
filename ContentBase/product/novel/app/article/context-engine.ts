@@ -250,7 +250,9 @@ async function loadCorpusItems(input: {
     getJson(input.gatewayUrl, '/content/literature', { search: input.query, limit: String(input.limits.literary) }, 'literary corpus', [], DEFAULT_EVIDENCE_TIMEOUT_MS),
     getJson(input.gatewayUrl, '/creative/author-profile', {}, 'author corpus', [], DEFAULT_EVIDENCE_TIMEOUT_MS),
   ]);
+  // Literary style samples: always inject regardless of topic (teaches HOW to write, not WHAT)
   const literaryCorpusItems = await loadLiteraryCorpusSearch(input.gatewayUrl, input.query);
+  const fixedStyleSamples = await loadFixedStyleSamples(input.gatewayUrl);
   return [
     ...normalizeSemanticUnits(semantic),
     ...normalizeVocabularyItems(vocabulary),
@@ -258,6 +260,7 @@ async function loadCorpusItems(input: {
     ...normalizeLiteratureItems(literature),
     ...normalizeAuthorProfile(authorProfile),
     ...literaryCorpusItems,
+    ...fixedStyleSamples,
   ];
 }
 
@@ -536,6 +539,41 @@ function normalizeLiteratureItems(payload: Record<string, any>): ContextItem[] {
       metadata: { provider: 'database.literature', id: item.id },
     };
   }).filter(Boolean) as ContextItem[];
+}
+
+async function loadFixedStyleSamples(gatewayUrl: string): Promise<ContextItem[]> {
+  // Fixed style samples: always injected regardless of topic.
+  // These teach the Writer HOW to write (sentence rhythm, diction, transitions)
+  // not WHAT to write. Uses random sampling from the literary corpus to ensure
+  // the Writer always has human prose to learn from.
+  const queries = ['鲁迅 杂文', '三岛由纪夫 散文', '内藤湖南 东洋史'];
+  const items: ContextItem[] = [];
+  for (const q of queries) {
+    try {
+      const payload = await getJson(
+        gatewayUrl,
+        '/search/vector',
+        { q, limit: '3' },
+        'fixed style sample',
+        [],
+        8000,
+      );
+      const results = Array.isArray(payload.results) ? payload.results : [];
+      for (const item of results) {
+        const text = String(item.snippet || item.chunk_text || item.content || '').trim();
+        if (!text || text.length < 100) continue;
+        items.push({
+          channel: 'literary',
+          title: String(item.title || item.source || '').trim() || '文体范本',
+          source: `fixed-style/${String(item.document_id || '').trim()}`,
+          text: text.slice(0, 800),
+          priority: 140,
+          metadata: { provider: 'database.fixed_style_sample', fixedInjection: true },
+        });
+      }
+    } catch { /* skip failed queries */ }
+  }
+  return items.slice(0, 9);
 }
 
 async function loadLiteraryCorpusSearch(gatewayUrl: string, query: string): Promise<ContextItem[]> {
