@@ -55,7 +55,17 @@ const WRITER_SYSTEM_PROMPT = `你是 Writer，一个评论性散文写作者。�
 
 ## 执行
 
-基于 Corpus Context 中的 [REALITY]、[LITERARY]、[SEMANTIC]、[LEXICON]、[STRUCTURE]、[AUTHOR] 各段写作。[LITERARY] 是文体范本——学其句法节奏转折收束，不照搬内容。[REALITY] 是事实来源——精确信息必须逐字可溯。直接输出正文。
+基于 Corpus Context 中的 [REALITY]、[LITERARY]、[SEMANTIC]、[LEXICON]、[STRUCTURE]、[AUTHOR] 各段写作。[REALITY] 是事实来源——精确信息必须逐字可溯。直接输出正文。
+
+## 文体范本（硬约束）
+
+[LITERARY] 是你的文体教材，不是参考资料。你必须从中学习并内化以下要素：
+- 句子的长短交替节奏（观察范本中短句和长句如何穿插）
+- 名词的密度和并置方式（观察范本中具象名词如何堆叠产生质感）
+- 段落的转折手法（观察范本中如何从一个话题滑入另一个话题，不用"然而""但是"）
+- 情绪的克制方式（观察范本中如何用动作、物件、沉默代替直接抒情）
+
+你写出的正文，句法节奏必须接近 [LITERARY] 中的范本。如果范本是鲁迅，你的句子要短、硬、有刺；如果是三岛，要有官能性的精确描写；如果是内藤湖南，要有学者式的从容和冷淡的判断。不是模仿内容，是内化节奏。读者应该能从你的句子里闻到这些作者的气息，但找不到任何一句直接搬运。
 
 ## 严禁排比
 
@@ -185,7 +195,7 @@ async function generateArticle(request) {
     topic,
     targetWordCount: effectiveTarget,
   });
-  const modelInvocation = await callSingleWriter(context.prompt, request?.settings || {});
+  const modelInvocation = await callSingleWriter(context.prompt, { ...request?.settings, genre: request?.genre || '' });
   let body = String(modelInvocation.body || '').trim();
   if (!body) {
     throw new Error('Writer returned no article body');
@@ -211,7 +221,7 @@ async function generateArticle(request) {
       '不要重复已写内容，不要写过渡语或总结语，直接续写正文。',
       '保持相同文风、节奏和质量标准。每段必须有具体锚点。',
     ].join('\n');
-    const continuation = await callSingleWriter(continuePrompt, request?.settings || {});
+    const continuation = await callSingleWriter(continuePrompt, { ...request?.settings, genre: request?.genre || '' });
     const newText = String(continuation.body || '').trim();
     if (!newText || newText.length < 200) break;
     body = body + '\n\n' + newText;
@@ -239,9 +249,19 @@ async function generateArticle(request) {
 }
 
 async function callSingleWriter(prompt, settings) {
-  const baseUrl = String(process.env.CONTENTBASE_LLM_BASE_URL || '').trim().replace(/\/+$/, '');
-  const apiKey = String(process.env.CONTENTBASE_LLM_API_KEY || '').trim();
-  const model = String(settings?.model || process.env.CONTENTBASE_LLM_MODEL || '').trim();
+  // Model routing: fiction/narrative uses Qwen, everything else uses Claude
+  const isNarrative = String(settings?.genre || settings?.routeHint || '').match(/narrative|fiction|小说|章节/i);
+  let baseUrl, apiKey, model;
+
+  if (isNarrative && process.env.CONTENTBASE_QWEN_BASE_URL) {
+    baseUrl = String(process.env.CONTENTBASE_QWEN_BASE_URL || '').trim().replace(/\/+$/, '');
+    apiKey = String(process.env.CONTENTBASE_QWEN_API_KEY || '').trim();
+    model = String(settings?.model || process.env.CONTENTBASE_QWEN_MODEL || 'qwen-max').trim();
+  } else {
+    baseUrl = String(process.env.CONTENTBASE_LLM_BASE_URL || '').trim().replace(/\/+$/, '');
+    apiKey = String(process.env.CONTENTBASE_LLM_API_KEY || '').trim();
+    model = String(settings?.model || process.env.CONTENTBASE_LLM_MODEL || '').trim();
+  }
   if (!baseUrl) {
     throw new Error('CONTENTBASE_LLM_BASE_URL is required');
   }
@@ -251,70 +271,80 @@ async function callSingleWriter(prompt, settings) {
   if (!model) {
     throw new Error('CONTENTBASE_LLM_MODEL is required');
   }
-  const response = await fetch(`${baseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${apiKey}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        {
-          role: 'system',
-          content: WRITER_SYSTEM_PROMPT,
+  const maxRetries = 2;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${apiKey}`,
+          'content-type': 'application/json',
         },
-        {
-          role: 'user',
-          content: prompt,
+        body: JSON.stringify({
+          model,
+          messages: [
+            {
+              role: 'system',
+              content: WRITER_SYSTEM_PROMPT,
+            },
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          temperature: Number.isFinite(Number(settings?.temperature)) ? Number(settings.temperature) : 0.4,
+          max_tokens: Number.isFinite(Number(settings?.maxTokens)) && Number(settings.maxTokens) > 0
+            ? Math.trunc(Number(settings.maxTokens))
+            : 4096,
+          stream: true,
+        }),
+      });
+      if (!response.ok) {
+        const errText = await response.text().catch(() => '');
+        if (attempt < maxRetries) continue;
+        throw new Error(`LLM gateway returned HTTP ${response.status}: ${errText.slice(0, 240)}`);
+      }
+      // Collect streamed SSE chunks into full response
+      let fullContent = '';
+      let usage = null;
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') continue;
+          try {
+            const chunk = JSON.parse(data);
+            const delta = chunk.choices?.[0]?.delta?.content;
+            if (delta) fullContent += delta;
+            if (chunk.usage) usage = chunk.usage;
+          } catch {}
+        }
+      }
+      if (!fullContent && attempt < maxRetries) continue;
+      let payload = { choices: [{ message: { content: fullContent } }], usage };
+      return {
+        body: payload?.choices?.[0]?.message?.content || '',
+        trace: {
+          provider: 'openai-compatible',
+          model,
+          baseUrl,
+          usage: payload?.usage || null,
+          finishedAt: new Date().toISOString(),
         },
-      ],
-      temperature: Number.isFinite(Number(settings?.temperature)) ? Number(settings.temperature) : 0.4,
-      max_tokens: Number.isFinite(Number(settings?.maxTokens)) && Number(settings.maxTokens) > 0
-        ? Math.trunc(Number(settings.maxTokens))
-        : 4096,
-      stream: true,
-    }),
-  });
-  if (!response.ok) {
-    const errText = await response.text().catch(() => '');
-    throw new Error(`LLM gateway returned HTTP ${response.status}: ${errText.slice(0, 240)}`);
-  }
-  // Collect streamed SSE chunks into full response
-  let fullContent = '';
-  let usage = null;
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
-    for (const line of lines) {
-      if (!line.startsWith('data: ')) continue;
-      const data = line.slice(6).trim();
-      if (data === '[DONE]') continue;
-      try {
-        const chunk = JSON.parse(data);
-        const delta = chunk.choices?.[0]?.delta?.content;
-        if (delta) fullContent += delta;
-        if (chunk.usage) usage = chunk.usage;
-      } catch {}
+      };
+    } catch (err) {
+      if (attempt < maxRetries) continue;
+      throw err;
     }
   }
-  let payload = { choices: [{ message: { content: fullContent } }], usage };
-  return {
-    body: payload?.choices?.[0]?.message?.content || '',
-    trace: {
-      provider: 'openai-compatible',
-      model,
-      baseUrl,
-      usage: payload?.usage || null,
-      finishedAt: new Date().toISOString(),
-    },
-  };
 }
 
 async function corpusDiagnostics() {

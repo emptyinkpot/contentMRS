@@ -40,8 +40,9 @@ Content-Type: application/json
 ```json
 {
   "topic": "满洲人征服中国的历史悖论",
-  "genre": "historical_commentary",
-  "targetWordCount": 800,
+  "genre": "historical-essay",
+  "wordCount": 8000,
+  "target": "论证方向和结构要求",
   "protocol": "immersive_historical_synthetic_narrative",
   "evidenceQuery": {
     "includeWeb": true,
@@ -50,24 +51,39 @@ Content-Type: application/json
     "ragflowDatasetIds": ["bdcc99c658f111f18aecb3d695a2553d"]
   },
   "settings": {
-    "model": "gpt-5.5",
+    "model": "claude-sonnet-4-6",
     "temperature": 0.4,
-    "maxTokens": 4096
+    "maxTokens": 16000
   }
 }
 ```
 
+### 双模型路由
+
+系统根据 `genre` 自动选择 Writer 模型：
+
+| genre | 模型 | 适用场景 |
+|-------|------|---------|
+| `historical-essay` / `essay` / `reality_commentary` | Claude Sonnet 4.6 | 独立文章、政论、视频文案、时事评论 |
+| `narrative` / `fiction` / 含"小说""章节" | Qwen Max (DashScope) | 小说章节、虚构叙事、文学创作 |
+
+也可以通过 `settings.model` 手动指定模型覆盖自动路由。
+
+**为什么分开：**
+- Claude 判断锋利、不套路、节奏自然，适合需要立场和论证的文本
+- Qwen 中文文学性更强、对文体范本响应更好，适合需要修辞密度和情感质感的虚构文本
+
 | 参数 | 必填 | 说明 |
 |---|---|---|
 | `topic` | ✅ | 文章主题，中文自然语言 |
-| `genre` | 否 | 体裁暗示：`historical_commentary` / `reality_commentary` / `narrative` / `essay`。不传则自动从 topic 推断，默认 essay |
-| `targetWordCount` | 否 | 目标字数，默认 2400 |
+| `genre` | 否 | 体裁：`historical-essay` / `essay` / `narrative` / `fiction`。影响模型路由和检索策略 |
+| `wordCount` | 否 | 目标字数，默认 2400。不足 70% 时自动续写（最多 3 次） |
+| `target` | 否 | 写作方向、结构要求、论证层次（自然语言描述） |
 | `protocol` | 否 | 写作协议名（影响 style-contract 检索） |
 | `evidenceQuery.includeWeb` | 否 | 是否搜索 Web 证据，默认 true |
 | `evidenceQuery.includeRagflow` | 否 | 是否搜索 RAGFlow 文档库，默认 true |
-| `evidenceQuery.webQueries` | 否 | 额外的 Web 搜索关键词（补充自动生成的 query） |
-| `evidenceQuery.ragflowDatasetIds` | 否 | 指定搜索哪些 RAGFlow dataset（不传则按 genre 自动路由） |
-| `settings.model` | 否 | Writer 模型，默认读服务器环境变量 |
+| `evidenceQuery.webQueries` | 否 | 额外的 Web 搜索关键词（补充 pre-research 自动生成的 query） |
+| `settings.model` | 否 | 手动指定 Writer 模型，覆盖自动路由 |
 | `settings.temperature` | 否 | 生成温度，默认 0.4 |
 | `settings.maxTokens` | 否 | 最大输出 token，默认 4096 |
 
@@ -79,10 +95,11 @@ Content-Type: application/json
   "data": {
     "draft": {
       "body": "生成的文章正文（纯文本，无 markdown）",
+      "continuations": 0,
       "modelInvocation": {
         "provider": "openai-compatible",
-        "model": "gpt-5.5",
-        "usage": { "prompt_tokens": 54000, "completion_tokens": 1600, "total_tokens": 55600 }
+        "model": "claude-sonnet-4-6",
+        "usage": { "prompt_tokens": 35000, "completion_tokens": 3600, "total_tokens": 38600 }
       }
     },
     "context": {
@@ -817,43 +834,215 @@ Dify = UI / trigger / polling
 ### 系统拓扑
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│  Production Server (腾讯云 CVM)                               │
-│                                                               │
-│  ┌──────────────┐       ┌──────────────────┐                 │
-│  │ ContentBase  │──────▶│ DataBase Gateway  │                 │
-│  │ :5111        │       │ :18090            │                 │
-│  │ Writer 调用   │       │ 所有数据出口       │                 │
-│  └──────┬───────┘       └───┬──────┬───────┘                 │
-│         │                   │      │                          │
-│         ▼                   ▼      ▼                          │
-│  ┌────────────┐     ┌─────────┐ ┌──────────────────┐        │
-│  │ sub2api    │     │ RAGFlow │ │ Web Evidence     │        │
-│  │ (外部 LLM) │     │ :9380   │ │ Provider :19091  │        │
-│  └────────────┘     └────┬────┘ └───────┬──────────┘        │
-│                           │              │                    │
-│                           ▼              ▼                    │
-│                     ┌──────────┐  ┌───────────┐              │
-│                     │DashScope │  │ Tavily    │              │
-│                     │Embedding │  │ Web Search│              │
-│                     └──────────┘  └───────────┘              │
-│                                                               │
-│  ┌─────────────────────────────────────┐                     │
-│  │ MySQL (腾讯云 CloudBase)             │                     │
-│  └─────────────────────────────────────┘                     │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│  Production Server (腾讯云 CVM · 124.220.233.126)                     │
+│                                                                       │
+│  ┌──────────────┐       ┌──────────────────┐                         │
+│  │ ContentBase  │──────▶│ DataBase Gateway  │                         │
+│  │ :5111        │       │ :18090            │                         │
+│  │ 文章生成引擎  │       │ 统一数据 API       │                         │
+│  └──────┬───────┘       └───┬──────┬───────┘                         │
+│         │                   │      │                                  │
+│         ▼                   ▼      ▼                                  │
+│  ┌────────────┐     ┌─────────┐ ┌──────────────────┐                │
+│  │ sub2api    │     │ RAGFlow │ │ Web Evidence     │                │
+│  │ (外部 LLM) │     │ :9380   │ │ Provider :19091  │                │
+│  └────────────┘     └────┬────┘ └───────┬──────────┘                │
+│                           │              │                            │
+│                           ▼              ▼                            │
+│                     ┌──────────┐  ┌───────────┐                      │
+│                     │DashScope │  │ Tavily    │                      │
+│                     │Embedding │  │ Web Search│                      │
+│                     └──────────┘  └───────────┘                      │
+│                                                                       │
+│  ┌──────────────┐  ┌─────────────────────────────────────────┐      │
+│  │ Fanqie Svc  │  │ MyBlog (3 services)                      │      │
+│  │ :5701       │  │  publish-api :4122                        │      │
+│  │ 番茄小说发布  │  │  content-projector (Obsidian→index)       │      │
+│  └──────────────┘  │  sse (实时推送)                           │      │
+│                     │  syncthing (vault 同步)                   │      │
+│                     └─────────────────────────────────────────┘      │
+│                                                                       │
+│  ┌─────────────────────────────────────┐                             │
+│  │ MySQL (腾讯云 CloudBase) · 118 tables │                             │
+│  └─────────────────────────────────────┘                             │
+└─────────────────────────────────────────────────────────────────────┘
 ```
+
+### 运行中的服务
+
+| 服务 | 端口 | 用途 |
+|---|---|---|
+| contentbase | 5111 | 文章生成引擎（Context Engine + Writer） |
+| database-gateway | 18090 | 统一数据 API（所有模块的数据出口） |
+| web-evidence-provider | 19091 | Tavily Web 搜索 + 全文抓取 |
+| fanqie-service | 5701 | 番茄小说自动发布（Playwright 驱动） |
+| myblog-publish-api | 4122 | 博客发布 API（供 Dify workflow 调用） |
+| myblog-runtime-content-projector | 内部 | Obsidian vault → 实时内容索引（283 篇） |
+| myblog-runtime-sse | 内部 | SSE 实时推送内容更新 |
+| myblog-syncthing | 内部 | Obsidian vault 双向同步 |
+| RAGFlow | 9380 | 文档向量检索（74,949 chunks） |
 
 ### 外部依赖
 
 | 类别 | 服务商 | 用途 | 可替换为 |
 |------|--------|------|----------|
 | 云服务器 | 腾讯云 CVM | 跑所有后端 | 任何 Linux VPS |
-| MySQL | 腾讯云 CloudBase | 数据存储 | 任何 MySQL 8.0+ |
+| MySQL | 腾讯云 CloudBase | 数据存储（118 tables） | 任何 MySQL 8.0+ |
 | Writer LLM | sub2api → OpenAI | 文章生成 (gpt-5.5) | 任何 OpenAI 兼容 API |
 | Embedding | 阿里云 DashScope | 向量化检索 (text-embedding-v3) | 任何 RAGFlow 支持的 embedding |
 | Web 搜索 | Tavily | Reality 事实检索 | 任何搜索 API |
-| 向量引擎 | RAGFlow (self-hosted) | 文档向量检索 | — |
+| 向量引擎 | RAGFlow (self-hosted) | 文档向量检索（74,949 chunks） | — |
+| 小说平台 | 番茄小说 | 章节发布 | — |
+| 博客同步 | Syncthing | Obsidian vault 双向同步 | — |
+
+---
+
+## 番茄小说发布
+
+Fanqie Service (:5701) 是 Playwright 驱动的浏览器自动化服务，负责把章节内容发布到番茄小说平台。
+
+### 能力
+
+- 2 个活跃账号（墨水的生命周期、墨水的灰色）
+- 8 部作品在追踪
+- 自动登录 + cookie 管理
+- 章节内容从 Gateway 拉取 → 自动发布到番茄
+
+### 数据流
+
+```text
+Gateway /content/publication/publish-context
+  → 获取待发布章节 + 目标账号
+  → Fanqie Service 执行浏览器发布
+  → Gateway /writes/record-publication-result 记录结果
+```
+
+---
+
+## MyBlog 系统
+
+三个服务协作，实现 Obsidian vault → 博客的自动发布管道。
+
+### 架构
+
+```text
+Obsidian (本机编辑)
+  → Syncthing 同步到服务器
+  → content-projector 监听文件变化，重建索引（283 篇）
+  → SSE 实时推送更新到客户端
+  → publish-api (:4122) 供 Dify workflow 调用触发发布
+```
+
+### 数据
+
+- 283 篇文章已索引
+- 包含学术论文、笔记、导出内容
+- 实时监听文件变化，无需手动刷新
+
+---
+
+## DataBase Gateway 完整 API
+
+Gateway (:18090) 是所有模块的统一数据出口。以下是完整路由表。
+
+### 证据与搜索
+
+| 路由 | 用途 |
+|---|---|
+| `GET /evidence/search` | 多源证据检索（MySQL + semantic + Web + RAGFlow） |
+| `GET /search/vector` | RAGFlow 向量检索 |
+
+### 内容管理
+
+| 路由 | 用途 |
+|---|---|
+| `GET /content/works` | 作品列表（28 部） |
+| `GET /content/works/:id/chapters` | 章节列表 |
+| `GET /content/works/:id/characters` | 角色列表 |
+| `GET /content/canonical/works` | canonical 作品（30 部） |
+| `GET /content/canonical/works/:id/parts` | 卷/章节结构 |
+| `GET /content/canonical/parts/:id/blocks` | 内容块 |
+| `GET /content/canonical/parts/:id/evidence-fact-atoms` | 证据引用 |
+| `GET /content/canonical/assets` | 内容资产 |
+| `GET /content/canonical/publication-targets` | 发布目标映射 |
+| `GET /content/sources` | 统一来源目录（文档 + chunks + semantic units） |
+| `GET /content/literature` | 文学参考语料（94+ 条） |
+| `GET /content/literature/stats` | 文学语料统计 |
+| `GET /content/notes` | 笔记（36+ 条） |
+| `GET /content/experience-records` | agent 经验记录（65+ 条） |
+| `GET /content/fanqie-works` | 番茄作品追踪（8 部） |
+| `GET /content/state-machine/transitions` | 章节工作流状态 |
+
+### 发布管道
+
+| 路由 | 用途 |
+|---|---|
+| `GET /content/publication/accounts` | 番茄账号（2 个，含 session） |
+| `GET /content/publication/publish-context` | 聚合发布上下文（目标+账号+作品） |
+| `GET /content/publication/remote-chapters` | 远端章节快照 |
+| `GET /content/publication/publish-chapter` | 待发布章节内容 |
+
+### 创作系统
+
+| 路由 | 用途 |
+|---|---|
+| `GET /creative/style-contract` | 完整风格协议（模块、编辑步骤、质量规则、材料、技法、词汇偏好） |
+| `GET /creative/author-profile` | 作者画像（兴趣聚类 + 技法绑定） |
+| `GET /creative/context` | 一次性拉取完整创作上下文（叙事状态+语义状态+风格+词汇+发布状态+运行时快照） |
+
+### 语义知识
+
+| 路由 | 用途 |
+|---|---|
+| `GET /semantic/units` | semantic units 检索（带 tag 分类） |
+| `GET /vocabulary/search` | 词汇库检索（推荐词 by category） |
+
+### 研究
+
+| 路由 | 用途 |
+|---|---|
+| `GET /research/topics` | topic corpus |
+| `POST /research/query` | 研究查询执行（corpus + Web 模式） |
+
+### 叙事记忆
+
+| 路由 | 用途 |
+|---|---|
+| `GET /story-memory/recent` | 最近叙事记忆 |
+| `POST /writes/record-story-memory` | 写入叙事记忆 |
+
+### 文件代理（OpenList）
+
+| 路由 | 用途 |
+|---|---|
+| `GET /openlist/mounts` | 挂载点（夸克网盘） |
+| `GET /openlist/targets` | 导出目标目录 |
+| `GET /openlist/files` | 文件列表 |
+
+### 写入接口
+
+| 路由 | 用途 |
+|---|---|
+| `POST /writes/record-generation-output` | 记录生成结果 |
+| `POST /writes/record-audit-result` | 记录审计结果 |
+| `POST /writes/record-chapter-transition` | 记录章节状态变更 |
+| `POST /writes/record-publication-result` | 记录发布结果 |
+| `POST /writes/replace-work-structure` | 替换作品结构 |
+| `POST /writes/record-style-revision-pair` | 记录风格修正对 |
+| `POST /writes/record-semantic-reference-material` | 记录语义参考材料 |
+| `POST /writes/record-article-acceptance-report` | 记录文章验收报告 |
+| `POST /writes/record-article-reference-usage-report` | 记录引用使用报告 |
+| `POST /writes/record-author-lexicon-review` | 记录词汇审查 |
+| `POST /writes/record-story-memory` | 记录叙事记忆 |
+
+### 系统
+
+| 路由 | 用途 |
+|---|---|
+| `GET /health` | 健康检查（含 MySQL + RAGFlow 状态） |
+| `GET /health/ragflow` | RAGFlow 专项健康检查 |
+| `GET /inventory/tables` | 数据库表清单（118 tables） |
 
 ### 配置模板
 
@@ -889,31 +1078,6 @@ cd DataBase/apps/gateway && pnpm dev # Gateway dev server :18090
 ```
 
 本机通过 `~/.codex-secrets/` 下的 .env 文件自动加载凭据，无需手动配置。
-
----
-
-## 内部技术细节（以下内容面向开发者，非调用方）
-
-### 服务端口
-
-| 服务 | 端口 | 用途 |
-|---|---|---|
-| ContentBase | :5111 | 生成引擎（主入口） |
-| DataBase Gateway | :18090 | 所有数据出口（证据、语料、风格） |
-| Web Evidence Provider | :19091 | Tavily Web 搜索 |
-| RAGFlow | :9380 | 文档向量检索 |
-
-### Gateway 内部路由
-
-| 路由 | 用途 |
-|---|---|
-| `/evidence/search` | 证据搜索（Web + RAGFlow 混合） |
-| `/semantic/units` | Semantic unit 检索 |
-| `/vocabulary/search` | 词汇库检索 |
-| `/content/literature` | 文学语料检索 |
-| `/creative/style-contract` | 风格契约 |
-| `/creative/author-profile` | 作者画像 |
-| `/health/ragflow` | RAGFlow 健康检查 |
 
 ---
 
