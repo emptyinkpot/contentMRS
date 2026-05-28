@@ -168,21 +168,50 @@ async function generateArticle(request) {
   if (!topic) {
     throw new Error('topic is required');
   }
-  const targetWordCount = Number(request?.structure?.targetWordCount || request?.targetWordCount || 2400);
+  const targetWordCount = Number(request?.wordCount || request?.structure?.targetWordCount || request?.targetWordCount || 2400);
+  const effectiveTarget = Number.isFinite(targetWordCount) && targetWordCount > 0 ? Math.trunc(targetWordCount) : 2400;
   const context = await buildArticleContextEngine({
     request,
     topic,
-    targetWordCount: Number.isFinite(targetWordCount) && targetWordCount > 0 ? Math.trunc(targetWordCount) : 2400,
+    targetWordCount: effectiveTarget,
   });
   const modelInvocation = await callSingleWriter(context.prompt, request?.settings || {});
-  const body = String(modelInvocation.body || '').trim();
+  let body = String(modelInvocation.body || '').trim();
   if (!body) {
     throw new Error('Writer returned no article body');
   }
+
+  // Auto-continuation: if output is less than 70% of target, continue writing
+  const minChars = Math.floor(effectiveTarget * 0.7);
+  let continuations = 0;
+  while (body.length < minChars && continuations < 3) {
+    continuations++;
+    // Continuation prompt is lightweight: just topic + last 800 chars of body + instruction
+    const lastContext = body.slice(-800);
+    const continuePrompt = [
+      `题目：${topic}`,
+      `目标字数：${effectiveTarget}字`,
+      `已完成：${body.length}字，还需续写约${effectiveTarget - body.length}字。`,
+      '',
+      '[已完成部分末尾]',
+      lastContext,
+      '',
+      '[续写指令]',
+      '从上文末尾自然接续，展开下一个层次的论述。',
+      '不要重复已写内容，不要写过渡语或总结语，直接续写正文。',
+      '保持相同文风、节奏和质量标准。每段必须有具体锚点。',
+    ].join('\n');
+    const continuation = await callSingleWriter(continuePrompt, request?.settings || {});
+    const newText = String(continuation.body || '').trim();
+    if (!newText || newText.length < 200) break;
+    body = body + '\n\n' + newText;
+  }
+
   return {
     draft: {
       body,
       modelInvocation: modelInvocation.trace,
+      continuations,
     },
     context: {
       evidence: {
