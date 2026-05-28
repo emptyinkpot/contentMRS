@@ -120,10 +120,19 @@ export async function buildArticleContextEngine(input: {
   const genre = detectGenre(input.request);
   const retrievalLimits = GENRE_RETRIEVAL_LIMITS[genre];
 
+  // Pre-research: expand topic into multiple specific search queries via lightweight LLM
+  const expandedQueries = await expandResearchQueries(input.topic, input.request.target || input.request.goal || '', genre);
+  if (expandedQueries.length) {
+    warnings.push(`pre-research: expanded into ${expandedQueries.length} queries`);
+  }
+
   const evidencePack = await loadEvidencePack({
     gatewayUrl,
     query,
-    request: input.request,
+    request: {
+      ...input.request,
+      webQueries: expandedQueries.length ? expandedQueries : (input.request.webQueries || []),
+    },
     warnings,
     realityLimit: retrievalLimits.reality,
     genre,
@@ -826,6 +835,8 @@ function buildWriterPrompt(input: {
     '禁止使用"不禁让人思考"、"引人深思"、"值得我们注意"、"我们应当"、"在某种意义上"、"在一定程度上"、"从某种角度来看"这类评论腔套话。',
     '禁止用括号、冒号、破折号引出长段补充说明。需要补充就另起一句。',
     '段落要有呼吸感：不要每段都同样长。允许出现两三句话的短段落用来收束或转折。',
+    '每个段落必须包含至少一个具体锚点（人名、书名、年份、数字、地名、文件名、引文）。纯概括性段落不得超过连续两段。',
+    '段落结尾必须停在事实、判断或未解决的张力上，禁止用意象画面收束段落。',
     `字数要求：正文不得少于 ${input.targetWordCount} 字。可以超出，鼓励写长写透，但不得注水重复。宁可多展开一层论证、多一个微观细节，也不要为凑字数而堆砌同义句。`,
     hasOnlyReality(input.sections)
       ? '注意：本次只有 Reality/Web 事实材料，无其他 Corpus。输出必须收窄为简短分析短文，不得写长篇文学性或地缘政治叙事。'
@@ -1080,4 +1091,43 @@ function normalizeText(value: string): string {
 
 function dedupeStrings(values: string[]): string[] {
   return Array.from(new Set(values.map((item) => String(item || '').trim()).filter(Boolean)));
+}
+
+async function expandResearchQueries(topic: string, target: string, genre: Genre): Promise<string[]> {
+  const baseUrl = String(process.env.CONTENTBASE_LLM_BASE_URL || process.env.DATABASE_RESEARCH_LLM_BASE_URL || '').trim().replace(/\/+$/, '');
+  const apiKey = String(process.env.CONTENTBASE_LLM_API_KEY || process.env.DATABASE_RESEARCH_LLM_API_KEY || '').trim();
+  const model = String(process.env.CONTENTBASE_LLM_MODEL || process.env.DATABASE_RESEARCH_LLM_MODEL || 'gpt-5.5').trim();
+  if (!baseUrl || !apiKey) return [];
+
+  const prompt = `文章主题：${topic}${target ? `\n写作方向：${target}` : ''}
+
+把这个主题拆成6-8个具体的搜索查询。要求：
+- 中英文各半
+- 每个查询针对一个具体的事实、人物、事件、年份、文献或数据
+- 不要泛泛的概念词，要能搜到具体信息的查询
+- 英文查询要用学术/百科风格的关键词组合
+- 每行一个查询，不要编号，不要解释`;
+
+  try {
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: '你是研究助手。只输出搜索查询列表，不输出其他内容。' },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.3,
+        max_tokens: 500,
+      }),
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!response.ok) return [];
+    const payload = await response.json() as Record<string, any>;
+    const text = String(payload?.choices?.[0]?.message?.content || '');
+    return text.split('\n').map((line: string) => line.trim()).filter((line: string) => line.length >= 4 && line.length <= 80).slice(0, 8);
+  } catch {
+    return [];
+  }
 }

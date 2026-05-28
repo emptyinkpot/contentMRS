@@ -932,15 +932,47 @@ export function evidenceRoutes({ pool, config }: RouteDependencies) {
       ...semanticSearch.rounds,
     ];
     if (includeWeb && config.evidenceWebSearchUrl) {
-      const web = await searchWebEvidence({
-        url: config.evidenceWebSearchUrl,
-        q,
-        limit: Math.min(limit, 10),
-        requestId: c.get("requestId"),
-      });
-      appendWebItems({ items: web.items, sourceById, chunks, citations, sourcePolicy });
-      webSources = web.items.length;
-      rounds.push(web.round);
+      const webQueriesRaw = (c.req.query("webQueries") || "").trim();
+      const webQueryList = webQueriesRaw
+        ? webQueriesRaw.split('\n').map((line: string) => line.trim()).filter((line: string) => line.length >= 2)
+        : [];
+
+      if (webQueryList.length > 0) {
+        // Multi-query web search: run each expanded query with limit 3
+        const allWebItems: any[] = [];
+        const seenUrls = new Set<string>();
+        for (const wq of webQueryList.slice(0, 8)) {
+          try {
+            const webResult = await searchWebEvidence({
+              url: config.evidenceWebSearchUrl,
+              q: wq,
+              limit: 3,
+              requestId: c.get("requestId"),
+            });
+            for (const item of webResult.items) {
+              const url = String(item.url || item.id || '').toLowerCase();
+              if (!seenUrls.has(url)) {
+                seenUrls.add(url);
+                allWebItems.push(item);
+              }
+            }
+            rounds.push(webResult.round);
+          } catch { /* skip failed individual queries */ }
+        }
+        appendWebItems({ items: allWebItems, sourceById, chunks, citations, sourcePolicy });
+        webSources = allWebItems.length;
+      } else {
+        // Single query fallback
+        const web = await searchWebEvidence({
+          url: config.evidenceWebSearchUrl,
+          q,
+          limit: Math.min(limit, 10),
+          requestId: c.get("requestId"),
+        });
+        appendWebItems({ items: web.items, sourceById, chunks, citations, sourcePolicy });
+        webSources = web.items.length;
+        rounds.push(web.round);
+      }
     }
     if (includeRagflow && config.evidenceRagflow) {
       const ragflow = await searchRagflowEvidence({
