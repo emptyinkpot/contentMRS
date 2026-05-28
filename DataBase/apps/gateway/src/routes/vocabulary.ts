@@ -19,22 +19,20 @@ export function vocabularyRoutes({ pool }: RouteDependencies) {
   app.get("/vocabulary/search", async (c) => {
     const q = (c.req.query("q") || "").trim();
     const limit = clampLimit(c.req.query("limit") || null, 20, 100);
-    if (q.length < 1) {
-      return c.json({ query: q, count: 0, items: [], requestId: c.get("requestId") });
-    }
 
-    const like = `%${q}%`;
+    // Vocabulary entries are short (2-8 chars). Topic queries are long and won't LIKE-match.
+    // Always return the full curated vocabulary pool (non-baseline) regardless of query,
+    // so the Writer always has the preferred/banned word list available.
     const rows = await query<VocabularyRow[]>(
       pool,
       `
       SELECT id, content, type, category, note, created_at, updated_at
       FROM vocabulary
-      WHERE (content LIKE ? OR type LIKE ? OR category LIKE ? OR note LIKE ?)
-        AND category != 'baseline-article'
-      ORDER BY id DESC
+      WHERE category != 'baseline-article'
+      ORDER BY RAND()
       LIMIT ?
       `,
-      [like, like, like, like, limit]
+      [limit]
     );
 
     return c.json({
