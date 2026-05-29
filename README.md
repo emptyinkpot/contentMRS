@@ -13,6 +13,35 @@ ContentMRS 是一个**被 AI agent 调用的生成引擎**。它不是面向人�
            成品
 ```
 
+## 系统全景
+
+```text
+novel-factory (小说生产系统)     ContentAdmin (管理面板)
+      │                              │
+      │  调用生成API                  │  调用生成/检索API
+      ▼                              ▼
+  ContentMRS API ←──────────────── 本仓库
+      │
+      ├── DataBase Gateway (数据检索)
+      ├── RAGFlow (向量检索)
+      ├── Web Evidence Provider (网页搜索)
+      └── n8n (工作流编排)
+              │
+              ▼
+      fanqie-service (番茄发布)
+```
+
+| 仓库 | 用途 | 地址 |
+|------|------|------|
+| contentMRS | 生成引擎（本仓库） | github.com/emptyinkpot/contentMRS |
+| novel-factory | 小说生产系统（大纲→生成→审核→发布） | github.com/emptyinkpot/novel-factory |
+| fanqie-service | 番茄小说发布 | github.com/emptyinkpot/fanqie-service |
+| DataBase | 数据基础设施 | github.com/emptyinkpot/DataBase |
+             │
+             ▼
+           成品
+```
+
 ContentMRS 接受软参数（topic、方向性描述、体裁暗示、长度期望），返回带有个人风格烙印的成品。
 理解用户意图的是 AI Agent，不是 ContentMRS。ContentMRS 只负责出活。
 
