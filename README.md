@@ -124,11 +124,70 @@ Content-Type: application/json
 
 ### 注意事项
 
-- 请求超时建议设 **3 分钟**（证据搜索 + LLM 生成需要时间）
-- `data.draft.body` 是最终成品，直接使用即可
-- `data.context.diagnostics` 是调试信息，正常使用不需要关注
-- 不需要传 API key（服务内部已配置 LLM 和搜索凭据）
-- 如果返回 `"error": "Reality required: ..."` 说明该 topic 没有找到足够的事实材料，可以换个更具体的 topic 或补充 `webQueries`
+- 请求需要 API Key：`Authorization: Bearer cb-k9Xm4wPqR7vJ2nLs5tYh8dFe`
+- 请求超时建议设 **5 分钟**（pre-research + 证据搜索 + LLM 生成 + 续写）
+- `data.draft.body` 是最终成品，已经过确定性去AI化处理
+- 不需要关注 `data.context.diagnostics`（调试用）
+
+---
+
+## 架构与设计决策
+
+### 生成管线
+
+```
+topic + target
+  → pre-research (LLM扩展为6-8个中英文搜索查询)
+  → evidence search (多轮web搜索 + FULLTEXT DB + RAGFlow向量检索)
+  → corpus items (semantic + vocabulary + style-contract + literature + author-profile + 固定文体范本)
+  → rank / rerank / pack (按channel预算分配)
+  → buildWriterPrompt (组装[REALITY][LITERARY][SEMANTIC][LEXICON][STRUCTURE][AUTHOR])
+  → callSingleWriter (streaming, 带重试)
+  → 续写机制 (不足70%目标字数时自动续写，最多3次)
+  → deterministicDeAI (确定性规则引擎去AI化)
+  → 输出
+```
+
+### 双模型路由
+
+| genre | 模型 | 提供商 | 适用场景 |
+|-------|------|--------|---------|
+| essay / historical-essay / reality_commentary | Claude Sonnet 4.6 | openoneapi.com | 独立文章、政论、视频文案 |
+| narrative / fiction / 含"小说""章节" | Qwen Max | DashScope 直连 | 小说章节、虚构叙事 |
+
+### 去AI化策略（三层）
+
+**第一层：生成时控制（system prompt）**
+- 不用禁令清单，用人格描述 + 示范句式
+- 要求从 [LITERARY] 化用描写，不得自行编造意象
+- 立场偏向通过选材和判断方向体现
+- 转折方式用具体示范（"比起…我更愿意称之为…""说白了"）
+
+**第二层：确定性规则引擎（deterministicDeAI）**
+- 删除25+个AI过渡词（此外、值得注意的是、综上所述…）
+- 限制"不是A，是B"句式最多2次
+- 删除所有"然而""但是""不过"句首转折
+- 打乱均匀段落长度（每4段拆分1段）
+- 删除总结段（综上/总之开头）
+
+**第三层：不使用LLM做post-processing**
+- 用AI改AI只会产生新的AI模式
+- 确定性规则不引入新的语言模式
+
+### 文体范本注入
+
+literary 通道有两个来源：
+1. **topic相关检索**：RAGFlow向量搜索 + /content/literature 标题匹配
+2. **固定注入**：loadFixedStyleSamples() 始终注入鲁迅杂文、三岛由纪夫散文、内藤湖南东洋史，不受topic影响
+
+文体范本教模型"怎么写"（句法节奏、描写方式），不教"写什么"。
+
+### 已知限制
+
+- AI对齐训练比prompt强：无论prompt怎么写"要有立场"，Claude仍倾向中立平衡
+- 句式模式无法完全消除：确定性规则能删过渡词，但无法改变模型的底层句法偏好
+- 文学化用效果不稳定：模型有时会忽略[LITERARY]材料，用自己的方式写
+- 字数控制不精确：模型倾向在3000-4000字自行收束，续写机制可补足但拼接痕迹可能存在
 
 ## 唯一目标
 
