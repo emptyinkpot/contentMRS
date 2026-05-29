@@ -188,6 +188,83 @@ literary 通道有两个来源：
 - 句式模式无法完全消除：确定性规则能删过渡词，但无法改变模型的底层句法偏好
 - 文学化用效果不稳定：模型有时会忽略[LITERARY]材料，用自己的方式写
 - 字数控制不精确：模型倾向在3000-4000字自行收束，续写机制可补足但拼接痕迹可能存在
+- 当前定位：**初稿生成器**，产出逻辑严密、数据扎实、立场明确的7000-8000字初稿，人工润色后使用
+
+---
+
+## 运维：新书入库流程
+
+当你拿到一本新书（epub/pdf/mobi/azw3/md/txt），按以下步骤入库：
+
+### 步骤1：导入到 literature 表
+
+```bash
+cd DataBase/apps/gateway
+# 方式A：单本书（epub/pdf/mobi/azw3）
+node scripts/batch-import-literature.mjs --apply
+# 需要先在 scripts/import-manifest.json 里加一条记录
+
+# 方式B：本地 epub/md 文件（会同时分块到 search_chunks）
+node scripts/import-local-book-corpus.mjs --file "路径" --apply
+```
+
+### 步骤2：分块索引到 search_chunks
+
+如果用了方式A（只写 literature 表），需要手动分块：
+```bash
+# 在服务器上运行（参考之前的 index-literature.mjs 脚本）
+ssh ubuntu@124.220.233.126 "cd /srv/database-gateway && node index-literature.mjs"
+```
+
+### 步骤3：上传到 RAGFlow（向量检索）
+
+```bash
+node scripts/index-literature-to-ragflow.mjs --apply
+# 会把 literature 表中未上传的条目导出为 .txt 并上传到 RAGFlow dataset
+```
+
+### 步骤4（可选）：加入固定文体范本
+
+如果这本书是你想让 Writer 始终学习的文体范本，在服务器环境变量中添加：
+```bash
+# /srv/contentbase/shared/llm.env
+CONTENTBASE_STYLE_QUERIES=鲁迅 杂文,三岛由纪夫 散文,内藤湖南 东洋史,新作者 关键词
+```
+重启 contentbase 后生效。
+
+### 支持的格式
+
+| 格式 | 导入脚本 | 说明 |
+|------|---------|------|
+| .epub | batch-import-literature.mjs / import-local-book-corpus.mjs | AdmZip 解析 spine |
+| .pdf | batch-import-literature.mjs | pymupdf 提取文本 |
+| .mobi/.azw3 | batch-import-literature.mjs | markitdown 转换 |
+| .md | import-local-book-corpus.mjs | 按标题分节 |
+| .txt | index-literature-to-ragflow.mjs（导出用） | 纯文本 |
+
+---
+
+## 可调参数
+
+### 请求级参数（每次调用可不同）
+
+| 参数 | 说明 | 默认值 |
+|------|------|--------|
+| `settings.literaryInterval` | 每N字要求1处文学化用 | 1000 |
+| `settings.literaryMinCount` | 全文最少化用次数 | 5 |
+| `settings.model` | 手动指定模型 | 按genre自动路由 |
+| `settings.temperature` | 生成温度 | 0.4 |
+| `settings.maxTokens` | 最大输出token | 4096 |
+| `wordCount` | 目标字数（不足90%自动续写） | 2400 |
+
+### 环境变量级参数（改后重启生效）
+
+| 变量 | 说明 | 当前值 |
+|------|------|--------|
+| `CONTENTBASE_STYLE_QUERIES` | 固定文体范本查询词（逗号分隔） | 鲁迅 杂文,三岛由纪夫 散文,内藤湖南 东洋史 |
+| `CONTENTBASE_LLM_MODEL` | 默认Writer模型 | claude-sonnet-4-6 |
+| `CONTENTBASE_QWEN_MODEL` | 小说Writer模型 | qwen-max |
+| `CONTENTBASE_API_KEY` | API鉴权key | cb-k9Xm4wPqR7vJ2nLs5tYh8dFe |
 
 ## 唯一目标
 

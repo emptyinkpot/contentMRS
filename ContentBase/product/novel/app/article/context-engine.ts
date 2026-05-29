@@ -543,17 +543,19 @@ function normalizeLiteratureItems(payload: Record<string, any>): ContextItem[] {
 
 async function loadFixedStyleSamples(gatewayUrl: string): Promise<ContextItem[]> {
   // Fixed style samples: always injected regardless of topic.
-  // These teach the Writer HOW to write (sentence rhythm, diction, transitions)
-  // not WHAT to write. Uses random sampling from the literary corpus to ensure
-  // the Writer always has human prose to learn from.
-  const queries = ['鲁迅 杂文', '三岛由纪夫 散文', '内藤湖南 东洋史'];
+  // Configurable via env var CONTENTBASE_STYLE_QUERIES (comma-separated).
+  // Default: 鲁迅 杂文, 三岛由纪夫 散文, 内藤湖南 东洋史
+  const defaultQueries = ['鲁迅 杂文', '三岛由纪夫 散文', '内藤湖南 东洋史'];
+  const envQueries = String(process.env.CONTENTBASE_STYLE_QUERIES || '').trim();
+  const queries = envQueries ? envQueries.split(',').map((q: string) => q.trim()).filter(Boolean) : defaultQueries;
+  const perQuery = Math.max(2, Math.min(5, Math.floor(12 / queries.length)));
   const items: ContextItem[] = [];
   for (const q of queries) {
     try {
       const payload = await getJson(
         gatewayUrl,
         '/search/vector',
-        { q, limit: '3' },
+        { q, limit: String(perQuery) },
         'fixed style sample',
         [],
         8000,
@@ -573,7 +575,7 @@ async function loadFixedStyleSamples(gatewayUrl: string): Promise<ContextItem[]>
       }
     } catch { /* skip failed queries */ }
   }
-  return items.slice(0, 9);
+  return items.slice(0, 12);
 }
 
 async function loadLiteraryCorpusSearch(gatewayUrl: string, query: string): Promise<ContextItem[]> {
@@ -859,7 +861,7 @@ function buildWriterPrompt(input: {
     '',
     hasLiterary ? '[LITERARY] 是你的化用素材库：' : '',
     hasLiterary ? '- 从中找到与当前论证相关的描写、句式、意象，化用到正文中（不是引用，是用那些作者的方式说你自己的话）。' : '',
-    hasLiterary ? '- 每1000字至少1处化用，全文不少于5处。化用方式：借句式节奏、借意象、借语气温度。' : '',
+    hasLiterary ? `- 每${readNumber(input.request.settings?.literaryInterval, 1000)}字至少1处化用，全文不少于${readNumber(input.request.settings?.literaryMinCount, 5)}处。化用方式：借句式节奏、借意象、借语气温度。` : '',
     hasLiterary ? '- 允许出现意象和物件描写，但必须来自[LITERARY]材料的化用，不得自行编造。' : '',
     hasLiterary ? '- 不允许出现"宛如"、"犹如"、"恰似"这类廉价比喻词。' : '',
     '',
