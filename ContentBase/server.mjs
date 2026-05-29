@@ -161,7 +161,7 @@ async function generateArticle(request) {
   }
 
   // Auto-continuation: if output is less than 70% of target, continue writing
-  const minChars = Math.floor(effectiveTarget * 0.7);
+  const minChars = Math.floor(effectiveTarget * 0.9);
   let continuations = 0;
   while (body.length < minChars && continuations < 3) {
     continuations++;
