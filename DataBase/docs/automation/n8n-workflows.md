@@ -77,6 +77,64 @@ The workflow is intentionally read-only and currently stores no MySQL password i
 
 It also stores no DataBase Gateway API key because it only calls the unauthenticated loopback `/health` probe.
 
+## Planned Content Workflow: novel-factory-generate-quality-publish
+
+```yaml
+workflowId: novel-factory-generate-quality-publish
+status: imported-inactive
+definition: docs/automation/workflows/novel-factory-generate-quality-publish.json
+trigger: production webhook
+endpoint: http://127.0.0.1:5678/webhook/novel-factory-generate-quality-publish
+credential:
+  - CONTENTBASE_RUNTIME_URL
+  - CONTENTBASE_RUNTIME_API_KEY
+  - FANQIE_SERVICE_URL
+systems:
+  - ContentBase Runtime as novel-factory service
+  - fanqie-service
+output:
+  type: generation + publish result
+  destination:
+    - webhook JSON response
+failure:
+  quality gate:
+    responseCode: 422
+    behavior: do not call fanqie-service
+```
+
+Current nodes:
+
+- Webhook
+- Call novel-factory: `POST /api/novel/runtime/generate/article`
+- Quality check: deterministic body presence and minimum length check
+- Publish: `POST /publish/tomato`
+- Respond success / Respond quality blocked
+
+Import procedure:
+
+```bash
+ts=$(date +%Y%m%d-%H%M%S)
+sudo docker exec n8n n8n export:workflow --all \
+  --output=/home/node/.n8n/backups/workflows-before-change-$ts.json
+sudo docker exec -i n8n n8n import:workflow \
+  --input=/home/node/.n8n/import/novel-factory-generate-quality-publish.json
+```
+
+The workflow must remain inactive until `CONTENTBASE_RUNTIME_API_KEY` is present
+in the n8n environment and a dry-run publish returns a structured Fanqie result.
+
+Imported on 2026-05-29 after backup:
+
+```text
+/mnt/data/n8n/backups/workflows-before-novel-factory-20260529-110232.json
+```
+
+Observed workflow id:
+
+```text
+novelFactoryGenerateQualityPublish
+```
+
 ## Planned DataBase Workflow: database-inventory-refresh
 
 ```yaml

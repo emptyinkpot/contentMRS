@@ -197,6 +197,12 @@ GET /api/health
 GET /healthz
 GET /api/novel/health
 POST /api/content/runtime/generate/article
+GET /api/novel/runtime/capabilities
+POST /api/novel/runtime/generate/article
+POST /api/novel/runtime/generate/chapter
+POST /api/novel/runtime/jobs
+GET /api/novel/runtime/jobs/:jobId
+POST /api/novel/runtime/jobs/:jobId/cancel
 ```
 
 Required project checks:
@@ -421,3 +427,18 @@ Literary 是最大的非 Reality channel，但它的内容是精选的风格范�
 Allowed root files are package/workspace metadata, `server.mjs`, `project.json`, scripts that start or validate the allowed runtime, schema files, and DataBase generated artifacts.
 
 All other runtime surfaces must be deleted instead of preserved as compatibility paths.
+
+## novel-factory Service Alias
+
+`novel-factory` is an operator-facing service name for this ContentBase runtime.
+It does not own a second Writer or a second generation engine.
+
+```text
+n8n / ContentAdmin
+  -> ContentBase /api/novel/runtime/*
+  -> existing article runtime
+  -> /api/content/runtime/generate/article
+```
+
+Deployment artifacts live in `ops/`. The systemd unit runs `server.mjs` on port
+5111 and exposes the same required health and generation routes.

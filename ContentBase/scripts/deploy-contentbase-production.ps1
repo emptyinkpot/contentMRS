@@ -23,6 +23,7 @@ $copyItems = @(
   "pnpm-workspace.yaml",
   "project.json",
   "README.md",
+  "ops",
   "product",
   "vendor",
   "scripts"
@@ -63,6 +64,9 @@ $remoteCommands = @(
 )
 if ($UseSystemd) {
   $remoteCommands += @(
+    "sudo install -m 0644 $RuntimeRoot/current/ops/contentbase.service /etc/systemd/system/contentbase.service",
+    "sudo systemctl daemon-reload",
+    "sudo systemctl enable contentbase >/dev/null",
     "sudo systemctl restart contentbase",
     "sleep 8",
     "systemctl is-active contentbase",

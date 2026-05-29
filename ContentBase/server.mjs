@@ -3,6 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import { randomUUID } from 'node:crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -79,6 +80,37 @@ for (let index = 2; index < process.argv.length; index += 1) {
 
 const port = Number(args.get('port') || process.env.CONTENTBASE_CONSOLE_PORT || 5101);
 const CONTENTBASE_API_KEY = String(process.env.CONTENTBASE_API_KEY || '').trim();
+const runtimeJobs = new Map();
+const runtimeCapabilities = [
+  {
+    id: 'runtime.generate.article',
+    owner: 'ContentBase',
+    runtime: 'Corpus -> Retrieval -> Composition -> Writer',
+    inputContract: {
+      required: ['topic'],
+      optional: ['genre', 'wordCount', 'target', 'settings', 'evidenceQuery', 'persist', 'workId', 'chapterNumber'],
+    },
+    outputContract: {
+      draft: ['topic', 'target', 'body', 'modelInvocation'],
+      trace: ['modelInvocation', 'context'],
+      context: ['evidence', 'diagnostics'],
+    },
+  },
+  {
+    id: 'runtime.generate.chapter',
+    owner: 'ContentBase',
+    runtime: 'Corpus -> Retrieval -> Composition -> Writer',
+    inputContract: {
+      required: ['topic'],
+      optional: ['workId', 'chapterNumber', 'genre', 'wordCount', 'target', 'settings', 'evidenceQuery', 'persist'],
+    },
+    outputContract: {
+      draft: ['topic', 'target', 'body', 'modelInvocation'],
+      trace: ['modelInvocation', 'context'],
+      context: ['evidence', 'diagnostics'],
+    },
+  },
+];
 
 function checkAuth(req, res) {
   if (!CONTENTBASE_API_KEY) return true;
@@ -108,11 +140,76 @@ const server = http.createServer(async (req, res) => {
       });
       return;
     }
+    if (url.pathname === '/api/novel/runtime/capabilities' && req.method === 'GET') {
+      if (!checkAuth(req, res)) return;
+      writeJson(res, 200, {
+        success: true,
+        data: {
+          version: 'contentbase-runtime-capabilities.v1',
+          runtime: 'corpus-retrieval-composition-writer',
+          capabilities: runtimeCapabilities,
+        },
+      });
+      return;
+    }
     if (url.pathname === '/api/content/runtime/generate/article' && req.method === 'POST') {
       if (!checkAuth(req, res)) return;
       const input = await readJson(req);
       const data = await generateArticle(input);
       writeJson(res, 200, { success: true, data });
+      return;
+    }
+    if (
+      (url.pathname === '/api/novel/runtime/generate/article'
+        || url.pathname === '/api/novel/runtime/generate/chapter')
+      && req.method === 'POST'
+    ) {
+      if (!checkAuth(req, res)) return;
+      const input = await readJson(req);
+      const data = await generateArticle(input);
+      writeJson(res, 200, { success: true, data: toRuntimeArticleResult(data, input) });
+      return;
+    }
+    if (url.pathname === '/api/novel/runtime/jobs' && req.method === 'POST') {
+      if (!checkAuth(req, res)) return;
+      const input = await readJson(req);
+      const job = createRuntimeJob(input);
+      runtimeJobs.set(job.id, job);
+      void runRuntimeJob(job.id);
+      writeJson(res, 200, { success: true, data: job });
+      return;
+    }
+    const jobMatch = url.pathname.match(/^\/api\/novel\/runtime\/jobs\/([^/]+)$/);
+    if (jobMatch && req.method === 'GET') {
+      if (!checkAuth(req, res)) return;
+      const job = runtimeJobs.get(decodeURIComponent(jobMatch[1]));
+      if (!job) {
+        writeJson(res, 404, { success: false, error: 'runtime job not found' });
+        return;
+      }
+      writeJson(res, 200, { success: true, data: job });
+      return;
+    }
+    const cancelMatch = url.pathname.match(/^\/api\/novel\/runtime\/jobs\/([^/]+)\/cancel$/);
+    if (cancelMatch && req.method === 'POST') {
+      if (!checkAuth(req, res)) return;
+      const body = await readJson(req);
+      const job = runtimeJobs.get(decodeURIComponent(cancelMatch[1]));
+      if (!job) {
+        writeJson(res, 404, { success: false, error: 'runtime job not found' });
+        return;
+      }
+      const now = new Date().toISOString();
+      if (job.status === 'queued') {
+        job.status = 'cancelled';
+        job.cancelReason = String(body?.reason || 'cancelled_by_request');
+        job.finishedAt = now;
+      } else if (!['succeeded', 'failed', 'cancelled'].includes(job.status)) {
+        job.cancelReason = String(body?.reason || 'cancel_requested');
+      }
+      job.updatedAt = now;
+      runtimeJobs.set(job.id, job);
+      writeJson(res, 200, { success: true, data: job });
       return;
     }
     if (url.pathname === '/api/corpus/diagnostics' && req.method === 'GET') {
@@ -209,6 +306,113 @@ async function generateArticle(request) {
         diagnostics: context.diagnostics,
       },
     },
+  };
+}
+
+function createRuntimeJob(request) {
+  const capabilityId = String(request?.capabilityId || '').trim();
+  if (!runtimeCapabilities.some((capability) => capability.id === capabilityId)) {
+    throw new Error('unsupported runtime capability');
+  }
+  const input = request?.input && typeof request.input === 'object' && !Array.isArray(request.input)
+    ? request.input
+    : {};
+  if (!String(input.topic || '').trim()) {
+    throw new Error('topic is required');
+  }
+  const id = String(request?.idempotencyKey || '').trim() || `cbjob_${Date.now().toString(36)}_${randomUUID().slice(0, 8)}`;
+  const now = new Date().toISOString();
+  return {
+    id,
+    capabilityId,
+    status: 'queued',
+    runtime: 'contentbase',
+    requestedBy: String(request?.requestedBy || 'contentbase-runtime').trim(),
+    createdAt: now,
+    updatedAt: now,
+    input,
+  };
+}
+
+async function runRuntimeJob(jobId) {
+  let job = runtimeJobs.get(jobId);
+  if (!job || job.status !== 'queued') return;
+  const startedAt = new Date().toISOString();
+  job = { ...job, status: 'running', startedAt, updatedAt: startedAt };
+  runtimeJobs.set(jobId, job);
+  try {
+    const data = await generateArticle(job.input);
+    const finishedAt = new Date().toISOString();
+    job = {
+      ...job,
+      status: 'succeeded',
+      result: toRuntimeArticleResult(data, job.input),
+      finishedAt,
+      updatedAt: finishedAt,
+    };
+  } catch (error) {
+    const finishedAt = new Date().toISOString();
+    job = {
+      ...job,
+      status: 'failed',
+      error: error instanceof Error ? error.message : String(error),
+      finishedAt,
+      updatedAt: finishedAt,
+    };
+  }
+  runtimeJobs.set(jobId, job);
+}
+
+function toRuntimeArticleResult(data, input) {
+  const draft = data?.draft || {};
+  const body = String(draft.body || '');
+  const modelInvocation = draft.modelInvocation || data?.trace?.modelInvocation || null;
+  const diagnostics = data?.context?.diagnostics || data?.trace?.context?.diagnostics || null;
+  return {
+    runtimeVersion: 'contentbase-runtime.v1',
+    draft: {
+      title: String(input?.title || input?.topic || ''),
+      target: String(input?.target || ''),
+      topic: String(input?.topic || ''),
+      body,
+      referenceCoverage: {
+        evidenceSources: data?.context?.evidence?.pack?.sources?.length ?? null,
+        evidenceChunks: data?.context?.evidence?.pack?.chunks?.length ?? null,
+        evidenceCitations: data?.context?.evidence?.pack?.citations?.length ?? null,
+      },
+      frontmatter: {
+        workId: input?.workId ?? null,
+        chapterNumber: input?.chapterNumber ?? null,
+        persist: input?.persist ?? null,
+      },
+    },
+    context: data?.context || null,
+    trace: {
+      ...(data?.trace || {}),
+      modelInvocation,
+      context: {
+        diagnostics,
+      },
+    },
+    quality: {
+      bodyChars: body.length,
+      hasBody: body.length > 0,
+      model: modelInvocation?.model || null,
+      provider: modelInvocation?.provider || null,
+    },
+    acceptance: {
+      status: body.length > 0 ? 'accepted' : 'blocked',
+      checks: {
+        bodyPresent: body.length > 0,
+        modelInvocationPresent: Boolean(modelInvocation?.model),
+        evidencePackPresent: Boolean(data?.context?.evidence?.pack),
+      },
+    },
+    persisted: null,
+    acceptancePersisted: null,
+    referenceUsagePersisted: null,
+    styleRevisionPairsPersisted: null,
+    experiencePersisted: null,
   };
 }
 

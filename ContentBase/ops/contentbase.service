@@ -1,0 +1,31 @@
+[Unit]
+Description=ContentBase novel-factory runtime (ContentMRS Tier-1)
+After=network-online.target database-gateway.service
+Wants=network-online.target
+Requires=database-gateway.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/srv/contentbase/current
+Environment=NODE_ENV=production
+Environment=CONTENTBASE_WORKSPACE_ROOT=/srv/contentbase/current
+Environment=CONTENTBASE_CONSOLE_PORT=5111
+Environment=DATABASE_GATEWAY_URL=http://127.0.0.1:18090
+Environment=CONTENTBASE_RUNTIME_JOB_TIMEOUT_MAX_MS=900000
+EnvironmentFile=-/home/ubuntu/.codex-secrets/database-gateway/database_gateway.env
+EnvironmentFile=-/srv/contentbase/shared/contentbase.env
+EnvironmentFile=-/srv/contentbase/shared/llm.env
+EnvironmentFile=-/srv/contentbase/shared/database.env
+ExecStartPre=-/usr/bin/fuser -k 5111/tcp
+ExecStart=/usr/bin/node /srv/contentbase/current/server.mjs --port 5111
+Restart=on-failure
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=30
+StandardOutput=append:/srv/contentbase/shared/contentbase-runtime.log
+StandardError=append:/srv/contentbase/shared/contentbase-runtime.log
+
+[Install]
+WantedBy=multi-user.target

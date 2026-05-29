@@ -196,6 +196,30 @@ const runtimeChapterNumber = ref(1);
 const runtimeTopic = ref('新地主阶级事件与理论资料聚合');
 const runtimeTarget = ref('article');
 const runtimeRequestedBy = ref('content-admin-public-workbench');
+const novelAccountId = ref('');
+const novelBookId = ref('');
+const novelTitle = computed(() => runtimeTopic.value.trim() || `Chapter ${runtimeChapterNumber.value}`);
+const novelWorkflowEndpoint = computed(() => '/webhook/novel-factory-generate-quality-publish');
+const novelPayloadPreview = computed(() => ({
+  topic: runtimeTopic.value.trim(),
+  title: novelTitle.value,
+  target: runtimeTarget.value.trim() || 'novel-chapter',
+  genre: 'narrative',
+  wordCount: 2400,
+  workId: runtimeWorkId.value,
+  chapterNumber: runtimeChapterNumber.value,
+  accountId: novelAccountId.value.trim() || undefined,
+  bookId: novelBookId.value.trim() || undefined,
+  dryRun: true,
+  persist: runtimePersist.value,
+  evidenceQuery: {
+    query: query.value.trim(),
+    limit: limit.value,
+    rounds: searchRounds.value,
+    includeWeb: includeWeb.value,
+    includeRagflow: includeRagflow.value,
+  },
+}));
 
 const activeTopicPreset = computed(() =>
   researchTopics.value.find((entry) => entry.id === topicId.value.trim()) || null,
@@ -599,6 +623,7 @@ async function generateArticleJob() {
           persist: runtimePersist.value,
           workId: runtimeWorkId.value,
           chapterNumber: runtimeChapterNumber.value,
+          genre: runtimeTarget.value.trim() === 'novel-chapter' ? 'narrative' : undefined,
           evidenceQuery: {
             query: query.value.trim(),
             limit: limit.value,
@@ -705,6 +730,52 @@ startPollingJob();
       </div>
     </header>
 
+    <section class="novel-manager">
+      <div class="panel-heading">
+        <div>
+          <h2>Novel Management</h2>
+          <p>ContentBase runs as the novel-factory service; n8n owns generate → quality check → publish orchestration.</p>
+        </div>
+        <span>{{ novelWorkflowEndpoint }}</span>
+      </div>
+      <div class="novel-grid">
+        <label>
+          <span>Work ID</span>
+          <input v-model.number="runtimeWorkId" type="number" min="1" />
+        </label>
+        <label>
+          <span>Chapter</span>
+          <input v-model.number="runtimeChapterNumber" type="number" min="1" />
+        </label>
+        <label>
+          <span>Fanqie account</span>
+          <input v-model="novelAccountId" type="text" placeholder="accountId" />
+        </label>
+        <label>
+          <span>Fanqie book</span>
+          <input v-model="novelBookId" type="text" placeholder="bookId" />
+        </label>
+        <label class="novel-topic">
+          <span>Chapter brief</span>
+          <textarea v-model="runtimeTopic" rows="3" />
+        </label>
+        <label class="novel-topic">
+          <span>Writing target</span>
+          <textarea v-model="runtimeTarget" rows="3" />
+        </label>
+      </div>
+      <div class="runtime-actions">
+        <button :disabled="loadingGenerate" @click="generateArticleJob">
+          {{ loadingGenerate ? 'Generating...' : 'Generate Novel Draft' }}
+        </button>
+        <button disabled>n8n Publish Dry Run</button>
+      </div>
+      <details class="payload-preview">
+        <summary>n8n webhook payload</summary>
+        <pre>{{ JSON.stringify(novelPayloadPreview, null, 2) }}</pre>
+      </details>
+    </section>
+
     <section class="controls">
       <label>
         <span>Query</span>
@@ -750,14 +821,6 @@ startPollingJob();
       <label v-if="researchSessionId">
         <span>Research session</span>
         <input :value="researchSessionId" readonly />
-      </label>
-      <label>
-        <span>Work ID</span>
-        <input v-model.number="runtimeWorkId" type="number" min="1" />
-      </label>
-      <label>
-        <span>Chapter</span>
-        <input v-model.number="runtimeChapterNumber" type="number" min="1" />
       </label>
       <label>
         <span>Persist</span>
@@ -968,6 +1031,7 @@ startPollingJob();
 
 .topbar,
 .controls,
+.novel-manager,
 .source-layout,
 .metrics,
 .workspace,
@@ -979,6 +1043,7 @@ startPollingJob();
 }
 
 .topbar,
+.novel-manager,
 .runtime-panel {
   padding: 20px;
 }
@@ -1032,6 +1097,54 @@ button:disabled {
   margin: 0;
   font-size: 0.85rem;
   color: #5b6472;
+}
+
+.novel-manager {
+  display: grid;
+  gap: 16px;
+  border: 1px solid var(--theme--border-color);
+  border-radius: 8px;
+  background: var(--theme--background-normal);
+}
+
+.novel-manager .panel-heading {
+  align-items: flex-start;
+}
+
+.novel-manager .panel-heading p {
+  margin: 6px 0 0;
+  color: var(--theme--foreground-subdued);
+  line-height: 1.5;
+}
+
+.novel-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.novel-topic {
+  grid-column: span 2;
+}
+
+.payload-preview {
+  border: 1px solid var(--theme--border-color-subdued);
+  border-radius: 6px;
+  padding: 12px;
+  background: var(--theme--background);
+}
+
+.payload-preview summary {
+  cursor: pointer;
+  color: var(--theme--foreground-subdued);
+  font-weight: 700;
+}
+
+.payload-preview pre {
+  margin: 12px 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.6;
 }
 
 .controls {
@@ -1255,6 +1368,7 @@ input {
 
 @media (max-width: 960px) {
   .topbar,
+  .novel-grid,
   .source-layout,
   .workspace,
   .runtime-article-grid,
