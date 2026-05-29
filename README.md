@@ -1,5 +1,9 @@
 # ContentMRS
 
+> **权威边界与运行时状态以 [`contentMRS SPEC SD.md`](../../Vaults/Obsidian/docs/blog/意图规范/contentMRS%20SPEC%20SD.md) 为准。**
+> 本 README 主要用作调用指南与索引；如本文档与 SPEC SD 冲突，以 SPEC SD 为权威快照。
+> 所有真实凭据（API key、密码、cookie）只放在 `~/.codex-secrets/` 或运行时 env，不应出现在文档里。
+
 ContentMRS 是一个**被 AI agent 调用的生成引擎**。它不是面向人的交互界面——人与 AI（如 Codex、Claude）对话，AI 决定何时调用 ContentMRS 生成内容。
 
 ```text
@@ -153,7 +157,7 @@ Content-Type: application/json
 
 ### 注意事项
 
-- 请求需要 API Key：`Authorization: Bearer cb-k9Xm4wPqR7vJ2nLs5tYh8dFe`
+- 请求需要 API Key：`Authorization: Bearer <CONTENTBASE_API_KEY>`（具体值见 ops 凭据库或 `~/.codex-secrets/`）
 - 请求超时建议设 **5 分钟**（pre-research + 证据搜索 + LLM 生成 + 续写）
 - `data.draft.body` 是最终成品，已经过确定性去AI化处理
 - 不需要关注 `data.context.diagnostics`（调试用）
@@ -293,7 +297,7 @@ CONTENTBASE_STYLE_QUERIES=鲁迅 杂文,三岛由纪夫 散文,内藤湖南 东�
 | `CONTENTBASE_STYLE_QUERIES` | 固定文体范本查询词（逗号分隔） | 鲁迅 杂文,三岛由纪夫 散文,内藤湖南 东洋史 |
 | `CONTENTBASE_LLM_MODEL` | 默认Writer模型 | claude-sonnet-4-6 |
 | `CONTENTBASE_QWEN_MODEL` | 小说Writer模型 | qwen-max |
-| `CONTENTBASE_API_KEY` | API鉴权key | cb-k9Xm4wPqR7vJ2nLs5tYh8dFe |
+| `CONTENTBASE_API_KEY` | API鉴权key（见凭据库） | `<不在文档里展示>` |
 
 ## 唯一目标
 

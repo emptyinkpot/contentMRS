@@ -725,6 +725,8 @@ async function recordGenerationOutput(ctx: MutationContext): Promise<MutationRes
   const status = readString(ctx.payload, "status", "first_draft");
   const operator = readString(ctx.payload, "operator", ctx.actor) ?? ctx.actor;
   const metadata = readOptionalRecord(ctx.payload, "metadata");
+  const createIfMissing = readBoolean(ctx.payload, "createIfMissing", false);
+  const volumeNumber = readNumber(ctx.payload, "volumeNumber", 1);
 
   if (!workId || !chapterNumber || !bodyText || !status) {
     invalidPayload("payload.workId, payload.chapterNumber, payload.body, and payload.status must be valid");
@@ -747,7 +749,31 @@ async function recordGenerationOutput(ctx: MutationContext): Promise<MutationRes
       `,
       chapterIdInput ? [chapterIdInput] : [workId, chapterNumber]
     );
-    const chapter = chapterRows[0];
+    let chapter = chapterRows[0];
+    if (!chapter && createIfMissing) {
+      if (chapterIdInput) {
+        invalidPayload("payload.createIfMissing cannot be used with a missing explicit chapterId");
+      }
+      const [insertedChapter] = await connection.execute<ResultSetHeader>(
+        `
+        INSERT INTO chapters
+          (work_id, volume_number, chapter_number, title, content, plot_summary, word_count, status, audit_status, audit_issues)
+        VALUES (?, ?, ?, ?, '', NULL, 0, 'draft', 'pending', CAST('[]' AS JSON))
+        `,
+        [workId, volumeNumber ?? 1, chapterNumber, title]
+      );
+      const [createdRows] = await connection.query<RowDataPacket[]>(
+        `
+        SELECT id, work_id, volume_number, chapter_number, title, content, word_count, status, audit_status, audit_issues,
+               published_at, audit_score, suggested_action, audited_at, created_at, updated_at
+        FROM chapters
+        WHERE id = ?
+        LIMIT 1
+        `,
+        [insertedChapter.insertId]
+      );
+      chapter = createdRows[0];
+    }
     if (!chapter) {
       invalidPayload(`chapter not found for workId=${workId}, chapterNumber=${chapterNumber}`);
     }

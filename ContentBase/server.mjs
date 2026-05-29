@@ -81,6 +81,14 @@ for (let index = 2; index < process.argv.length; index += 1) {
 const port = Number(args.get('port') || process.env.CONTENTBASE_CONSOLE_PORT || 5101);
 const CONTENTBASE_API_KEY = String(process.env.CONTENTBASE_API_KEY || '').trim();
 const runtimeJobs = new Map();
+const runtimeActionIds = [
+  'plan-work',
+  'plan-volume',
+  'generate-chapter',
+  'revise-chapter',
+  'check-continuity',
+  'prepare-publication',
+];
 const runtimeCapabilities = [
   {
     id: 'runtime.generate.article',
@@ -108,6 +116,20 @@ const runtimeCapabilities = [
       draft: ['topic', 'target', 'body', 'modelInvocation'],
       trace: ['modelInvocation', 'context'],
       context: ['evidence', 'diagnostics'],
+    },
+  },
+  {
+    id: 'runtime.actions.novel',
+    owner: 'ContentBase',
+    runtime: 'Action contract -> Corpus -> Retrieval -> Composition -> Writer',
+    inputContract: {
+      required: ['action'],
+      optional: ['workId', 'chapterId', 'chapterNumber', 'title', 'topic', 'targetContract', 'settings'],
+      forbidden: ['freeformPrompt', 'systemPromptOverride'],
+    },
+    outputContract: {
+      required: ['draft', 'trace', 'diagnostics', 'contractUsed', 'violations', 'nextAllowedActions'],
+      actions: runtimeActionIds,
     },
   },
 ];
@@ -148,8 +170,18 @@ const server = http.createServer(async (req, res) => {
           version: 'contentbase-runtime-capabilities.v1',
           runtime: 'corpus-retrieval-composition-writer',
           capabilities: runtimeCapabilities,
+          actions: runtimeActionIds.map((action) => runtimeActionContract(action)),
         },
       });
+      return;
+    }
+    const actionMatch = url.pathname.match(/^\/api\/novel\/runtime\/actions\/([^/]+)$/);
+    if (actionMatch && req.method === 'POST') {
+      if (!checkAuth(req, res)) return;
+      const action = decodeURIComponent(actionMatch[1]);
+      const input = await readJson(req);
+      const data = await runRuntimeAction(action, input);
+      writeJson(res, 200, { success: true, data });
       return;
     }
     if (url.pathname === '/api/content/runtime/generate/article' && req.method === 'POST') {
@@ -414,6 +446,177 @@ function toRuntimeArticleResult(data, input) {
     styleRevisionPairsPersisted: null,
     experiencePersisted: null,
   };
+}
+
+async function runRuntimeAction(action, request) {
+  const contractUsed = runtimeActionContract(action);
+  if (!runtimeActionIds.includes(action)) {
+    return runtimeActionEnvelope({
+      action,
+      contractUsed,
+      diagnostics: { status: 'blocked', reason: 'unknown_action' },
+      violations: [runtimeViolation('unknown_action', `unsupported runtime action: ${action}`)],
+    });
+  }
+
+  if (hasForbiddenPromptOverride(request)) {
+    return runtimeActionEnvelope({
+      action,
+      contractUsed,
+      diagnostics: { status: 'blocked', reason: 'forbidden_prompt_override' },
+      violations: [
+        runtimeViolation(
+          'forbidden_prompt_override',
+          'runtime actions do not accept freeformPrompt, prompt, messages, or systemPromptOverride'
+        ),
+      ],
+    });
+  }
+
+  if (action !== 'generate-chapter') {
+    return runtimeActionEnvelope({
+      action,
+      contractUsed,
+      diagnostics: {
+        status: 'blocked',
+        reason: 'action_contract_only',
+        detail: 'This endpoint is reserved, but the implementation is not enabled in this runtime yet.',
+      },
+      violations: [runtimeViolation('action_not_implemented', `${action} is not implemented yet`)],
+    });
+  }
+
+  const normalized = normalizeGenerateChapterActionInput(request);
+  if (normalized.violations.length) {
+    return runtimeActionEnvelope({
+      action,
+      contractUsed,
+      diagnostics: { status: 'blocked', reason: 'invalid_action_input' },
+      violations: normalized.violations,
+    });
+  }
+
+  const data = await generateArticle(normalized.input);
+  const result = toRuntimeArticleResult(data, normalized.input);
+  return runtimeActionEnvelope({
+    action,
+    contractUsed,
+    draft: result.draft,
+    trace: result.trace,
+    diagnostics: result.context?.diagnostics || null,
+    nextAllowedActions: ['revise-chapter', 'check-continuity', 'prepare-publication'],
+  });
+}
+
+function normalizeGenerateChapterActionInput(request) {
+  const targetContract = request?.targetContract && typeof request.targetContract === 'object'
+    ? request.targetContract
+    : {};
+  const chapterContract = {
+    characters: request?.characters ?? targetContract.characters ?? null,
+    background: request?.background ?? targetContract.background ?? null,
+    outline: request?.outline ?? targetContract.outline ?? null,
+    constraints: request?.constraints ?? targetContract.constraints ?? null,
+  };
+  const topic = String(
+    request?.topic
+      || request?.title
+      || targetContract.topic
+      || targetContract.title
+      || buildTopicFromChapterContract(chapterContract)
+      || ''
+  ).trim();
+  const violations = [];
+  if (!topic) {
+    violations.push(runtimeViolation('topic_required', 'generate-chapter requires topic or title'));
+  }
+  return {
+    violations,
+    input: {
+      ...request,
+      targetContract: {
+        ...targetContract,
+        ...chapterContract,
+      },
+      topic,
+      title: request?.title || targetContract.title || topic,
+      workId: request?.workId || targetContract.workId || null,
+      chapterId: request?.chapterId || targetContract.chapterId || null,
+      chapterNumber: request?.chapterNumber || targetContract.chapterNumber || null,
+      genre: request?.genre || targetContract.genre || '小说章节',
+      routeHint: 'fiction',
+      wordCount: request?.wordCount || targetContract.wordCount || targetContract.targetWordCount || undefined,
+      settings: request?.settings && typeof request.settings === 'object' ? request.settings : {},
+    },
+  };
+}
+
+function buildTopicFromChapterContract(contract) {
+  const parts = [];
+  if (contract?.outline) parts.push(`本章大纲：${formatContractText(contract.outline)}`);
+  if (contract?.background) parts.push(`背景：${formatContractText(contract.background)}`);
+  if (contract?.characters) parts.push(`人物：${formatContractText(contract.characters)}`);
+  return parts.join('\n').trim();
+}
+
+function formatContractText(value) {
+  if (value == null) return '';
+  if (typeof value === 'string') return value.trim();
+  return JSON.stringify(value);
+}
+
+function runtimeActionContract(action) {
+  return {
+    version: 'contentbase-runtime-action.v1',
+    action,
+    owner: 'ContentBase',
+    durableStateOwner: 'DataBase Gateway',
+    orchestratorRole: 'n8n may schedule and advance state, but must not own business truth or prompt assembly.',
+    inputContract: {
+      required: action === 'generate-chapter' ? ['topic or title'] : ['targetContract'],
+      optional: ['workId', 'chapterId', 'chapterNumber', 'wordCount', 'settings', 'targetContract'],
+      forbidden: ['freeformPrompt', 'prompt', 'messages', 'systemPromptOverride'],
+    },
+    outputContract: ['draft', 'trace', 'diagnostics', 'contractUsed', 'violations', 'nextAllowedActions'],
+    nonGoals: [
+      'n8n does not store durable story truth',
+      'n8n does not assemble prompts',
+      'ContentBase does not create DataBase schema from this endpoint',
+      'missing evidence is not permission to invent facts',
+    ],
+  };
+}
+
+function runtimeActionEnvelope({ action, contractUsed, draft = null, trace = null, diagnostics = null, violations = [], nextAllowedActions = [] }) {
+  return {
+    runtimeVersion: 'contentbase-runtime-actions.v1',
+    action,
+    draft,
+    trace: trace || {
+      action,
+      modelInvocation: null,
+      generatedAt: new Date().toISOString(),
+    },
+    diagnostics: diagnostics || {
+      status: violations.length ? 'blocked' : 'ok',
+    },
+    contractUsed,
+    violations,
+    nextAllowedActions,
+  };
+}
+
+function runtimeViolation(code, message) {
+  return {
+    code,
+    severity: 'blocking',
+    message,
+  };
+}
+
+function hasForbiddenPromptOverride(request) {
+  if (!request || typeof request !== 'object') return false;
+  return ['freeformPrompt', 'prompt', 'messages', 'systemPromptOverride'].some((key) => key in request);
 }
 
 function deterministicDeAI(text) {

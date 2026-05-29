@@ -81,19 +81,22 @@ It also stores no DataBase Gateway API key because it only calls the unauthentic
 
 ```yaml
 workflowId: novel-factory-generate-quality-publish
-status: imported-inactive
+status: active
 definition: docs/automation/workflows/novel-factory-generate-quality-publish.json
 trigger: production webhook
 endpoint: http://127.0.0.1:5678/webhook/novel-factory-generate-quality-publish
 credential:
   - CONTENTBASE_RUNTIME_URL
   - CONTENTBASE_RUNTIME_API_KEY
+  - DATABASE_GATEWAY_URL
+  - DATABASE_GATEWAY_API_KEY
   - FANQIE_SERVICE_URL
 systems:
   - ContentBase Runtime as novel-factory service
+  - DataBase Gateway write facade
   - fanqie-service
 output:
-  type: generation + publish result
+  type: generation + database save + publish result
   destination:
     - webhook JSON response
 failure:
@@ -105,10 +108,19 @@ failure:
 Current nodes:
 
 - Webhook
-- Call novel-factory: `POST /api/novel/runtime/generate/article`
+- Generate chapter: `POST /api/novel/runtime/actions/generate-chapter`
 - Quality check: deterministic body presence and minimum length check
-- Publish: `POST /publish/tomato`
+- Save generation output: `POST /writes/record-generation-output`
+- Publish: `POST /publish/database-chapter`
 - Respond success / Respond quality blocked
+
+Runtime contract:
+
+- n8n calls ContentBase on loopback with `CONTENTBASE_RUNTIME_URL`.
+- ContentBase owns model/provider selection through `CONTENTBASE_LLM_*`.
+- n8n writes generated chapter output back through DataBase Gateway.
+- fanqie-service resolves the chapter from DataBase before publishing.
+- Workflow JSON must not encode a provider-specific route or model fallback.
 
 Import procedure:
 
@@ -120,8 +132,9 @@ sudo docker exec -i n8n n8n import:workflow \
   --input=/home/node/.n8n/import/novel-factory-generate-quality-publish.json
 ```
 
-The workflow must remain inactive until `CONTENTBASE_RUNTIME_API_KEY` is present
-in the n8n environment and a dry-run publish returns a structured Fanqie result.
+The workflow requires `CONTENTBASE_RUNTIME_API_KEY` in the n8n environment.
+If Gateway auth is enabled, it also requires `DATABASE_GATEWAY_API_KEY`.
+Dry-run publish must return a structured Fanqie result before using live publish.
 
 Imported on 2026-05-29 after backup:
 
@@ -134,6 +147,8 @@ Observed workflow id:
 ```text
 novelFactoryGenerateQualityPublish
 ```
+
+Activated on 2026-05-29 after adding the stable webhook id in the workflow JSON.
 
 ## Planned DataBase Workflow: database-inventory-refresh
 

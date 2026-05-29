@@ -125,7 +125,7 @@ export function loadConfig(): GatewayConfig {
           datasetIds: ragflowDatasetIds,
           documentIds: listEnv("DATABASE_EVIDENCE_RAGFLOW_DOCUMENT_IDS"),
           similarityThreshold: numberEnv("DATABASE_EVIDENCE_RAGFLOW_SIMILARITY_THRESHOLD", 0.2),
-          vectorSimilarityWeight: numberEnv("DATABASE_EVIDENCE_RAGFLOW_VECTOR_WEIGHT", 0.3),
+          vectorSimilarityWeight: numberEnv("DATABASE_EVIDENCE_RAGFLOW_VECTOR_WEIGHT", 0.35),
           topK: numberEnv("DATABASE_EVIDENCE_RAGFLOW_TOP_K", 1024),
           useKg: booleanEnv("DATABASE_EVIDENCE_RAGFLOW_USE_KG", false),
           tocEnhance: booleanEnv("DATABASE_EVIDENCE_RAGFLOW_TOC_ENHANCE", false),

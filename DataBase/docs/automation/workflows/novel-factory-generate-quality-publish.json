@@ -6,25 +6,36 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "novel-factory-generate-quality-publish",
-        "responseMode": "responseNode",
+        "responseMode": "lastNode",
         "options": {}
       },
       "id": "webhook-trigger",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [-760, 0]
+      "webhookId": "f54de5a9-9c56-4f51-bfd3-3a4a3e4d0f88",
+      "position": [-1220, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const incoming = $input.first().json;\nconst body = incoming.body && typeof incoming.body === 'object' ? incoming.body : incoming;\nreturn [{ json: { input: body } }];"
+      },
+      "id": "normalize-input",
+      "name": "Normalize input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-980, 0]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{$env.CONTENTBASE_RUNTIME_URL || 'http://127.0.0.1:5111'}}/api/novel/runtime/generate/article",
+        "url": "={{$env.CONTENTBASE_RUNTIME_URL || 'http://127.0.0.1:5111'}}/api/novel/runtime/actions/generate-chapter",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{$env.CONTENTBASE_RUNTIME_API_KEY}}"
+              "value": "=Bearer {{$env.CONTENTBASE_RUNTIME_API_KEY || ''}}"
             },
             {
               "name": "Content-Type",
@@ -34,26 +45,26 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ topic: $json.body.topic, target: $json.body.target || 'novel-chapter', genre: $json.body.genre || 'narrative', wordCount: $json.body.wordCount || 2400, workId: $json.body.workId, chapterNumber: $json.body.chapterNumber, persist: $json.body.persist !== false, evidenceQuery: $json.body.evidenceQuery || { includeWeb: false, includeRagflow: true }, settings: $json.body.settings || {} }) }}",
+        "jsonBody": "={{ JSON.stringify({ workId: $json.input.workId, chapterId: $json.input.chapterId, chapterNumber: $json.input.chapterNumber, title: $json.input.title || $json.input.topic, topic: $json.input.topic || $json.input.title, characters: $json.input.characters, background: $json.input.background, outline: $json.input.outline, constraints: $json.input.constraints, wordCount: $json.input.wordCount || 2400, targetContract: $json.input.targetContract || {}, settings: $json.input.settings || {} }) }}",
         "options": {
           "timeout": 600000
         }
       },
-      "id": "call-contentbase",
-      "name": "Call novel-factory",
+      "id": "call-contentbase-action",
+      "name": "Generate chapter",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [-520, 0]
+      "position": [-740, 0]
     },
     {
       "parameters": {
-        "jsCode": "const payload = $input.first().json;\nconst result = payload.data || payload;\nconst body = result.draft?.body || '';\nconst quality = result.quality || {};\nconst trace = result.trace || {};\nreturn [{\n  json: {\n    result,\n    body,\n    quality,\n    qualityPass: body.length >= 800 && quality.hasBody !== false,\n    publish: {\n      accountId: $node['Webhook'].json.body?.accountId,\n      bookId: $node['Webhook'].json.body?.bookId,\n      chapterNumber: $node['Webhook'].json.body?.chapterNumber,\n      title: $node['Webhook'].json.body?.title || $node['Webhook'].json.body?.topic,\n      content: body,\n      dryRun: $node['Webhook'].json.body?.dryRun !== false,\n      waitForCompletion: true,\n      source: {\n        workId: $node['Webhook'].json.body?.workId,\n        requestId: trace.modelInvocation?.finishedAt || new Date().toISOString()\n      }\n    }\n  }\n}];"
+        "jsCode": "const payload = $input.first().json;\nconst result = payload.data || payload;\nconst body = result.draft?.body || '';\nconst trace = result.trace || {};\nconst diagnostics = result.diagnostics || {};\nconst input = $node['Normalize input'].json.input || {};\nconst violations = Array.isArray(result.violations) ? result.violations : [];\nreturn [{\n  json: {\n    input,\n    result,\n    body,\n    trace,\n    diagnostics,\n    violations,\n    qualityPass: body.length >= Number(input.minChars || 800) && violations.length === 0,\n    saveRequest: {\n      requestId: input.requestId,\n      actor: input.actor || 'n8n-novel-factory',\n      payload: {\n        workId: input.workId,\n        chapterId: input.chapterId,\n        chapterNumber: input.chapterNumber,\n        volumeNumber: input.volumeNumber || 1,\n        title: input.title || input.topic,\n        body,\n        status: input.generationStatus || 'first_draft',\n        createIfMissing: input.createIfMissing !== false,\n        metadata: {\n          source: 'n8n.novel-factory-generate-quality-publish',\n          contentbaseAction: 'generate-chapter',\n          trace,\n          diagnostics,\n          contractUsed: result.contractUsed || null,\n          nextAllowedActions: result.nextAllowedActions || []\n        }\n      }\n    }\n  }\n}];"
       },
-      "id": "quality-check",
-      "name": "Quality check",
+      "id": "quality-and-save-payload",
+      "name": "Quality and save payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-280, 0]
+      "position": [-500, 0]
     },
     {
       "parameters": {
@@ -71,12 +82,56 @@
       "name": "Quality passed",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [-60, 0]
+      "position": [-280, 0]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{$env.FANQIE_SERVICE_URL || 'https://fanqie.tengokukk.com/fanqie'}}/publish/tomato",
+        "url": "={{$env.DATABASE_GATEWAY_URL || 'http://127.0.0.1:18090'}}/writes/record-generation-output",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-DataBase-Api-Key",
+              "value": "={{$env.DATABASE_GATEWAY_API_KEY || ''}}"
+            },
+            {
+              "name": "X-DataBase-Idempotency-Key",
+              "value": "=novel-factory:record-generation-output:{{$node['Normalize input'].json.input.workId}}:{{$node['Normalize input'].json.input.chapterNumber}}:{{$execution.id}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.saveRequest) }}",
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "id": "save-generation-output",
+      "name": "Save generation output",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-40, -80]
+    },
+    {
+      "parameters": {
+        "jsCode": "const saved = $input.first().json;\nconst input = $node['Normalize input'].json.input || {};\nconst savedItem = saved.item && typeof saved.item === 'object' ? saved.item : {};\nreturn [{\n  json: {\n    saved,\n    publishRequest: {\n      accountId: input.accountId,\n      bookId: input.bookId,\n      localWorkId: input.localWorkId || input.workId,\n      chapterId: input.chapterId || savedItem.chapterId,\n      chapterNumber: input.chapterNumber,\n      dryRun: input.dryRun !== false,\n      waitForCompletion: true,\n      idempotencyKey: 'novel-factory:publish:' + input.workId + ':' + input.chapterNumber + ':' + $execution.id\n    }\n  }\n}];"
+      },
+      "id": "build-publish-payload",
+      "name": "Build publish payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [200, -80]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.FANQIE_SERVICE_URL || 'http://127.0.0.1:5701'}}/publish/database-chapter",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -88,62 +143,71 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json.publish) }}",
+        "jsonBody": "={{$json.publishRequest}}",
         "options": {
           "timeout": 600000
         }
       },
-      "id": "publish-fanqie",
-      "name": "Publish",
+      "id": "publish-fanqie-database-chapter",
+      "name": "Publish database chapter",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [180, -80]
+      "position": [440, -80]
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ JSON.stringify({ ok: true, qualityPass: true, generation: $node['Quality check'].json.result, publish: $json }) }}",
-        "options": {}
+        "jsCode": "return [{ json: { ok: true, qualityPass: true, generation: $node['Quality and save payload'].json.result, saved: $node['Build publish payload'].json.saved, publish: $input.first().json } }];"
       },
-      "id": "respond-success",
-      "name": "Respond success",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [420, -80]
+      "id": "build-success-response",
+      "name": "Build success response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, -80]
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ JSON.stringify({ ok: false, qualityPass: false, generation: $json.result, quality: $json.quality }) }}",
-        "options": {
-          "responseCode": 422
-        }
+        "jsCode": "return [{ json: { ok: false, qualityPass: false, generation: $json.result, violations: $json.violations, diagnostics: $json.diagnostics } }];"
       },
-      "id": "respond-quality-blocked",
-      "name": "Respond quality blocked",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [180, 120]
+      "id": "build-quality-blocked-response",
+      "name": "Build quality blocked response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-40, 120]
     }
   ],
   "connections": {
     "Webhook": {
-      "main": [[{ "node": "Call novel-factory", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Normalize input", "type": "main", "index": 0 }]]
     },
-    "Call novel-factory": {
-      "main": [[{ "node": "Quality check", "type": "main", "index": 0 }]]
+    "Normalize input": {
+      "main": [[{ "node": "Generate chapter", "type": "main", "index": 0 }]]
     },
-    "Quality check": {
+    "Generate chapter": {
+      "main": [[{ "node": "Quality and save payload", "type": "main", "index": 0 }]]
+    },
+    "Quality and save payload": {
       "main": [[{ "node": "Quality passed", "type": "main", "index": 0 }]]
     },
     "Quality passed": {
       "main": [
-        [{ "node": "Publish", "type": "main", "index": 0 }],
-        [{ "node": "Respond quality blocked", "type": "main", "index": 0 }]
+        [{ "node": "Save generation output", "type": "main", "index": 0 }],
+        [{ "node": "Build quality blocked response", "type": "main", "index": 0 }]
       ]
     },
-    "Publish": {
-      "main": [[{ "node": "Respond success", "type": "main", "index": 0 }]]
+    "Save generation output": {
+      "main": [[{ "node": "Build publish payload", "type": "main", "index": 0 }]]
+    },
+    "Build publish payload": {
+      "main": [[{ "node": "Publish database chapter", "type": "main", "index": 0 }]]
+    },
+    "Publish database chapter": {
+      "main": [[{ "node": "Build success response", "type": "main", "index": 0 }]]
+    },
+    "Build success response": {
+      "main": [[]]
+    },
+    "Build quality blocked response": {
+      "main": [[]]
     }
   },
   "settings": {

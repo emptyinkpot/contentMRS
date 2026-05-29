@@ -1,0 +1,1605 @@
+[
+  {
+    "id": 0,
+    "text": "面向多区域暖通空调设施的偏差补偿Q学习控制器开发",
+    "style": "Normal",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 1,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 2,
+    "text": "摘要：我们提出了一种偏差补偿强化学习（RL）算法的开发，该算法在存在不可测扰动和未知动态的多区域供暖、通风和空调（HVAC）实验室设施中，优化热舒适性（通过最小化跟踪误差）和控制利用率（通过惩罚设定点偏差）。研究表明，不可测扰动的存在会导致传统RL控制器中的学习方程不一致，从而引起参数估计偏差（即使有积分作用支持），在极端情况下甚至导致学习算法发散。我们通过将流行的Q学习算法应用于多区域HVAC环境的线性二次调节（LQR）问题来证明这个问题，并表明，即使有积分支持，当HVAC扰动由于未知的热增益、 occupancy变化、光源和室外天气变化而不可测时，算法在学习阶段仍表现出偏差问题。为了解决这个困难，我们提出了一种偏差补偿学习方程，该方程在学习最优控制参数的同时，学习由扰动（以及可能的其他来源）引起的集总偏差项。实验结果表明，所提出的方案不仅恢复了无偏差的最优控制参数，而且无需显式学习动态模型或估计扰动，证明了该算法在应对上述挑战方面的有效性。",
+    "style": "Normal",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 3,
+    "text": "关键词：HVAC控制，最优跟踪，Q学习，强化学习（RL）",
+    "style": "Normal",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 4,
+    "text": "1引言",
+    "style": "Title",
+    "kind": "short",
+    "translate": false
+  },
+  {
+    "id": 5,
+    "text": "使建筑既舒适又节能的一种有前景的方法是优化供暖、通风和空调（HVAC）系统的控制[1]。HVAC系统的最优控制对我们的社会具有实际意义[2]，因为美国人近76%的电力消耗用于建筑领域[3]。最优控制理论为设计满足规定性能和成本目标的控制器提供了框架。像模型预测控制（MPC）这样的最优控制器在HVAC控制中很受欢迎，尽管它们的设计过程复杂，需要相当准确的HVAC模型和外部扰动的估计[4]。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 6,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 7,
+    "text": "最近，特别是在过去五年中，HVAC控制文献已转向基于人工智能（AI）的方法来设计最优控制器[5]。强化学习（RL）框架是一种基于AI的最优决策范式，被认为是机器学习的三大支柱之一，另外两个是有监督学习和无监督学习[6]。RL在HVAC控制中是一个有前景的候选方法，因为它能够学习最优控制策略，而无需解决传统的基于模型的优化问题[7]。与基于整定的比例-积分-微分（PID）控制[8]和基于ML的系统辨识方法相比，无模型RL是一种直接自适应控制方法，它在不学习底层系统模型的情况下学习最优控制动作[9]。因此，无模型RL控制不同于基于学习模型进行优化的两步学习MPC方法。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 8,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 9,
+    "text": "基于RL的HVAC控制文献最近在不同控制层面上不断发展，从组件级控制[10]–[12]到系统级控制[13]–[15]。近期研究的一个全面综述见[16]。尽管RL控制文献在处理带约束的非线性问题方面取得了显著进展[17]，但无模型RL的一个缺点是，最优决策制定往往是一个完全的黑箱操作，没有利用HVAC系统的物理洞察。因此，学习过程往往很长，且得到的控制缺乏直观性[10]，[18]。RL在HVAC控制中的早期应用表明，在显著延长学习时间的情况下，能获得不错的控制性能[19]，[20]。在[21]中，基于黑箱RL的HVAC控制与开关控制和Fuzzy-PD控制的比较表明，尽管RL在热舒适性方面表现更优，但详尽的探索需要很长的训练周期，并无意中限制了性能提升。为了解决这一困难，一些研究者探索了降维方法来加速学习[22]–[24]。基于事件的方法也被提出以减少学习时间[25]。系统的物理洞察可以为控制问题的结构提供有价值的信息。最近，将HVAC动力学的部分知识与RL相结合的想法已被考虑[26]，[27]。传统PID控制成功的主要原因之一是控制参数的调整是透明的。然而，它没有正式的设计程序来优化规定的目标函数。另一方面，像线性二次型调节器（LQR）这样的最优控制方法解决了涉及某些用户定义成本函数的优化问题。RL已成功用于解决这类最优控制问题。分布式多智能体技术也正在被融入RL中，不断增强其固有能力[28]。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 10,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 11,
+    "text": "基于RL的无模型学习方法已被提出用于解决涉及扰动的最优控制问题。最近两种流行的处理扰动抑制的无模型最优控制方法涉及将这些学习方法与博弈论[29]和输出调节[30]的框架相结合。零和博弈公式已在[31]，[32]中提出。这些基于博弈论的扰动抑制设计的逆RL扩展最近也被提出[33]，[34]。在这些框架中处理扰动的一个关键困难是，通常假设扰动是可测量的，以防止学习方程相对于系统动态出现任何不匹配[29]。如果不加以考虑，未知扰动会导致不一致的学习方程，最终导致估计偏差，并可能使闭环系统不稳定。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 12,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 13,
+    "text": "在本文中，我们解决了不可测扰动的问题，这些问题是在多区域实验实验室设施中导致控制估计偏差（甚至不稳定）的潜在原因。研究表明，RL算法学习的控制动作满足规定的最优性准则。为了实际实现所提出的方案，采用了一系列设计考虑。这包括与不需要模拟数据源的黑箱RL方法相比，减少了学习时间。讨论了满足RL探索权衡的不同激励信号的实际影响，以及数值求解器在所提算法开发中的作用。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 14,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 15,
+    "text": "本工作的主要贡献如下。我们介绍了在美国国家标准与技术研究院（NIST）的多区域商业装备HVAC测试设施中，一种新颖的偏差补偿强化学习算法的设计和实现方面。鉴于建筑对我们能源足迹的重大影响，工业HVAC系统是利用此类AI算法能力的绝佳候选对象。本工作的动机是通过展示对商业环境中这些基于学习的最优控制算法的主流工业接受度至关重要的各种实现方面，来加速其在商业环境中的接受度。我们相信我们的工作是少数几个考虑RL控制文献中发现的扰动诱导偏差这一关键现象的实验研究之一，我们通过增强学习方程并引入偏差补偿机制来解决这一问题。我们的研究表明，通过采取所提出的措施，可以防止可能导致次优性和不稳定性的偏差问题，而无需模型辨识和扰动估计阶段。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 16,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 17,
+    "text": "本文的其余部分组织如下。第二部分提供了区域级HVAC控制的控制公式。第三部分介绍了扰动补偿Q学习算法的设计。第四部分描述了测试设施和实验设置的细节。第五部分介绍了研究的实现方面和结果。第六部分总结全文。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 18,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 19,
+    "text": "2 问题阐述",
+    "style": "Title",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 20,
+    "text": "我们将区域级控制问题阐述为结构化RL控制器易于处理的数学形式。注意，学习算法本身既不需要区域模型参数的知识，也不需要不可测负荷扰动的知识。相反，它在以下子节介绍的控制结构内学习最优参数。",
+    "style": "Normal",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 21,
+    "text": "2.1 区域动态",
+    "style": "Normal",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 22,
+    "text": "我们考虑一个区域模型，该模型捕捉了我们设计目标所需的复杂度，即基于规定的加权跟踪误差和设备设定点偏差来调节区域热舒适性。为此，我们采用以下基于常微分方程的标准HVAC区域动态模型[35]：",
+    "style": "Normal",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 23,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 24,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 25,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 26,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 27,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 28,
+    "text": "表I包含了变量和常参数的描述。上述区域模型可以通过定义状态向量x = [Tz Twew Twns]T,控制输入u = Tsa,和扰动向量d = [To q]T.用一个紧凑的矩阵形式表示。得到的状态空间模型为：",
+    "style": "Body Text",
+    "kind": "formula",
+    "translate": false
+  },
+  {
+    "id": 29,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 30,
+    "text": "T(1)中的状态空间模型需要（在时间上）离散化，以便于数字实现，也由于本文考虑的强化学习算法的离散性质。可以使用标准的欧拉离散化方法得到以下离散时间状态空间模型：",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 31,
+    "text": "xk+1 = Axk+ Buk+ Ddk (2)",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 32,
+    "text": "其中k是离散时间索引，离散化矩阵计算为A=eATs, B= s eAτdτB，D =s eAτdτD ,Ts是采样周期。(2)中矩阵的维度与(1)中变量定义的维度兼容。",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 33,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 34,
+    "text": "TABLE I",
+    "style": "Body Text",
+    "kind": "caption",
+    "translate": true
+  },
+  {
+    "id": 35,
+    "text": "NomENcLATuRE",
+    "style": "Normal",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 36,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 37,
+    "text": "",
+    "style": "Heading 3",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 38,
+    "text": "B. 控制结构",
+    "style": "Heading 3",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 39,
+    "text": "我们关注维持热舒适性，为此我们使用温度跟踪误差ek = Tzk _ Trk作为指标，其中Trk i是参考温度。目标是找到一个最优控制设定点u=Ta用于执行器，如空气处理单元或变风量（VAV）箱——参见第四部分），保证渐近温度跟踪，即limk→ ∞ ek = 0, 同时最小化如下形式的二次成本函数：",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 40,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 41,
+    "text": "其中Qe ≥ 0 和R > 0 是标量权重，分别用于惩罚作为热舒适性度量的温度误差和相对于稳态k =uk _uss (作为控制努力的度量),uss是送风温度或VAV箱的稳态设定点。",
+    "style": "Body Text",
+    "kind": "formula",
+    "translate": false
+  },
+  {
+    "id": 42,
+    "text": "我们采用一个标准的比例积分控制结构，最终希望RL算法学习该结构。注意，选择这种结构并不是对强化学习算法的限制。例如，我们可以采用其他结构，如前馈控制，而不是遵循比例积分结构。为此，我们引入了一个新状态wk来累积跟踪误差，这是连续时间设置中积分作用的离散时间等效项。基于这个新状态，我们形成以下增广系统：",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 43,
+    "text": "xk+1 = Axk+ Buk+ Ddk",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 44,
+    "text": "wk+1 = wk+ ek (4)",
+    "style": "Body Text",
+    "kind": "formula",
+    "translate": false
+  },
+  {
+    "id": 45,
+    "text": "它可以紧凑地表示为增广状态向量Xk = [x w]T ,",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 46,
+    "text": "Xk+1 = Xk + uk + dk + rk (5)",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 47,
+    "text": "其中rk = Trk 是如前定义的区域参考设定点，矩阵 , , 可以很容易地从(4)得到。这个增广形式的成本函数由(3)得出：",
+    "style": "Body Text",
+    "kind": "formula",
+    "translate": false
+  },
+  {
+    "id": 48,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 49,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 50,
+    "text": "其中 Q = C = 且 i = Xi _ Xss 对于某个稳态Xss对于(5)和(6)中的问题，存在一个唯一的最优控制器，其形式为",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 51,
+    "text": "u = _(R + TP* )_1TP*Xk = _K*Xk (7)",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 52,
+    "text": "其中P*是代数Riccati方程（ARE）的唯一正定解[36]",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 53,
+    "text": "TP _ P+ Q _ TP(R + TP)_1TP = 0. (8)",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 54,
+    "text": "注意，权重Qw 用于加权误差的积分（求和）。该权重惩罚积分（求和）状态相对于稳态的偏差。由于积分（求和）在闭环系统中引入了一个不稳定模态， Qw 需要是正定的。这个最优控制器的详细推导可以在[37]中找到。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 55,
+    "text": "III. 偏差补偿强化学习控制器",
+    "style": "Heading 2",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 56,
+    "text": "上一节介绍了HVAC区域动力学的控制结构。然而，控制设计涉及到区域动力学的知识，这些知识通常是未知的。处理这种设计问题的传统方法是采用系统辨识或自适应控制技术。与这些方法不同，强化学习具有基于规定的最优性准则直接学习控制动作或控制结构（如本工作所述）的潜力。在本节中，我们感兴趣的是采用强化学习来学习我们在上一节中介绍的控制结构。特别地，我们采用了一种在我们近期工作[37]中开发的扰动补偿Q学习算法。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 57,
+    "text": "A. 奖励函数",
+    "style": "Heading 3",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 58,
+    "text": "强化学习控制器设计的一个关键部分是合适地选择奖励（或惩罚/效用）函数。长期成本是基于这个函数评估的。由于长期成本无法先验得知（因为区域动态未知），从奖励函数获得的瞬时奖励主要用于驱动强化学习算法学习最优控制策略。从强化学习算法学到的最优策略对应于奖励函数的特定选择。",
+    "style": "Normal",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 59,
+    "text": "因此，奖励函数应该能够捕捉我们要解决的控制目标的本质。用于基于最优控制公式学习预定义控制结构的奖励函数可以很容易地从成本函数 JJ 中获得。对于我们特定的基于积分（求和）的控制结构，它是热性能和控制利用率的瞬时二次成本：",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 60,
+    "text": "Rk = XQXk + uRuk (9)",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 61,
+    "text": "其中热舒适性由如前定义的增广矩阵Q加权。注意，权重R 保持不变，因为它不受增广过程的影响。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 62,
+    "text": "B. Disturbance Compensated Q-Function",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 63,
+    "text": "在这项工作中，我们考虑将Q学习作为我们的主要RL算法，因为它具有无模型能力并且在学习最优控制器方面取得了成功。RL控制文献中大多数处理扰动抑制的学习算法都涉及在学习阶段测量（甚至操纵）扰动。在我们的问题设置中，扰动来自各种热源和室外温度变化。因此，扰动的测量通常是不可用的。我们最近的工作[37]表明，这些扰动如果未被考虑，会导致从标准Q学习算法学到的控制策略出现偏差。将动态(5)代入以下Q函数的定义[38]：",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 64,
+    "text": "QK = XQXk + uRuk+ VK(Xk+1) (10)",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 65,
+    "text": "其中，VK(Xk+1) = X+1PXk+1是二次值函数。将其与(5)一起代入(10)得到：",
+    "style": "Body Text",
+    "kind": "formula",
+    "translate": false
+  },
+  {
+    "id": 66,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 67,
+    "text": "其中涉及不可测信号dk 的最后四项会导致估计偏差。为了解决这个困难，我们提出了一种带扰动补偿的Q学习算法，防止学习阶段出现偏差。引入偏差补偿项的动机源于偏差效应本身，该效应由上述Q函数中包含不可测扰动dk 的项引起。因此，用一个偏差因子 c 增强常规Q函数可以补偿缺失的扰动项，并防止其余项出现估计偏差。这涉及设计以下带偏差补偿项的Q函数：",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 68,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 69,
+    "text": "其中子矩阵 H**根据系统矩阵和成本矩阵定义，如前述矩阵所示。因子c是一个偏差缩放因子，是为模拟偏差效应而引入的虚拟因子。感兴趣的读者可以参考[37]了解此类Q函数的详细信息。值得指出的是，上述Q函数具有明确定义的二次结构，对应于我们在第II-B节中介绍的控制结构选择。Q函数提供了在给定区域动态下遵循特定控制策略的长期成本的度量。由于区域动态未知，使用Q学习算法来学习Q函数并根据估计的Q函数改进控制策略。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 70,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 71,
+    "text": "C. Q学习算法",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 72,
+    "text": "在本节中，我们提出一个迭代Q学习算法，用于估计(12)中定义的二次结构化Q函数。该迭代算法基于强化学习文献中发现的策略迭代算法[39]。与标准的基于策略迭代的Q学习算法[38]不同，该算法旨在学习作用于区域的未知负荷扰动下的最优策略（比较见[37]）。Q学习方程是用于学习Q函数和最优策略的关键方程，其形式如下：",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 73,
+    "text": "zHzk = XQXk + uRuk+z+1Hzk+1 . (13)",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 74,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 75,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 76,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 77,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 78,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 79,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 80,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 81,
+    "text": "算法1是用于区域级HVAC控制的策略迭代Q学习算法。这本质上是一个两步过程。在策略评估步骤中，我们使用关键方程(13)求解未知向量 .在策略更新步骤中，我们执行单步策略改进，基本上最小化了在策略更新步骤中获得的Q函数估计的值。重复这两个步骤直到达到收敛准则ε。感兴趣的读者可以参考[37]了解该算法的收敛性证明。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 82,
+    "text": "D.贝尔曼方程的求解器",
+    "style": "Heading 3",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 83,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 84,
+    "text": "Q学习算法中的一个关键步骤是通过估计Q函数来评估策略值。在我们的问题中，这涉及通过求解贝尔曼方程(13)来估计矩阵H (表示为去除重复条目的向量 ) 虽然贝尔曼方程在未知数上是线性的，但它是欠定的。通常采用批处理最小二乘（LS）和递归最小二乘（RLS）等求解器来求解贝尔曼方程。在本研究中，我们比较了LS和RLS求解器，以观察求解器引起的估计值变化。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 85,
+    "text": "对于批处理最小二乘求解器，我们收集L ≥ l(l+ 1)/2 2 个数据样本(Xk , uk , rk)来形成数据矩阵Φ ∈ Rl(l+1)/2×L 和 Υ ∈ RL×1, 定义为",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 86,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 87,
+    "text": "其中是二次基。那么，(13)的最小二乘解由下式给出：",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 88,
+    "text": "j = (ΦΦT)−1ΦΥ (14)",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 89,
+    "text": "其中j 是未知向量的第 j 个估计值。由于uk = −KXk , 它与Xk 线性相关，(14)不会有唯一解，而这是收敛到最优参数所必需的。为了克服这个问题，在uk 中添加了一个激励噪声（仅在学習阶段），以保证(14)有唯一解，即确保满足以下秩条件：",
+    "style": "Body Text",
+    "kind": "formula",
+    "translate": false
+  },
+  {
+    "id": 90,
+    "text": "ρ(Φ) = l(l+ 1)/2: (15)",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 91,
+    "text": "值得注意的是，uk 中的激励将无法操纵偏差缩放因子c.然而，这个因子是容易调整的，例如，在连续的时间间隔内选择不同的常数。这将防止回归向量中出现零条目，并确保满足上述秩条件。显然，秩条件(15)是获得最优解所必需的，该最优解是最小二乘问题(14)的唯一解。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 92,
+    "text": "递归最小二乘主要用于促进最小二乘求解器的在线实现。在这项工作中，我们考虑了以下递归最小二乘实现：",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 93,
+    "text": "Ek(i) = Rk − Φ(i)(i− 1) (16)",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 94,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 95,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 96,
+    "text": "Pk(0) = P0 (18)",
+    "style": "Body Text",
+    "kind": "formula",
+    "translate": false
+  },
+  {
+    "id": 97,
+    "text": "其中对于某个非常大的P0 = βI，β > 0 且 Φk = k − k+1. 算法的收敛性是在持续激励（PE）条件下建立的[40]，该条件保证了数据足够丰富[41]。这个PE条件是通过在学习阶段向控制信号中注入探索噪声来满足的。",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 98,
+    "text": "IV. 测试设施与实验设置",
+    "style": "Heading 2",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 99,
+    "text": "智能建筑代理实验室（IBAL），如图1所示，旨在模拟小型商业建筑的HVAC系统和建筑负荷，但我们只使用了该设施的一小部分进行这项研究（IBAL的详细信息见[42]–[45]）。表II显示了关键设备的规格，标签与图1中的对应。图2显示了IBAL中的大部分空气系统；D是风门，用于帮助控制流经系统每个支路的空气量。AHU1和AHU2是空气处理单元，它们从室外和区域（循环空气）抽取空气，并为区域处理空气（即冷却和除湿）。每个AHU为两个区域处理空气，但这两个区域不一定有相同的冷却需求。VAV允许来自公共AHU的空气通过调节气流速率和/或再加热来自AHU的空气，来为特定区域进行修改。因此，商用AHU-VAV系统中的一个控制决策是供应给区域的空气温度。对于这项研究，我们控制进入VAV（来自AHU）的温度大约为12.8°C（55°F），然后使用VAV中的电加热器产生进入区域的空气的规定设定点温度。",
+    "style": "Normal",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 100,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 101,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 102,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 103,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 104,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 105,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 106,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 107,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 108,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 109,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 110,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 111,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 112,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 113,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 114,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 115,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 116,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 117,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 118,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 119,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 120,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 121,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 122,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 123,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 124,
+    "text": "图1.",
+    "style": "Normal",
+    "kind": "short",
+    "translate": false
+  },
+  {
+    "id": 125,
+    "text": "智能建筑代理实验室（IBAL）概览。",
+    "style": "Normal",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 126,
+    "text": "TABLE II",
+    "style": "Body Text",
+    "kind": "caption",
+    "translate": true
+  },
+  {
+    "id": 127,
+    "text": "EQuⅠpmENT SpEcⅠFⅠcATⅠoNs",
+    "style": "Normal",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 128,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 129,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 130,
+    "text": "Recirculation air",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 131,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 132,
+    "text": "Recirculation air",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 133,
+    "text": "图2.IBAL中的空气系统概览。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 134,
+    "text": "该目标设定点由手动整定的PI控制器或RL算法生成。这并不是真实商业建筑中控制的确切工作方式，但我们选择这种简化的方法作为RL控制算法的概念验证。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 135,
+    "text": "涉及RL控制器和VAV-区域子系统的基本反馈回路如图3所示。VAV下游的设定点温度 Tsa,SP , 是根据区域设定点温度Tz,SP ,和实际区域温度Tz . 之间的误差确定的。VAV加热器有其自身的本地PI回路（未显示），以比RL回路更快的速率运行，控制加热器使实际温度Tsa,接近Tsa,SP 。RL算法学习用于计算Tsa,SP的控制器的增益。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 136,
+    "text": "VAV Zone",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 137,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 138,
+    "text": "图3. RL控制回路，根据区域温度计算Tsa,SP，并馈送给VAV加热器控制信号。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 139,
+    "text": "V. 实现、结果与讨论",
+    "style": "Heading 2",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 140,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 141,
+    "text": "本节展示了所提出的Q学习方案的实现细节和结果。奖励函数参数控制着跟踪误差和设定点偏差的相对权重。在本研究中，我们选择参数为：跟踪误差Qe = 3000, 积分（求和）误差Qw = 600，控制努力R = 100 对于离散时间实现，1分钟的采样周期被认为适合我们的应用。在我们的实验设置中，由于区域之间的保温措施，墙壁的耦合系数可以忽略不计。因此，在学习过程中不使用墙温度对应的状态（尽管所提出的RL结构可以完全容纳它，如我们的模拟研究[37]所示）。因此，我们仅包括区域温度的反馈测量值用于状态反馈结构。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 142,
+    "text": "RL算法中的一个重要考虑是，需要通过探索信号充分探索状态-动作空间，以学习最优控制动作[6]。为此，根据探索的类型和幅度生成了各种数据集。我们考虑了两种最常用的探索信号：1）不同频率和幅度的正弦波，以及2）不同方差的高斯信号。从批处理LS和递归LS求解器获得的最终估计是相同的，因此我们仅展示递归LS求解器的图。请注意，在收集训练数据集时，为了满足PI算法的初始稳定性要求，并确保数据集在区域的预期运行范围内，已经运行了一个工作的稳定控制器（不一定是最优的）。我们将学习的这个阶段称为预学习阶段，也称为探索阶段，因为它涉及生成训练数据集。另一方面，采用学习到的控制器进行动作的阶段称为后学习阶段。算法1中的学习迭代正是在这两个阶段中执行的。虽然所有四个区域的结果都已包含在表II中，但当区域表现出相似行为时，仅显示区域1和2的图。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 143,
+    "text": "在实现RL算法之前，我们测试了一个手动整定的PI控制器，以了解典型的增益和响应。与遵循特定奖励函数计算增益的RL算法不同，这个PI控制器没有考虑任何特定的最优性准则。经过仔细整定，使用的比例增益和积分增益值分别为10和1.5。在这些手动增益下，所有四个区域的区域温度和设定点变化相似。图4显示了区域1和2的响应。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 144,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 145,
+    "text": "nk = A(0:01 sin(k) + 0:05 sin(3:1k) + 0:03 sin(5:3k)",
+    "style": "Body Text",
+    "kind": "formula",
+    "translate": false
+  },
+  {
+    "id": 146,
+    "text": "+ 0:02 cos(2:3k) + 0:07 cos(7:3k) + 0:04 cos(4:3k)",
+    "style": "Body Text",
+    "kind": "formula",
+    "translate": false
+  },
+  {
+    "id": 147,
+    "text": "+ 0:01 cos(3:9k) + 0:02 cos(11:9k) + 0:03 cos(13:9k))",
+    "style": "Body Text",
+    "kind": "formula",
+    "translate": false
+  },
+  {
+    "id": 148,
+    "text": "(19)",
+    "style": "Body Text",
+    "kind": "short",
+    "translate": false
+  },
+  {
+    "id": 149,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 150,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 151,
+    "text": "25",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 152,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 153,
+    "text": "20",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 154,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 155,
+    "text": "15",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 156,
+    "text": "0 0.5 1.0",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 157,
+    "text": "Time (hours)",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 158,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 159,
+    "text": "图4.手动整定PI控制器对参考温度Tr的响应，左侧为区域1，右侧为区域2。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 160,
+    "text": "对于A = 5和A = 10, 分别对应于正弦探索数据集 S1和S2。这种探索信号的选择基于实验观察，在学习阶段产生了令人满意的响应。次谐波频率和幅度是根据这些响应任意选择的。后面的讨论将解释各种探索如何影响收敛。注意，这些探索是添加在任何初始稳定控制器之上的，在我们的案例中，初始稳定控制器就是手动整定的PI控制器。我们使用向量符号来写增益（见表III），其中第一个分量是比例增益，第二个是积分分量。因此，初始增益向量设置为K0 = [10 1.5].在应用算法1之前，我们首先使用正弦数据集学习无偏差补偿的控制增益。区域1-4的结果显示在表III的前两行，显示了不收敛。事实上，这些控制增益从它们的符号可以看出是不稳定的。这表明，在存在扰动的情况下，常规的无补偿Q学习LQR算法会遭受偏差。现在，我们使用两个正弦探索数据集，应用带偏差补偿的算法1。使用S1和S2数据集时，区域1在学习阶段的响应如图5所示。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 161,
+    "text": "区域1在使用两个数据集的后学习响应和参数估计收敛性分别如图6和图7所示。比较这些图，我们发现参数估计的收敛性取决于探索的幅度。这是预料之中的，因为RL算法的收敛性随状态-动作空间探索的充分程度而变化。我们现在将区域1的上述收敛结果与区域2的结果进行比较。区域2在使用数据集S1和S2的预学习响应如图8所示，而后学习响应如图9所示。区域2的参数也显示出在不同探索下的收敛性，如图10所示。区域2的学习控制增益也与区域1非常接近，表明动态环境几乎相同。其余区域也观察到了类似的结果（仅显示了区域1和2的图）。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 162,
+    "text": "备注1： 最近在[46]中，考虑了分散LQ问题并将其应用于多区域HVAC问题，该问题也通过学习控制结构本身的偏差参数来解决由于未知扰动源（室外温度和热增益）引起的漂移/偏差效应。我们的方法精神类似，但不是学习控制偏差项，而是学习学习方程中出现的偏差项，无论控制如何。这实现了渐近温度跟踪（改善的热舒适性），因为偏差估计的误差不会显式出现在控制中。然而，我们的多区域实验设置仅限于独立区域控制，因为它没有考虑区域间的相互作用，这将涉及集中/分散式公式。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 163,
+    "text": "我们继续分析算法1下的系统行为。对于两个区域以及两个数据集S1和S2，我们发现学习到的控制器往往会产生更高的超调。然而，跟踪响应在20分钟内紧密跟随参考轨迹，这比手动整定控制器略有改进。这归因于热舒适性与设定点偏差的相对权重的特定选择。显然，不同的成本度量将产生不同的行为，可以根据用户的需求进行调整。其余区域也观察到了类似的行为，它们也使用了相同的成本函数参数。学习到的控制增益的数值总结在表III中。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 164,
+    "text": "接下来，我们分析高斯探索对参数收敛性的影响。在本研究中，我们考虑了不同方差的高斯信号来生成不同的数据集。两个数据集G1和G2（每个区域各一个）是使用零均值高斯噪声获得的，区域1的标准差为0.25和0.5，区域2的标准差为1.25和1.5。不同高斯噪声探索下的预学习行为如图11（区域1）和图14（区域2）所示。学习控制器在两种高斯数据集G1和G2下的后学习响应与使用正弦波探索获得的响应相当，如图12所示。从图15可以看出，区域2在数据集G1下表现出稍高的振荡响应，但在数据集G2下观察到了改进的响应。与正弦数据集S1和S2下的参数收敛结果相比，我们发现高斯数据集G1和G2下也能实现收敛，如图13（区域1）和图16（区域2）所示。然而，与正弦数据集下的偏差相比，我们发现迭代的收敛性对高斯噪声的标准差更敏感。收敛有时在较少的迭代次数内发生，但在较高的噪声下也遇到了不收敛的情况（表III中的XX条目表示不收敛）。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 165,
+    "text": "学习到的控制增益的总结见表III。将RL结果与手动整定的PI控制（整定为在确保快速收敛的同时保持较小的超调）进行比较，我们发现RL结果往往具有更大的超调但更小的调节时间。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 166,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 167,
+    "text": "TABLE III",
+    "style": "Body Text",
+    "kind": "caption",
+    "translate": true
+  },
+  {
+    "id": 168,
+    "text": "SummARy oF THE LEARNED CoNTRoL GAⅠNs UNDER DⅠFFERENT SoLvERs, ExpLoRATⅠoNs, AND DATAsETs",
+    "style": "Normal",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 169,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 170,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 171,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 172,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 173,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 174,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 175,
+    "text": "图5.区域1使用数据集S1（左）和S2（右）的预学习阶段",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 176,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 177,
+    "text": "0 0.5 1.0",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 178,
+    "text": "Time (hours)",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 179,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 180,
+    "text": "图6.区域1在RLS准则下使用数据集S1（左）和S2（右）的后学习响应。",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 181,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 182,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 183,
+    "text": "Fig. 7. Parameter convergence under RLS rule for Zone 1 using datasets S1 (left) and S2 (right).",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 184,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 185,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 186,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 187,
+    "text": "Fig. 8. Pre-learning phase of Zone 2 using datasets S1 (left) and S2 (right).",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 188,
+    "text": "虽然所有区域的尺寸相似，但我们发现对于相同的成本函数，区域3和4往往具有更高的增益。这可能是由于实验室设计的细节和其他耦合源。探索信号的类型和幅度也会影响增益，因为RL算法在很大程度上依赖于数据集的质量和探索信号的性质。除了少数例外，收敛是成功的。特别是，当高斯噪声的标准差为2.5时发生不收敛。当控制输入的探索变得过于主导时，系统设备可能开始在约束区域内运行或表现出非线性行为，在这种情况下，我们规定的控制结构将不再成立。因此，在RL算法中仔细选择探索是至关重要的，这是一个依赖于应用的考虑。在我们的实验中，我们发现当探索幅度改变时，正弦波探索导致的参数估计偏差较小。另一方面，高斯探索的变化有时会导致参数估计的较大变化。在其中一个区域，当偏差较高时也遇到了不收敛的情况。",
+    "style": "Normal",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 189,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 190,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 191,
+    "text": "Fig. 9. Post-learning response under RLS rule for Zone 2 using datasets Sl (left) and S2 (right).",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 192,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 193,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 194,
+    "text": "Fig. l0. Parameter convergence with RLS rule for Zone 2 using datasets Sl (left) and S2 (right).",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 195,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 196,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 197,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 198,
+    "text": "Fig. ll. Pre-learning phase of Zone l using dataset Gl (left) and G2 (right).",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 199,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 200,
+    "text": "0 0.5 1.0",
+    "style": "Body Text",
+    "kind": "object",
+    "translate": false
+  },
+  {
+    "id": 201,
+    "text": "Time (hours)",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 202,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 203,
+    "text": "Fig. l2. Post-learning response under RLS rule for Zone l using dataset Gl (left) and G2 (right).",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 204,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 205,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 206,
+    "text": "Fig. l3. Parameter convergence with RLS rule for Zone l using dataset Gl (left) and G2 (right).",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 207,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 208,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 209,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 210,
+    "text": "Fig. l4. Pre-learning phase of Zone 2 using dataset Gl (left) and G2 (right).",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 211,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 212,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 213,
+    "text": "Fig. 15. Post-learning response under RLS rule for Zone 2 using dataset G1 (left) and G2 (right).",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 214,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 215,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 216,
+    "text": "Fig. 16. Parameter convergence with RLS rule for Zone 2 using dataset G1 (left) and G2 (right).",
+    "style": "Body Text",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 217,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 218,
+    "text": "TABLE IV",
+    "style": "Body Text",
+    "kind": "caption",
+    "translate": true
+  },
+  {
+    "id": 219,
+    "text": "SummAry oF MEAn SquArEd TrAcking Error",
+    "style": "Normal",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 220,
+    "text": "",
+    "style": "Normal",
+    "kind": "empty",
+    "translate": false
+  },
+  {
+    "id": 221,
+    "text": "表IV显示了在标称精心整定的PI控制器和不同学习数据集（正弦波、高斯）下的RL控制器在不同区域的均方跟踪误差（MSE）汇总。总的来说，手动PI控制器在不同探索条件下表现出比学习控制器更小的MSE。这是因为所有RL控制器都设计有较大的加权矩阵Q值，该矩阵基于瞬态持续时间进行惩罚，因此以牺牲超调为代价实现了更短的瞬态。然而，这些超调对MSE有直接影响。另一方面，手动PI和自动RL控制器可以实现相同的稳态性能，因为一旦学习瞬态结束，控制器就遵循PI结构。",
+    "style": "Normal",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 222,
+    "text": "VI. 结论",
+    "style": "Heading 2",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 223,
+    "text": "本文介绍了一种结构化强化学习算法在多区域HVAC系统区域级控制中的实现。开发了一种偏差补偿的Q学习方案，该方案考虑了不可测扰动的影响。所提出的Q学习算法与HVAC区域（而非模拟模型）进行交互，并采用二次奖励函数来考虑跟踪误差和设定点偏差。通过利用控制结构并重用过去系统交互的数据，由于学习方程中定义良好的二次参数化和预先确定的控制结构，训练数据集的大小和学习时间得以减少。对各种探索信号的综合分析表明，学习到的控制参数，以及随后的后学习性能，取决于所用训练数据集的质量。什么是高质量数据集取决于系统状态和动作空间被探索的全面程度。然而，在实践中满足这些要求的充分条件目前尚不清楚。在我们的研究中，我们发现虽然参数估计的收敛性几乎总是得到保证，但与高斯探索相比，正弦波探索导致的最终估计偏差较小。与传统的PI相比，RL算法提供了将奖励函数定制为规定成本的灵活性。RL方法的自适应能力允许我们改变成本要求，这将促使RL算法针对新的规范重新学习控制。",
+    "style": "Normal",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 224,
+    "text": "参考文献",
+    "style": "Heading 2",
+    "kind": "short",
+    "translate": false
+  },
+  {
+    "id": 225,
+    "text": "[1] J. Mei, Z. Y. Lu, J. H. Hu, and Y. L. Fan, \"Energy-efficient optimal guaranteed cost intermittent-switch control of a direct expansion air conditioning system,\" IEEE/CAA J. Autom. Sinica, vol. 8, no. 11, pp. 1852–1866, Nov. 2020. [2] N. E. Klepeis, W. C. Nelson, W. R. Ott, J. P. Robinson, A. M. Tsang, P. Switzer, J. V. Behar, S. C. Hern, and W. H. Engelmann, \"The national human activity pattern survey (NHAPS): A resource for assessing exposure to environmental pollutants,\" J. Exp. Sci. Environ. Epidemiol., vol. 11, no. 3, pp. 231–252, May–Jun. 2001. [3] DOE, \"An assessment of energy technologies and research opportunities,\" in Proc. AIChE Annu. Meeting, 2015. [4] S. Prívara, J. Široký, L. Ferkl, and J. Cigler, \"Model predictive control of a building heating system: The first experience,\" Energy Build., vol. 43, no. 2-3, pp. 564–572, Feb.–Mar. 2011. [5] Y. Y. Fu, S. C. Xu, Q. Zhu, and Z. O'Neill, \"Containerized framework for building control performance comparisons: Model predictive control vs deep reinforcement learning control,\" in *Proc. 8th ACM Int. Conf. Systems for Energy-Efficient Buildings, Cities, and Transportation*, Coimbra, Portugal, 2021, pp. 276–280. [6] R. S. Sutton and A. G. Barto, Reinforcement Learning: An Introduction. Cambridge, USA: MIT Press, 1998. [7] M. M. Ha, D. Wang, and D. R. Liu, \"Discounted iterative adaptive critic designs with novel stability analysis for tracking control,\" IEEE/CAA J. Autom. Sinica, vol. 9, no. 7, pp. 1262–1272, Jul. 2022. [8] G. Geng and G. M. Geary, \"On performance and tuning of PID controllers in HVAC systems,\" in Proc. IEEE Int. Conf. Control and Applications, Vancouver, Canada, 1993, pp. 819–824. [9] R. S. Sutton, A. G. Barto, and R. J. Williams, \"Reinforcement learning is direct adaptive optimal control,\" IEEE Control Syst. Mag., vol. 12, no. 2, pp. 19–22, Apr. 1992. [10] M. J. Han, R. May, X. X. Zhang, X. R. Wang, S. Pan, D. Yan, and Y. Jin, \"A novel reinforcement learning method for improving occupant comfort via window opening and closing,\" Sustain. Cities Soc., vol. 61, p. 102247, Oct. 2020. [11] P. Fazenda, K. Veeramachaneni, P. Lima, and U.-M. O'Reilly, \"Using reinforcement learning to optimize occupant comfort and energy usage in HVAC systems,\" J. Ambient Intell. Smart Environ., vol. 6, no. 6, pp. 675-690, Jan. 2014. [12] A. Overgaard, B. K. Nielsen, C. S. Kallesoe, and J. D. Bendtsen, \"Reinforcement learning for mixing loop control with flow variable eligibility trace,\" in Proc. IEEE Conf. Control Technology and Applications, Hong Kong, China, 2019, pp. 1043-1048. [13] T. S. Wei, Y. Z. Wang, and Q. Zhu, \"Deep reinforcement learning for building HVAC control,\" in *Proc. 54th ACM/EDAC/IEEE Design Automation Conf.*, Austin, USA, 2017, pp. 1-6. [14] E. Barrett and S. Linder, \"Autonomous HVAC control, a reinforcement learning approach,\" in Proc. Joint European Conf. Machine Learning and Knowledge Discovery in Databases, Porto, Portugal, 2015, pp. 3-19. [15] G. T. Costanzo, S. Iacovella, F. Ruelens, T. Leurs, and B. J. Claessens, \"Experimental analysis of data-driven control for a building heating system,\" Sustain. Energy Grids Netw., vol. 6, pp. 81-90, Jun. 2016. [16] Z. Wang and T. Z. Hong, \"Reinforcement learning for building controls: The opportunities and challenges,\" Appl. Energy, vol. 269, p. 115036, Jul. 2020. [17] J. X. Zhang, K. W. Li, and Y. M. Li, \"Output-feedback based simplified optimized backstepping control for strict-feedback systems with input and state constraints,\" IEEE/CAA J. Autom. Sinica, vol. 8, no. 6, pp. 1119-1132, Jun. 2021. [18] Y. J. Chen, L. K. Norford, H. W. Samuelson, and A. Malkawi, \"Optimal control of HVAC and window systems for natural ventilation through reinforcement learning,\" Energy Build., vol. 169, pp. 195-205, Jun. 2018. [19] G. P. Henze and R. H. Dodier, \"Adaptive optimal control of a grid-independent photovoltaic system,\" J. Sol. Energy Eng., vol. 125, no. 1, pp. 34-42, Feb. 2003. [20] L. Yang, Z. Nagy, P. Goffin, and A. Schlueter, \"Reinforcement learning for optimal control of low energy buildings,\" Appl. Energy, vol. 156, pp. 577-586, Oct. 2015. [21] K. Dalamagkidis, D. Kolokotisa, K. Kalaitzakis, and G. S. Stavrakakis, \"Reinforcement learning for energy conservation and comfort in buildings,\" Build. Environ., vol. 42, no. 7, pp. 2686-2698, Jul. 2007. [22] C. X. Guan, Y. Z. Wang, X. Lin, S. Nazarian, and M. Pedram, \"Reinforcement learning-based control of residential energy storage systems for electric bill minimization,\" in Proc. 12th Annu. IEEE Consumer Communications and Networking Conf., Las Vegas, USA, 2015, pp. 637-642. [23] S. Y. Zhou, Z. J. Hu, W. Gu, M. Jiang, and X.-P. Zhang, \"Artificial intelligence based smart energy community management: A reinforcement learning approach,\" CSEE J. Power Energy Syst., vol. 5, no. 1, pp. 1-10, Mar. 2019. [24] Y. Y. Ran and M. H. Jun, \"Performance based thermal comfort control (PTCC) using deep reinforcement learning for space cooling,\" Energy Build., vol. 203, p. 109420, Nov. 2019. [25] B. Sun, P. B. Luh, Q.-S. Jia, and B. Yan, \"Event-based optimization within the lagrangian relaxation framework for energy savings in HVAC systems,\" IEEE Trans. Autom. Sci. Eng., vol. 12, no. 4, pp. 1396-1406, Oct. 2015. [26] Y. Zhang and M. van der Schaar, \"Structure-aware stochastic load management in smart grids,\" in *Proc. IEEE INFOCOM 2014 - IEEE Conf. Computer Communications*, Toronto, Canada, pp. 2643-2651. [27] B.-G. Kim, Y. Zhang, M. van der Schaar, and J.-W. Lee, \"Dynamic pricing and energy consumption scheduling with reinforcement learning,\" IEEE Trans. Smart Grid, vol. 7, no. 5, pp. 2187-2198, Sept. 2016.",
+    "style": "Normal (Web)",
+    "kind": "reference",
+    "translate": false
+  },
+  {
+    "id": 226,
+    "text": "第1714页",
+    "style": "Normal (Web)",
+    "kind": "text",
+    "translate": true
+  },
+  {
+    "id": 227,
+    "text": "[28] D. Bertsekas, \"Multiagent reinforcement learning: Rollout and policy iteration,\" IEEE/CAA J. Autom. Sinica, vol. 8, no. 2, pp. 249-272, Feb. 2021. [29] K. G. Vamvoudakis, H. Modares, B. Kiumarsi, and F. L. Lewis, \"Game theory-based control system algorithms with real-time reinforcement learning: How to solve multiplayer games online,\" IEEE Control Syst. Mag., vol. 37, no. 1, pp. 33-52, Feb. 2017. [30] J. Huang, Nonlinear Output Regulation - Theory and Applications, Philadelphia, USA: SIAM, 2004. [31] Y. J. Peng, Q. Chen, and W. J. Sun, \"Reinforcement Q-learning algorithm for H∞H∞​ tracking control of unknown discrete-time linear systems,\" IEEE Trans. Syst. Man Cybern. Syst., vol. 50, no. 11, pp. 4109-4122, Nov. 2020. [32] C. Chen, F. L. Lewis, K. Xie, S. L. Xie, and Y. L. Liu, \"Off-policy learning for adaptive optimal output synchronization of heterogeneous multi-agent systems,\" Automatica, vol. 119, p. 109081, Sept. 2020. [33] B. S. Lian, W. Q. Xue, F. L. Lewis, and T. Y. Chai, \"Robust inverse QQ-learning for continuous-time linear systems in adversarial environments,\" IEEE Trans. Cybern., vol. 52, no. 12, pp. 13083-13095, Dec. 2022. [34] B. S. Lian, W. Q. Xue, F. L. Lewis, and T. Y. Chai, \"Inverse reinforcement learning for adversarial apprentice games,\" IEEE Trans. Neural Netw. Learn. Syst., 2021. DOI: 10.1109/TNNLS.2021.3114612 [35] B. Tashtoush, M. Molhim, and M. Al-Rousan, \"Dynamic model of an HVAC system for control analysis,\" Energy, vol. 30, no. 10, pp. 1729-1745, Jul. 2005. [36] F. L. Lewis and V. L. Syrmos, Optimal Control. 2nd ed. Chichester, UK: John Wiley & Sons, 1995. [37] S. A. A. Rizvi, A. J. Pertzborn, and Z. L. Lin, \"Reinforcement learning based optimal tracking control under unmeasurable disturbances with application to HVAC systems,\" IEEE Trans. Neural Netw. Learn. Syst., vol. 33, no. 12, pp. 7523-7533, Dec. 2022. [38] S. J. Bradtke, B. E. Ydstie, and A. G. Barto, \"Adaptive linear quadratic control using policy iteration,\" in Proc. American Control Conf., Baltimore, USA, 1994, pp. 3475-3479. [39] Z. Chen and N. Li, \"An optimal control-based distributed reinforcement learning framework for a class of non-convex objective functionals of the multi-agent network,\" IEEE/CAA J. Autom. Sinica, 2022. DOI: 10.1109/JAS.2022.105992 [40] G. Tao, Adaptive Control Design and Analysis. Hoboken, USA: Wiley-Interscience, 2003. [41] C. H. Liu, F. Zhu, Q. Liu, and Y. C. Fu, \"Hierarchical reinforcement learning with automatic sub-goal identification,\" IEEE/CAA J. Autom. Sinica, vol. 8, no. 10, pp. 1686-1696, Oct. 2021. [42] IBAL Overview, National Institute of Standards and Technology. [在线]. 可用: https://www.nist.gov/el/energy-and-environment-division-73200/intelligent-buildings-agents-project/ibal-overview [43] A. J. Pertzborn, \"Intelligent building agents laboratory: Hydronic system design,\" U.S. Department of Commerce, National Institute of Standards and Technology, 2016. [在线]. 可用: https://doi.org/10.6028/NIST.TN.1933 [44] A. J. Pertzborn and D. A. Veronica, \"Intelligent building agents laboratory: Air system design,\" U.S. Department of Commerce, National Institute of Standards and Technology, 2016. [在线]. 可用: https://doi.org/10.6028/NIST.TN.2025 [45] A. J. Pertzborn and D. A. Veronica, \"Baseline control systems in the intelligent building agents laboratory,\" U.S. Department of Commerce, National Institute of Standards and Technology, 2021. [在线]. 可用: https://doi.org/10.6028/NIST.TN.2178 [46] Y. Y. Li, Y. J. Tang, R. Y. Zhang, and N. Li, \"Distributed reinforcement learning for decentralized linear quadratic control: A derivative-free policy optimization approach,\" IEEE Trans. Autom. Control, vol. 67, no. 12, pp. 6429-6444, Dec. 2022.",
+    "style": "Normal (Web)",
+    "kind": "reference",
+    "translate": false
+  },
+  {
+    "id": 228,
+    "text": "",
+    "style": "Body Text",
+    "kind": "empty",
+    "translate": false
+  }
+]
