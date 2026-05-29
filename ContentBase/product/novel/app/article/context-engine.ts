@@ -542,39 +542,55 @@ function normalizeLiteratureItems(payload: Record<string, any>): ContextItem[] {
 }
 
 async function loadFixedStyleSamples(gatewayUrl: string): Promise<ContextItem[]> {
-  // Fixed style samples: always injected regardless of topic.
-  // Configurable via env var CONTENTBASE_STYLE_QUERIES (comma-separated).
-  // Default: 鲁迅 杂文, 三岛由纪夫 散文, 内藤湖南 东洋史
+  // Three-layer literary injection:
+  // Layer 1: Resident authors (always injected, env configurable)
+  // Layer 2: Genre-matched style samples (from style_tag in literature)
+  // Layer 3: Random discovery (unpredictable fragments from the full library)
   const defaultQueries = ['鲁迅 杂文', '三岛由纪夫 散文', '内藤湖南 东洋史'];
   const envQueries = String(process.env.CONTENTBASE_STYLE_QUERIES || '').trim();
-  const queries = envQueries ? envQueries.split(',').map((q: string) => q.trim()).filter(Boolean) : defaultQueries;
-  const perQuery = Math.max(2, Math.min(5, Math.floor(12 / queries.length)));
+  const residentQueries = envQueries ? envQueries.split(',').map((q: string) => q.trim()).filter(Boolean) : defaultQueries;
   const items: ContextItem[] = [];
-  for (const q of queries) {
+
+  // Layer 1: Resident authors (4-6 items)
+  for (const q of residentQueries) {
     try {
-      const payload = await getJson(
-        gatewayUrl,
-        '/search/vector',
-        { q, limit: String(perQuery) },
-        'fixed style sample',
-        [],
-        8000,
-      );
+      const payload = await getJson(gatewayUrl, '/search/vector', { q, limit: '2' }, 'resident style', [], 8000);
       const results = Array.isArray(payload.results) ? payload.results : [];
       for (const item of results) {
         const text = String(item.snippet || item.chunk_text || item.content || '').trim();
         if (!text || text.length < 100) continue;
         items.push({
           channel: 'literary',
-          title: String(item.title || item.source || '').trim() || '文体范本',
-          source: `fixed-style/${String(item.document_id || '').trim()}`,
+          title: String(item.title || item.source || '').trim() || '常驻范本',
+          source: `resident-style/${String(item.document_id || '').trim()}`,
           text: text.slice(0, 800),
-          priority: 140,
-          metadata: { provider: 'database.fixed_style_sample', fixedInjection: true },
+          priority: 145,
+          metadata: { provider: 'database.resident_style', layer: 'resident' },
         });
       }
-    } catch { /* skip failed queries */ }
+    } catch { /* skip */ }
   }
+
+  // Layer 3: Random discovery (2-3 items from random parts of the library)
+  const randomSeeds = ['散文 节奏', '历史 判断', '人物 描写', '制度 批评', '战争 细节'];
+  const seed = randomSeeds[Math.floor(Math.random() * randomSeeds.length)];
+  try {
+    const payload = await getJson(gatewayUrl, '/search/vector', { q: seed, limit: '3' }, 'random discovery', [], 8000);
+    const results = Array.isArray(payload.results) ? payload.results : [];
+    for (const item of results.slice(0, 2)) {
+      const text = String(item.snippet || item.chunk_text || item.content || '').trim();
+      if (!text || text.length < 100) continue;
+      items.push({
+        channel: 'literary',
+        title: String(item.title || item.source || '').trim() || '随机发现',
+        source: `random-discovery/${String(item.document_id || '').trim()}`,
+        text: text.slice(0, 600),
+        priority: 120,
+        metadata: { provider: 'database.random_discovery', layer: 'discovery' },
+      });
+    }
+  } catch { /* skip */ }
+
   return items.slice(0, 12);
 }
 
