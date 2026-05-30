@@ -12,6 +12,11 @@ CHUNK_SIZE = 800
 CHUNK_OVERLAP = 100
 MIN_CONTENT_LEN = 500
 
+# Categories from import-manifest.json that are actual writing samples
+STYLE_CATEGORIES = {"literary-style-reference"}
+# Keywords that indicate biographical/meta content (not actual writing)
+META_KEYWORDS = ["译后记", "译者序", "编者按", "生平", "年谱", "评论", "研究", "简介", "出版说明", "前言", "序言", "附录", "注释"]
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_PATH = os.path.join(SCRIPT_DIR, "index-literature-ragflow.log")
 
@@ -129,6 +134,21 @@ def chunk_text(text):
     return chunks
 
 
+def classify_chunk(chunk_text, category, author):
+    """Classify a chunk as 原文范本 or 作者研究 based on category and content."""
+    # If the source book is a literary-style-reference, default to 原文范本
+    is_style_source = category in STYLE_CATEGORIES
+    # Check for meta/biographical keywords in the first 100 chars
+    head = chunk_text[:100]
+    is_meta = any(kw in head for kw in META_KEYWORDS)
+    if is_meta:
+        return f"[作者研究|{author}]"
+    if is_style_source:
+        return f"[原文范本|{author}]"
+    # Non-style sources (historical docs, theory) get no prefix
+    return ""
+
+
 def main():
     apply = "--apply" in sys.argv
     load_runtime_env()
@@ -182,8 +202,16 @@ def main():
 
         content = row["content"]
         chunks = chunk_text(content)
-        out(f"    {len(chunks)} chunks")
-        total_chunks += len(chunks)
+        category = item.get("category") or ""
+
+        # Prepend classification prefix to each chunk
+        prefixed_chunks = []
+        for c in chunks:
+            prefix = classify_chunk(c, category, author)
+            prefixed_chunks.append(f"{prefix} {c}" if prefix else c)
+
+        out(f"    {len(prefixed_chunks)} chunks (category={category})")
+        total_chunks += len(prefixed_chunks)
 
         if not apply:
             success += 1
@@ -192,7 +220,7 @@ def main():
         # Upload as a text file to RAGFlow (RAGFlow will parse and index it)
         # We pre-chunk by inserting double newlines between chunks for RAGFlow's naive parser
         doc_name = f"{title} -- {author}".replace("/", "-").replace("\\", "-")[:120] + ".txt"
-        doc_content = "\n\n".join(chunks)
+        doc_content = "\n\n".join(prefixed_chunks)
         doc_bytes = doc_content.encode("utf-8")
 
         resp = ragflow_upload_file(config, config["ragflow_dataset"], doc_name, doc_bytes, timeout=120)

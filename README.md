@@ -54,7 +54,7 @@ ContentMRS 接受软参数（topic、方向性描述、体裁暗示、长度期�
 ### 端点
 
 ```
-POST http://124.220.233.126:5111/api/content/runtime/generate/article
+POST http://<SERVER_IP>:5111/api/content/runtime/generate/article
 Content-Type: application/json
 ```
 
@@ -185,7 +185,7 @@ topic + target
 
 | genre | 模型 | 提供商 | 适用场景 |
 |-------|------|--------|---------|
-| essay / historical-essay / reality_commentary | Claude Sonnet 4.6 | openoneapi.com | 独立文章、政论、视频文案 |
+| essay / historical-essay / reality_commentary | Claude Sonnet 4.6 | OpenAI-compatible gateway | 独立文章、政论、视频文案 |
 | narrative / fiction / 含"小说""章节" | Qwen Max | DashScope 直连 | 小说章节、虚构叙事 |
 
 ### 去AI化策略（三层）
@@ -246,7 +246,7 @@ node scripts/import-local-book-corpus.mjs --file "路径" --apply
 如果用了方式A（只写 literature 表），需要手动分块：
 ```bash
 # 在服务器上运行（参考之前的 index-literature.mjs 脚本）
-ssh ubuntu@124.220.233.126 "cd /srv/database-gateway && node index-literature.mjs"
+ssh ubuntu@<SERVER_IP> "cd /srv/database-gateway && node index-literature.mjs"
 ```
 
 ### 步骤3：上传到 RAGFlow（向量检索）
@@ -1004,7 +1004,7 @@ Dify = UI / trigger / polling
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────┐
-│  Production Server (腾讯云 CVM · 124.220.233.126)                     │
+│  Production Server (腾讯云 CVM · <SERVER_IP>)                     │
 │                                                                       │
 │  ┌──────────────┐       ┌──────────────────┐                         │
 │  │ ContentBase  │──────▶│ DataBase Gateway  │                         │
@@ -1077,6 +1077,35 @@ Fanqie Service (:5701) 是 Playwright 驱动的浏览器自动化服务，负责
 - 8 部作品在追踪
 - 自动登录 + cookie 管理
 - 章节内容从 Gateway 拉取 → 自动发布到番茄
+
+### 自动发布系统（每日定时）
+
+每天 08:00 + 20:00 自动为 4 本活跃书各发布 1 章（共 2 章/书/天）。
+
+```bash
+# 手动触发（模拟）
+node scripts/novel-factory/daily-publish.mjs --dry-run
+
+# 手动触发（真实发布单本书）
+node scripts/novel-factory/daily-publish.mjs --book "枪与凋零之花" --count 1
+```
+
+**活跃书目：**
+
+| 书名 | 账号 | 模式 |
+|------|------|------|
+| 枪与凋零之花 | 墨水的生命周期 | 积压发布 |
+| 咳血少女与前世宿敌的百合维新 | 墨水的生命周期 | 积压发布 |
+| 无纪年王国 | 墨水的生命周期 | 积压发布 |
+| 变身S级魅魔后被坏女人包围了 | 墨水的灰色 | 生成+发布 |
+
+**发布策略：**
+- 积压模式：DataBase 中有未发布章节时，直接调用 `POST /publish/next-database-chapter`
+- 生成模式：积压用完后，拉取故事记忆 → n8n 生成 → 质量检查 → 发布
+
+**监控通知：**
+- Telegram bot `@mortis_operator_bot` 中文通知每次运行结果
+- Session 过期监控（每 72h 检查，过期时通知）
 
 ### 数据流
 
@@ -1283,3 +1312,34 @@ cd DataBase/apps/gateway && pnpm dev # Gateway dev server :18090
 - 不全量 RAGFlow：细粒度 chunk 不适合 RAGFlow 的 parent-child 检索模型
 - 最大瓶颈是 Corpus 精细度 + Composition 层厚度，不是 Writer，不是 RAGFlow
 - 旧提示词的价值在于材料（词汇、引用、比喻），不在于规则（禁令）
+
+---
+
+## 文学语料管理
+
+文学语料是生成质量的核心——Writer 的化用能力完全取决于召回材料的质量。
+
+### Canonical 管道
+
+| 步骤 | 脚本 | 说明 |
+|------|------|------|
+| 导入本地书籍 → MySQL | `DataBase/apps/gateway/scripts/import-local-book-corpus.mjs` | 从 EPUB/MD 导入，带 `content_kind`、`materialKind` 分类 |
+| MySQL → RAGFlow 向量索引 | `DataBase/apps/gateway/scripts/index-literature-to-ragflow.py` | 800 字符 chunk，带分类前缀标记 |
+| Baseline 文章回灌 | `DataBase/apps/gateway/scripts/import-baseline-articles-as-corpus.mjs` | 生成的好文章作为 semantic unit 回灌 |
+
+### 源书清单
+
+`DataBase/apps/gateway/scripts/import-manifest.json` — 22 本源书，分类：
+- `literary-style-reference`：鲁迅全集、三岛由纪夫、内藤湖南等（原文写作样本）
+- `historical-document-original`：历史原始文献
+- `theory-original`：理论原著
+
+### 操作手册
+
+详见 `DataBase/apps/gateway/ops/corpus/README.md`（canonical 操作文档）。
+
+### 质量要求
+
+- RAGFlow 中的文学语料必须区分"原文写作样本"和"关于作者的评论/介绍"
+- 向量检索必须优先返回原文写作样本，即使话题与作者领域不匹配
+- 当 RAGFlow 不可用时，生成直接报错，不降级为关键词匹配

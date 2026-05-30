@@ -441,6 +441,13 @@ export function searchRoutes({ pool, config }: RouteDependencies) {
           chunk?.metadata && typeof chunk.metadata === "object"
             ? (chunk.metadata as Record<string, unknown>)
             : {};
+        const snippet = chunkText(chunk).slice(0, 1000);
+        let score = Number(
+          chunk?.similarity || chunk?.score || chunk?.vector_similarity || 0
+        );
+        // Re-rank: boost original writing samples, demote meta/biographical content
+        if (snippet.startsWith("[原文范本|")) score *= 1.5;
+        else if (snippet.startsWith("[作者研究|")) score *= 0.5;
         return {
           document_id: String(
             chunk?.document_id || chunk?.doc_id || metadata.document_id || ""
@@ -457,14 +464,13 @@ export function searchRoutes({ pool, config }: RouteDependencies) {
           ),
           privacy_level: "private",
           chunk_index: Number(metadata.chunk_index ?? metadata.chunkIndex ?? index),
-          snippet: chunkText(chunk).slice(0, 1000),
-          score: Number(
-            chunk?.similarity || chunk?.score || chunk?.vector_similarity || 0
-          ),
+          snippet,
+          score,
           provider: "ragflow.retrieval"
         };
       })
-      .filter((item) => item.snippet);
+      .filter((item) => item.snippet)
+      .sort((a, b) => b.score - a.score);
 
     return c.json({
       query: q,
