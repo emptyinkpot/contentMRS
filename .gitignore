@@ -29,6 +29,7 @@ DataBase/apps/gateway/scripts/__pycache__/
 .idea/
 
 # Temporary & working directories
+.runtime/
 .tmp-remote/
 .codex-remote-edit/
 .remote-edit/
