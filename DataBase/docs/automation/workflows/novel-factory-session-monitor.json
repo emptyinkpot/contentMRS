@@ -1,0 +1,103 @@
+{
+  "name": "novel-factory-session-monitor",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "hours", "hoursInterval": 72 }]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Every 72h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-1200, 0]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://127.0.0.1:5701/session/check",
+        "options": { "timeout": 30000 }
+      },
+      "id": "check-session",
+      "name": "Check fanqie session",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-960, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const res = $input.first().json;\nconst valid = res.valid === true || res.success === true;\nreturn [{ json: { valid, raw: res } }];"
+      },
+      "id": "parse-result",
+      "name": "Parse result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-720, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.valid}}",
+              "value2": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "is-invalid",
+      "name": "Session invalid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-480, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"chat_id\":6134293858,\"text\":\"[Novel Factory] Fanqie session EXPIRED. Re-login needed.\\n\\nRun on Windows:\\nnode dist/src/runtime/browser/fanqie-session-check.mjs fanqie_52d5ff1c9614 --login --wait\"}",
+        "options": { "timeout": 15000 }
+      },
+      "id": "send-telegram-alert",
+      "name": "Send Telegram alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-240, -80]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { ok: true, session: 'valid', checked: new Date().toISOString() } }];"
+      },
+      "id": "session-ok",
+      "name": "Session OK",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-240, 80]
+    }
+  ],
+  "connections": {
+    "Every 72h": {
+      "main": [[{ "node": "Check fanqie session", "type": "main", "index": 0 }]]
+    },
+    "Check fanqie session": {
+      "main": [[{ "node": "Parse result", "type": "main", "index": 0 }]]
+    },
+    "Parse result": {
+      "main": [[{ "node": "Session invalid?", "type": "main", "index": 0 }]]
+    },
+    "Session invalid?": {
+      "main": [
+        [{ "node": "Send Telegram alert", "type": "main", "index": 0 }],
+        [{ "node": "Session OK", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": true,
+  "settings": { "executionOrder": "v1" },
+  "versionId": "1",
+  "id": "novelFactorySessionMonitor"
+}

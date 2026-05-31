@@ -1,0 +1,40 @@
+{
+  "books": [
+    {
+      "title": "枪与凋零之花",
+      "accountId": "fanqie_52d5ff1c9614",
+      "bookId": "7600575059215780926",
+      "localWorkId": "7",
+      "chaptersPerRun": 1,
+      "wordCount": 3000,
+      "active": true
+    },
+    {
+      "title": "咳血少女与前世宿敌的百合维新",
+      "accountId": "fanqie_52d5ff1c9614",
+      "bookId": "7600933271899212862",
+      "localWorkId": "10",
+      "chaptersPerRun": 1,
+      "wordCount": 3000,
+      "active": true
+    },
+    {
+      "title": "无纪年王国",
+      "accountId": "fanqie_52d5ff1c9614",
+      "bookId": "7597700170565815358",
+      "localWorkId": "1",
+      "chaptersPerRun": 1,
+      "wordCount": 3000,
+      "active": true
+    },
+    {
+      "title": "变身S级魅魔后被坏女人包围了",
+      "accountId": "fanqie_1fb88c898efb",
+      "bookId": "7610788958707928089",
+      "localWorkId": "9",
+      "chaptersPerRun": 1,
+      "wordCount": 3000,
+      "active": true
+    }
+  ]
+}

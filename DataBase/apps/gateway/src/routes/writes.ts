@@ -857,11 +857,12 @@ async function recordGenerationOutput(ctx: MutationContext): Promise<MutationRes
       UPDATE chapters
       SET title = COALESCE(?, title),
           content = ?,
+          plot_summary = COALESCE(?, plot_summary),
           word_count = ?,
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
       `,
-      [finalTitle, bodyText, wordCount, chapterId]
+      [finalTitle, bodyText, (metadata as Record<string, unknown> | null)?.plotSummary as string ?? null, wordCount, chapterId]
     );
 
     await connection.execute(

@@ -1,0 +1,25 @@
+[
+  {
+    "name": "Novel Daily Publish",
+    "id": "CBO0UEk4dxT1T1dX",
+    "active": true,
+    "trigger": "Schedule: daily 12:00 Asia/Shanghai",
+    "flow": "Schedule -> Book List -> Plan Next -> Has Chapter? -> true: Publish Safe / false: Generate Next -> Publish Safe -> Telegram Notify",
+    "books": [
+      {"workId": "9", "bookId": "7610788958707928089", "accountId": "fanqie_1fb88c898efb", "title": "变身S级魅魔后"},
+      {"workId": "7", "bookId": "7600575059215780926", "accountId": "fanqie_52d5ff1c9614", "title": "枪与凋零之花"},
+      {"workId": "10", "bookId": "7600933271899212862", "accountId": "fanqie_52d5ff1c9614", "title": "咳血少女"}
+    ]
+  },
+  {
+    "name": "Session Monitor",
+    "id": "KLHPMN26Kv1iShfY",
+    "active": true,
+    "trigger": "Schedule: every 72 hours",
+    "flow": "Schedule -> Account List -> Check Session -> Valid? -> false: Telegram Alert",
+    "accounts": [
+      {"accountId": "fanqie_52d5ff1c9614", "name": "墨水的生命周期"},
+      {"accountId": "fanqie_1fb88c898efb", "name": "魅魔账号"}
+    ]
+  }
+]

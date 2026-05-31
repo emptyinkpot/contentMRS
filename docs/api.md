@@ -2,8 +2,8 @@
 
 ## 基本信息
 
-- 端点：`http://124.220.233.126:5111`
-- 鉴权：`Authorization: Bearer cb-k9Xm4wPqR7vJ2nLs5tYh8dFe`
+- 端点：`http://<SERVER_IP>:5111`
+- 鉴权：`Authorization: Bearer <CONTENTBASE_API_KEY>`
 - 超时建议：5分钟
 
 ## POST /api/content/runtime/generate/article
@@ -111,7 +111,7 @@
 ### curl
 
 ```bash
-curl -X POST http://124.220.233.126:5111/api/content/runtime/generate/article \
+curl -X POST http://<SERVER_IP>:5111/api/content/runtime/generate/article \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer cb-k9Xm4wPqR7vJ2nLs5tYh8dFe" \
   -d '{"topic":"满洲人征服中国的历史悖论","genre":"historical-essay","wordCount":8000}'
@@ -123,7 +123,7 @@ curl -X POST http://124.220.233.126:5111/api/content/runtime/generate/article \
 import requests
 
 resp = requests.post(
-    "http://124.220.233.126:5111/api/content/runtime/generate/article",
+    "http://<SERVER_IP>:5111/api/content/runtime/generate/article",
     headers={
         "Content-Type": "application/json",
         "Authorization": "Bearer cb-k9Xm4wPqR7vJ2nLs5tYh8dFe",
@@ -143,7 +143,7 @@ if data["success"]:
 ### Node.js
 
 ```javascript
-const resp = await fetch("http://124.220.233.126:5111/api/content/runtime/generate/article", {
+const resp = await fetch("http://<SERVER_IP>:5111/api/content/runtime/generate/article", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",

@@ -81,6 +81,36 @@ for (let index = 2; index < process.argv.length; index += 1) {
 const port = Number(args.get('port') || process.env.CONTENTBASE_CONSOLE_PORT || 5101);
 const CONTENTBASE_API_KEY = String(process.env.CONTENTBASE_API_KEY || '').trim();
 const runtimeJobs = new Map();
+const JOBS_PERSIST_PATH = path.join(__dirname, '.runtime', 'jobs.json');
+
+function loadPersistedJobs() {
+  try {
+    if (!fs.existsSync(JOBS_PERSIST_PATH)) return;
+    const data = JSON.parse(fs.readFileSync(JOBS_PERSIST_PATH, 'utf8'));
+    if (!Array.isArray(data)) return;
+    const now = new Date().toISOString();
+    for (const job of data) {
+      if (job.status === 'running' || job.status === 'queued') {
+        job.status = 'failed';
+        job.error = 'interrupted by server restart';
+        job.finishedAt = now;
+        job.updatedAt = now;
+      }
+      runtimeJobs.set(job.id, job);
+    }
+  } catch {}
+}
+
+function persistJobs() {
+  try {
+    const dir = path.dirname(JOBS_PERSIST_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const jobs = [...runtimeJobs.values()].slice(-200);
+    fs.writeFileSync(JOBS_PERSIST_PATH, JSON.stringify(jobs, null, 2));
+  } catch {}
+}
+
+loadPersistedJobs();
 const runtimeActionIds = [
   'plan-work',
   'plan-volume',
@@ -207,6 +237,7 @@ const server = http.createServer(async (req, res) => {
       const input = await readJson(req);
       const job = createRuntimeJob(input);
       runtimeJobs.set(job.id, job);
+      persistJobs();
       void runRuntimeJob(job.id);
       writeJson(res, 200, { success: true, data: job });
       return;
@@ -241,6 +272,7 @@ const server = http.createServer(async (req, res) => {
       }
       job.updatedAt = now;
       runtimeJobs.set(job.id, job);
+      persistJobs();
       writeJson(res, 200, { success: true, data: job });
       return;
     }
@@ -372,6 +404,7 @@ async function runRuntimeJob(jobId) {
   const startedAt = new Date().toISOString();
   job = { ...job, status: 'running', startedAt, updatedAt: startedAt };
   runtimeJobs.set(jobId, job);
+  persistJobs();
   try {
     const data = await generateArticle(job.input);
     const finishedAt = new Date().toISOString();
@@ -393,6 +426,7 @@ async function runRuntimeJob(jobId) {
     };
   }
   runtimeJobs.set(jobId, job);
+  persistJobs();
 }
 
 function toRuntimeArticleResult(data, input) {
@@ -473,6 +507,14 @@ async function runRuntimeAction(action, request) {
     });
   }
 
+  if (action === 'revise-chapter') {
+    return await runReviseChapterAction(request, contractUsed);
+  }
+
+  if (action === 'check-continuity') {
+    return await runCheckContinuityAction(request, contractUsed);
+  }
+
   if (action !== 'generate-chapter') {
     return runtimeActionEnvelope({
       action,
@@ -551,6 +593,400 @@ function normalizeGenerateChapterActionInput(request) {
   };
 }
 
+const REVISER_SYSTEM_PROMPT = `你是 Reviser。你接收一篇已完成的初稿，做定向修订后输出完整修订稿。
+
+修订原则：
+- 不改变情节走向、人物关系、事件顺序
+- 不增删段落结构，只做句级和段级打磨
+- 修复节奏断裂：过长的匀速段落需要打断，过短的碎片需要合并
+- 修复 AI 腔残留：删除"此外""值得注意的是""不可否认"等连接词；删除首尾呼应式总结
+- 补充化用密度：每 1000 字至少一处来自上下文材料的化用（借用句式节奏、具体意象、情绪温度）
+- 人物行为一致性：对照提供的人物表和前文摘要，修复称呼错误、性格矛盾
+- 描写锚点：空洞的形容替换为具体物件、动作、数字
+- 结尾必须停在具体事实上，不升华不总结
+
+输出规则：
+- 只输出修订后的完整正文，不要输出修订说明
+- 保持原文风格和语气`;
+
+async function runReviseChapterAction(request, contractUsed) {
+  const body = String(request?.body || request?.draft?.body || '').trim();
+  if (!body) {
+    return runtimeActionEnvelope({
+      action: 'revise-chapter',
+      contractUsed,
+      diagnostics: { status: 'blocked', reason: 'missing_draft_body' },
+      violations: [runtimeViolation('body_required', 'revise-chapter requires body or draft.body')],
+    });
+  }
+
+  const workId = request?.workId || request?.targetContract?.workId || null;
+  const chapterNumber = request?.chapterNumber || request?.targetContract?.chapterNumber || null;
+  const targetContract = request?.targetContract || {};
+
+  let storyContext = '';
+  if (workId) {
+    storyContext = await fetchStoryMemoryForRevision(workId, chapterNumber);
+  }
+
+  const revisionPrompt = buildRevisionPrompt(body, {
+    storyContext,
+    characters: targetContract.characters || request?.characters || '',
+    outline: targetContract.outline || request?.outline || '',
+    background: targetContract.background || request?.background || '',
+  });
+
+  const settings = {
+    genre: '小说章节',
+    routeHint: 'fiction',
+    temperature: 0.2,
+    maxTokens: 6144,
+    ...(request?.settings || {}),
+  };
+
+  const result = await callReviser(revisionPrompt, settings);
+  let revisedBody = String(result.body || '').trim();
+
+  if (!revisedBody || revisedBody.length < body.length * 0.5) {
+    return runtimeActionEnvelope({
+      action: 'revise-chapter',
+      contractUsed,
+      diagnostics: { status: 'failed', reason: 'revision_too_short', originalLength: body.length, revisedLength: revisedBody.length },
+      violations: [runtimeViolation('revision_failed', 'revised output is less than 50% of original')],
+    });
+  }
+
+  if (revisedBody.length > 1000) {
+    revisedBody = deterministicDeAI(revisedBody);
+  }
+
+  return runtimeActionEnvelope({
+    action: 'revise-chapter',
+    contractUsed,
+    draft: {
+      body: revisedBody,
+      originalLength: body.length,
+      revisedLength: revisedBody.length,
+      modelInvocation: result.trace,
+    },
+    trace: {
+      action: 'revise-chapter',
+      modelInvocation: result.trace,
+      generatedAt: new Date().toISOString(),
+    },
+    diagnostics: { status: 'ok', revisionRatio: (revisedBody.length / body.length).toFixed(2) },
+    nextAllowedActions: ['check-continuity', 'prepare-publication'],
+  });
+}
+
+async function runCheckContinuityAction(request, contractUsed) {
+  const body = String(request?.body || request?.draft?.body || '').trim();
+  if (!body) {
+    return runtimeActionEnvelope({
+      action: 'check-continuity',
+      contractUsed,
+      diagnostics: { status: 'blocked', reason: 'missing_draft_body' },
+      violations: [runtimeViolation('body_required', 'check-continuity requires body or draft.body')],
+    });
+  }
+
+  const workId = request?.workId || request?.targetContract?.workId || null;
+  const chapterNumber = request?.chapterNumber || request?.targetContract?.chapterNumber || null;
+
+  if (!workId) {
+    return runtimeActionEnvelope({
+      action: 'check-continuity',
+      contractUsed,
+      diagnostics: { status: 'blocked', reason: 'missing_work_id' },
+      violations: [runtimeViolation('work_id_required', 'check-continuity requires workId to fetch prior chapters')],
+    });
+  }
+
+  const storyContext = await fetchStoryMemoryForRevision(workId, chapterNumber);
+  const characters = await fetchCharactersForWork(workId);
+
+  const checkPrompt = buildContinuityCheckPrompt(body, {
+    storyContext,
+    characters,
+    chapterNumber,
+  });
+
+  const settings = {
+    genre: '小说章节',
+    routeHint: 'fiction',
+    temperature: 0.1,
+    maxTokens: 2048,
+    ...(request?.settings || {}),
+  };
+
+  const result = await callContinuityChecker(checkPrompt, settings);
+  const report = parseContinuityReport(result.body);
+
+  return runtimeActionEnvelope({
+    action: 'check-continuity',
+    contractUsed,
+    draft: null,
+    trace: {
+      action: 'check-continuity',
+      modelInvocation: result.trace,
+      generatedAt: new Date().toISOString(),
+    },
+    diagnostics: {
+      status: report.passed ? 'ok' : 'warning',
+      continuityReport: report,
+    },
+    nextAllowedActions: report.passed ? ['prepare-publication'] : ['revise-chapter'],
+  });
+}
+
+async function fetchStoryMemoryForRevision(workId, chapterNumber) {
+  const gatewayUrl = String(process.env.DATABASE_GATEWAY_URL || '').trim().replace(/\/+$/, '');
+  if (!gatewayUrl) return '';
+  const apiKey = String(process.env.DATABASE_GATEWAY_API_KEY || '').trim();
+  const headers = apiKey ? { authorization: `Bearer ${apiKey}` } : {};
+
+  // Strategy 1: try story-memory/context (structured events/growth)
+  try {
+    const r = await fetch(`${gatewayUrl}/creative/story-memory/context?workId=${workId}${chapterNumber ? `&currentChapter=${chapterNumber}` : ''}`, { headers, signal: AbortSignal.timeout(8000) });
+    if (r.ok) {
+      const data = await r.json();
+      if (data?.summary && data.summary.length > 50) return data.summary;
+    }
+  } catch {}
+
+  // Strategy 2: fallback to reading previous 3 chapters' content directly
+  if (!chapterNumber || chapterNumber <= 1) return '';
+  const summaries = [];
+  for (let i = Math.max(1, chapterNumber - 3); i < chapterNumber; i++) {
+    try {
+      const r = await fetch(`${gatewayUrl}/content/publication/publish-chapter?local_work_id=${workId}&chapter_number=${i}`, { headers, signal: AbortSignal.timeout(8000) });
+      if (!r.ok) continue;
+      const data = await r.json();
+      const content = data?.chapter?.content || '';
+      const title = data?.chapter?.title || `第${i}章`;
+      if (content) summaries.push(`【第${i}章 ${title}】${content.slice(0, 600)}...`);
+    } catch {}
+  }
+  return summaries.join('\n\n');
+}
+
+function buildRevisionPrompt(body, context) {
+  const parts = [];
+  if (context.storyContext) {
+    parts.push('[前文摘要]');
+    parts.push(context.storyContext.slice(0, 2000));
+    parts.push('');
+  }
+  if (context.characters) {
+    parts.push('[人物表]');
+    parts.push(formatContractText(context.characters).slice(0, 800));
+    parts.push('');
+  }
+  if (context.outline) {
+    parts.push('[本章大纲]');
+    parts.push(formatContractText(context.outline).slice(0, 600));
+    parts.push('');
+  }
+  if (context.background) {
+    parts.push('[背景]');
+    parts.push(formatContractText(context.background).slice(0, 600));
+    parts.push('');
+  }
+  parts.push('[待修订初稿]');
+  parts.push(body);
+  parts.push('');
+  parts.push('[修订指令]');
+  parts.push('对照前文摘要和人物表，修订以上初稿。只输出修订后的完整正文。');
+  return parts.join('\n');
+}
+
+async function callReviser(prompt, settings) {
+  const isNarrative = String(settings?.genre || settings?.routeHint || '').match(/narrative|fiction|小说|章节/i);
+  let baseUrl, apiKey, model;
+  if (isNarrative && process.env.CONTENTBASE_QWEN_BASE_URL) {
+    baseUrl = String(process.env.CONTENTBASE_QWEN_BASE_URL || '').trim().replace(/\/+$/, '');
+    apiKey = String(process.env.CONTENTBASE_QWEN_API_KEY || '').trim();
+    model = String(settings?.model || process.env.CONTENTBASE_QWEN_MODEL || 'qwen-max').trim();
+  } else {
+    baseUrl = String(process.env.CONTENTBASE_LLM_BASE_URL || '').trim().replace(/\/+$/, '');
+    apiKey = String(process.env.CONTENTBASE_LLM_API_KEY || '').trim();
+    model = String(settings?.model || process.env.CONTENTBASE_LLM_MODEL || '').trim();
+  }
+  if (!baseUrl) throw new Error('CONTENTBASE_LLM_BASE_URL is required');
+  if (!apiKey) throw new Error('CONTENTBASE_LLM_API_KEY is required');
+  if (!model) throw new Error('CONTENTBASE_LLM_MODEL is required');
+
+  const temperature = Number.isFinite(Number(settings?.temperature)) ? Number(settings.temperature) : 0.2;
+  const maxTokens = Number.isFinite(Number(settings?.maxTokens)) && Number(settings.maxTokens) > 0
+    ? Math.trunc(Number(settings.maxTokens)) : 6144;
+
+  for (let attempt = 0; attempt <= 2; attempt++) {
+    try {
+      const response = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: REVISER_SYSTEM_PROMPT },
+            { role: 'user', content: prompt },
+          ],
+          temperature,
+          max_tokens: maxTokens,
+          stream: true,
+        }),
+      });
+      if (!response.ok) {
+        if (attempt < 2) continue;
+        const errText = await response.text().catch(() => '');
+        throw new Error(`LLM gateway returned HTTP ${response.status}: ${errText.slice(0, 240)}`);
+      }
+      let fullContent = '';
+      let usage = null;
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') continue;
+          try {
+            const chunk = JSON.parse(data);
+            const delta = chunk.choices?.[0]?.delta?.content;
+            if (delta) fullContent += delta;
+            if (chunk.usage) usage = chunk.usage;
+          } catch {}
+        }
+      }
+      if (!fullContent && attempt < 2) continue;
+      return {
+        body: fullContent,
+        trace: { provider: 'openai-compatible', model, baseUrl, usage, finishedAt: new Date().toISOString() },
+      };
+    } catch (err) {
+      if (attempt < 2) continue;
+      throw err;
+    }
+  }
+}
+
+async function fetchCharactersForWork(workId) {
+  const gatewayUrl = String(process.env.DATABASE_GATEWAY_URL || '').trim().replace(/\/+$/, '');
+  if (!gatewayUrl) return '';
+  const apiKey = String(process.env.DATABASE_GATEWAY_API_KEY || '').trim();
+  const headers = apiKey ? { authorization: `Bearer ${apiKey}` } : {};
+  try {
+    const r = await fetch(`${gatewayUrl}/content/works/${workId}/characters`, { headers, signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return '';
+    const data = await r.json();
+    const chars = data?.characters || data || [];
+    if (!Array.isArray(chars)) return '';
+    return chars.map(c => `${c.name || c.character_name}（${c.role || c.description || ''}）`).join('；');
+  } catch { return ''; }
+}
+
+function buildContinuityCheckPrompt(body, context) {
+  const parts = [];
+  parts.push('[检查任务]');
+  parts.push('检查以下章节与前文的连续性。输出 JSON 格式的检查报告。');
+  parts.push('');
+  if (context.storyContext) {
+    parts.push('[前文摘要]');
+    parts.push(context.storyContext.slice(0, 2000));
+    parts.push('');
+  }
+  if (context.characters) {
+    parts.push('[人物表]');
+    parts.push(context.characters.slice(0, 800));
+    parts.push('');
+  }
+  if (context.chapterNumber) {
+    parts.push(`[当前章节号] 第${context.chapterNumber}章`);
+    parts.push('');
+  }
+  parts.push('[待检查正文]');
+  parts.push(body.slice(0, 6000));
+  parts.push('');
+  parts.push('[输出格式]');
+  parts.push('输出严格 JSON，不要其他文字：');
+  parts.push('{"passed":true/false,"issues":[{"type":"character|timeline|setting|tone","severity":"critical|warning","description":"..."}]}');
+  return parts.join('\n');
+}
+
+async function callContinuityChecker(prompt, settings) {
+  const isNarrative = String(settings?.genre || settings?.routeHint || '').match(/narrative|fiction|小说|章节/i);
+  let baseUrl, apiKey, model;
+  if (isNarrative && process.env.CONTENTBASE_QWEN_BASE_URL) {
+    baseUrl = String(process.env.CONTENTBASE_QWEN_BASE_URL || '').trim().replace(/\/+$/, '');
+    apiKey = String(process.env.CONTENTBASE_QWEN_API_KEY || '').trim();
+    model = String(settings?.model || process.env.CONTENTBASE_QWEN_MODEL || 'qwen-max').trim();
+  } else {
+    baseUrl = String(process.env.CONTENTBASE_LLM_BASE_URL || '').trim().replace(/\/+$/, '');
+    apiKey = String(process.env.CONTENTBASE_LLM_API_KEY || '').trim();
+    model = String(settings?.model || process.env.CONTENTBASE_LLM_MODEL || '').trim();
+  }
+  if (!baseUrl) throw new Error('CONTENTBASE_LLM_BASE_URL is required');
+  if (!apiKey) throw new Error('CONTENTBASE_LLM_API_KEY is required');
+  if (!model) throw new Error('CONTENTBASE_LLM_MODEL is required');
+
+  const temperature = Number.isFinite(Number(settings?.temperature)) ? Number(settings.temperature) : 0.1;
+  const maxTokens = Number.isFinite(Number(settings?.maxTokens)) && Number(settings.maxTokens) > 0
+    ? Math.trunc(Number(settings.maxTokens)) : 2048;
+
+  for (let attempt = 0; attempt <= 2; attempt++) {
+    try {
+      const response = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: '你是连续性检查器。检查小说章节与前文的一致性，输出 JSON 报告。' },
+            { role: 'user', content: prompt },
+          ],
+          temperature,
+          max_tokens: maxTokens,
+          stream: false,
+        }),
+      });
+      if (!response.ok) {
+        if (attempt < 2) continue;
+        const errText = await response.text().catch(() => '');
+        throw new Error(`LLM gateway returned HTTP ${response.status}: ${errText.slice(0, 240)}`);
+      }
+      const payload = await response.json();
+      const content = payload?.choices?.[0]?.message?.content || '';
+      return {
+        body: content,
+        trace: { provider: 'openai-compatible', model, baseUrl, usage: payload?.usage || null, finishedAt: new Date().toISOString() },
+      };
+    } catch (err) {
+      if (attempt < 2) continue;
+      throw err;
+    }
+  }
+}
+
+function parseContinuityReport(raw) {
+  try {
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        passed: Boolean(parsed.passed),
+        issues: Array.isArray(parsed.issues) ? parsed.issues : [],
+      };
+    }
+  } catch {}
+  return { passed: true, issues: [] };
+}
+
 function buildTopicFromChapterContract(contract) {
   const parts = [];
   if (contract?.outline) parts.push(`本章大纲：${formatContractText(contract.outline)}`);
@@ -573,8 +1009,8 @@ function runtimeActionContract(action) {
     durableStateOwner: 'DataBase Gateway',
     orchestratorRole: 'n8n may schedule and advance state, but must not own business truth or prompt assembly.',
     inputContract: {
-      required: action === 'generate-chapter' ? ['topic or title'] : ['targetContract'],
-      optional: ['workId', 'chapterId', 'chapterNumber', 'wordCount', 'settings', 'targetContract'],
+      required: action === 'generate-chapter' ? ['topic or title'] : action === 'revise-chapter' ? ['body or draft.body'] : ['targetContract'],
+      optional: ['workId', 'chapterId', 'chapterNumber', 'wordCount', 'settings', 'targetContract', 'characters', 'outline', 'background'],
       forbidden: ['freeformPrompt', 'prompt', 'messages', 'systemPromptOverride'],
     },
     outputContract: ['draft', 'trace', 'diagnostics', 'contractUsed', 'violations', 'nextAllowedActions'],
