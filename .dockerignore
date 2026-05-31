@@ -1,0 +1,8 @@
+node_modules
+.git
+.worktrees
+*.tar
+*.log
+.env
+.env.*
+dist

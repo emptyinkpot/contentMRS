@@ -1,0 +1,18 @@
+FROM node:20-slim AS base
+WORKDIR /app
+
+FROM base AS build
+COPY apps/gateway/package.json apps/gateway/
+COPY packages/ packages/
+COPY services/ services/
+COPY apps/gateway/ apps/gateway/
+WORKDIR /app/apps/gateway
+RUN npm install --omit=dev 2>/dev/null || npm install
+RUN npx tsc -p tsconfig.json
+
+FROM base AS runtime
+COPY --from=build /app/apps/gateway/dist /app/dist
+COPY --from=build /app/apps/gateway/node_modules /app/node_modules
+COPY --from=build /app/apps/gateway/package.json /app/
+EXPOSE 18090
+CMD ["node", "dist/index.js"]
