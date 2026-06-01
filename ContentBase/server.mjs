@@ -27,13 +27,14 @@ const WRITER_SYSTEM_PROMPT = `你是 Writer。只输出正文。
 
 你就是这样写。句子短的时候像钉子。长的时候像绳索，把人勒住才松手。段落长短不规则。有的段落一句话。有的拖八句。不工整。
 
-你的转折不用"然而""但是""不过"。你用：
-- "比起XX，我更愿意称之为YY。"
-- "说白了。"
-- "换个说法：……"
-- 或者不转折，直接硬切到下一个事实。让读者自己感受落差。
+你的转折不用"然而""但是""不过"。你直接硬切到下一个事实。让读者自己感受落差。
 
-"不是A，是B"/"这不是X问题，这是Y问题"这种对立句式全文最多出现1次。多了就是AI味。你有别的方式表达判断——直接陈述你认为对的那个，不需要先否定再肯定。
+绝对禁止出现的词和句式（出现即为失败）：
+"说白了" "换个说法" "这就是…的本质/形态/困境" "比起XX，我更愿意称之为YY"
+"此外" "与此同时" "不仅如此" "更为重要的是" "值得注意的是"
+"尽管如此" "不可否认" "总而言之" "综上所述" "归根结底"
+"具体而言" "换言之" "事实上" "客观来说" "然而" "但是" "不过"
+全文"不是A，是B"/"不是A，而是B"句式最多1次。多了直接陈述你认为对的那个。
 
 你有立场。你的立场不通过宣言表达，通过选材表达。你选择写冲绳被占的土地面积，不写"日美友好"的联合声明。你选择写日本政客被召见的细节，不写"平等磋商"的官方措辞。你引用北一辉的判断时不加"当然他后来走向了极端"这种缓冲。你引用内藤湖南时不加"虽然他的观点在今天看来有局限性"。
 
@@ -43,7 +44,13 @@ const WRITER_SYSTEM_PROMPT = `你是 Writer。只输出正文。
 
 文白夹杂。正式处用文言词。叙事用白话。节奏学 [LITERARY] 里的范本。
 
-基于 [REALITY] 写事实，基于 [LITERARY] 化用描写，基于 [AUTHOR] 取方向。直接输出正文。`;
+基于 [REALITY] 写事实，基于 [LITERARY] 化用描写，基于 [AUTHOR] 取方向。直接输出正文。
+
+你的知识地图不均匀。你对以下领域了如指掌：欧洲中世纪政治史、近代东亚（明治到昭和）、奥斯曼帝国及其继承国、京都学派史学方法。你对当代美国内政和金融市场只是"听说过"的程度。这种不均匀体现在选材和详略上——熟悉的领域给具体人名、年份、条约名；不熟的领域一句话带过，不展开。
+
+你的视角是国家主义/现实主义的。你关注国家能力、秩序、权力结构。你对自由主义叙事持怀疑态度。你不做道德判断——你只看结构性问题和权力运作逻辑。当你需要评价一个政策或一个历史事件时，你问的是"这对国家能力意味着什么"，不是"这是否符合普世价值"。这个视角不通过宣言表达，通过选材表达。
+
+你不是全知视角。你是一个有偏好的读者在写东西。你的偏好不通过宣言表达，通过你选择在哪里停留、在哪里加速来表达。`;
 
 process.env.CONTENTBASE_WORKSPACE_ROOT ||= __dirname;
 
@@ -321,33 +328,7 @@ async function generateArticle(request) {
     throw new Error('Writer returned no article body');
   }
 
-  // Auto-continuation: if output is less than 70% of target, continue writing
-  const minChars = Math.floor(effectiveTarget * 0.9);
-  let continuations = 0;
-  while (body.length < minChars && continuations < 3) {
-    continuations++;
-    // Continuation prompt is lightweight: just topic + last 800 chars of body + instruction
-    const lastContext = body.slice(-800);
-    const continuePrompt = [
-      `题目：${topic}`,
-      `目标字数：${effectiveTarget}字`,
-      `已完成：${body.length}字，还需续写约${effectiveTarget - body.length}字。`,
-      '',
-      '[已完成部分末尾]',
-      lastContext,
-      '',
-      '[续写指令]',
-      '从上文末尾自然接续，展开下一个层次的论述。',
-      '不要重复已写内容，不要写过渡语或总结语，直接续写正文。',
-      '保持相同文风、节奏和质量标准。每段必须有具体锚点。',
-    ].join('\n');
-    const continuation = await callSingleWriter(continuePrompt, { ...request?.settings, genre: request?.genre || '' });
-    const newText = String(continuation.body || '').trim();
-    if (!newText || newText.length < 200) break;
-    body = body + '\n\n' + newText;
-  }
-
-  // Post-processing: deterministic rule-based de-AI-ification (no LLM)
+  // Post-processing: minimal deterministic cleanup (no LLM)
   if (body.length > 1000) {
     body = deterministicDeAI(body);
   }
@@ -356,7 +337,6 @@ async function generateArticle(request) {
     draft: {
       body,
       modelInvocation: modelInvocation.trace,
-      continuations,
     },
     context: {
       evidence: {
@@ -1058,68 +1038,24 @@ function hasForbiddenPromptOverride(request) {
 function deterministicDeAI(text) {
   let result = text;
 
-  // 1. Remove AI transition words
-  const aiTransitions = [
-    '此外，', '与此同时，', '不仅如此，', '更为重要的是，', '值得注意的是，',
-    '尽管如此，', '不可否认的是，', '总而言之，', '综上所述，', '归根结底，',
-    '正因如此，', '尤为重要的是，', '需要指出的是，', '需要强调的是，',
-    '在此基础上，', '毋庸置疑，', '不言而喻，', '由此可见，',
-    '具体而言，', '换言之，', '事实上，', '客观来说，',
-    '不可否认，', '尤其值得关注的是，', '不容忽视的是，',
-  ];
-  for (const word of aiTransitions) {
-    result = result.replaceAll(word, '');
-  }
+  // 1. Fix orphaned "而是" without preceding "不是" (broken sentence bug)
+  result = result.replace(/([。\n])([^。\n]*?)(?<!不是[^。\n]*)而是/g, (match, prefix, middle) => {
+    if (middle.includes('不是')) return match;
+    return prefix + middle.replace(/而是/, '');
+  });
 
-  // 2. Limit "不是A，是B" pattern to max 2 occurrences
+  // 2. Limit "不是A，是B" pattern to max 1 occurrence
   const buShiPattern = /[。\n]([^。\n]*不是[^。\n]*[，,][^。\n]*是[^。\n]*[。])/g;
   let matches = [...result.matchAll(buShiPattern)];
-  if (matches.length > 2) {
-    // Keep first 2, rewrite the rest by removing the "不是" prefix
-    for (let i = matches.length - 1; i >= 2; i--) {
-      const match = matches[i];
-      const original = match[1];
-      // Simple rewrite: remove "不是X，" prefix, keep the "是Y" part as direct statement
+  if (matches.length > 1) {
+    for (let i = matches.length - 1; i >= 1; i--) {
+      const original = matches[i][1];
       const rewritten = original.replace(/不是[^，,]*[，,]\s*/, '').replace(/^是/, '');
       result = result.replace(original, rewritten);
     }
   }
 
-  // 3. Remove "然而"/"但是"/"不过" at sentence starts (keep max 2 in whole text)
-  const turnWords = ['然而，', '但是，', '不过，', '尽管如此，', '与此同时，'];
-  for (const word of turnWords) {
-    let count = 0;
-    result = result.replaceAll(word, () => {
-      count++;
-      return count <= 1 ? '' : '';  // Remove all
-    });
-  }
-
-  // 4. Break uniform paragraph lengths - insert line breaks in long paragraphs
-  const paragraphs = result.split('\n\n');
-  const avgLen = paragraphs.reduce((s, p) => s + p.length, 0) / paragraphs.length;
-  const rebuilt = [];
-  for (let i = 0; i < paragraphs.length; i++) {
-    const p = paragraphs[i];
-    // If paragraph is close to average and we have many similar-length paragraphs, split one
-    if (p.length > avgLen * 0.8 && p.length < avgLen * 1.2 && i % 4 === 2) {
-      // Split at a sentence boundary near the middle
-      const sentences = p.split(/(?<=[。！？])/);
-      if (sentences.length >= 4) {
-        const mid = Math.floor(sentences.length / 3);
-        rebuilt.push(sentences.slice(0, mid).join(''));
-        rebuilt.push(sentences.slice(mid).join(''));
-        continue;
-      }
-    }
-    rebuilt.push(p);
-  }
-  result = rebuilt.join('\n\n');
-
-  // 5. Remove summary paragraphs that start with conclusion markers
-  result = result.replace(/\n\n[^\n]*(?:综上|总之|总而言之|归根结底)[^\n]*(?:\n|$)/g, '\n\n');
-
-  // 6. Clean up multiple blank lines
+  // 3. Clean up multiple blank lines
   result = result.replace(/\n{3,}/g, '\n\n').trim();
 
   return result;

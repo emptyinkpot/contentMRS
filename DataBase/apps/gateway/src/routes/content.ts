@@ -972,6 +972,39 @@ export function contentRoutes({ pool }: RouteDependencies) {
     });
   });
 
+  app.get("/content/publication/stock-depth", async (c) => {
+    const workId = (c.req.query("work_id") || c.req.query("workId") || "").trim();
+    if (!workId) {
+      return c.json({ code: "invalid_query", message: "work_id is required", requestId: c.get("requestId") }, 400);
+    }
+
+    const snapRows = await query<FanqieRemoteChapterSnapshotRow[]>(
+      pool,
+      `SELECT chapter_count FROM fanqie_remote_chapter_snapshots
+       WHERE book_id IN (SELECT book_id FROM works WHERE id = ? LIMIT 1)
+       ORDER BY synced_at DESC LIMIT 1`,
+      [workId]
+    );
+    const remoteLatest = snapRows[0]?.chapter_count ?? 0;
+
+    const stockRows = await query<{ chapter_number: number }[]>(
+      pool,
+      `SELECT chapter_number FROM chapters
+       WHERE work_id = ? AND chapter_number > ? AND content IS NOT NULL
+       ORDER BY chapter_number ASC`,
+      [workId, remoteLatest]
+    );
+
+    return c.json({
+      workId: Number(workId),
+      remoteLatest,
+      localChapters: stockRows.map(r => r.chapter_number),
+      stockDepth: stockRows.length,
+      nextToPublish: stockRows[0]?.chapter_number ?? null,
+      requestId: c.get("requestId")
+    });
+  });
+
   app.get("/content/works", async (c) => {
     const limit = clampLimit(c.req.query("limit") || null, 50, 200);
     const search = (c.req.query("search") || "").trim();

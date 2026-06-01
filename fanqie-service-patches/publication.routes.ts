@@ -49,7 +49,14 @@ export function createPublicationRouter(
   });
 
   router.post('/publication/inventory-status', async (req, res, next) => {
-    try { ok(res, await inventoryStatus(scan, database, req.body)); }
+    try {
+      const mode = (req.query.mode as string) || '';
+      ok(res, await inventoryStatus(scan, database, req.body, mode));
+    } catch (error) { next(error); }
+  });
+
+  router.post('/publication/auto-generate-next', async (req, res, next) => {
+    try { ok(res, await autoGenerateNext(req.body)); }
     catch (error) { next(error); }
   });
 
@@ -64,7 +71,8 @@ function getRemoteLatest(chapters: RemoteChapterSnapshot[]): number {
 }
 
 const CONTENTBASE_URL = process.env.CONTENTBASE_URL || 'http://127.0.0.1:5111';
-const CONTENTBASE_API_KEY = process.env.CONTENTBASE_API_KEY || '';
+const CONTENTBASE_API_KEY = process.env.CONTENTBASE_API_KEY || 'cb-k9Xm4wPqR7vJ2nLs5tYh8dFe';
+const DATABASE_GATEWAY_URL = process.env.DATABASE_GATEWAY_URL || 'http://127.0.0.1:18090';
 
 // ─── plan-next (unchanged) ───
 
@@ -158,17 +166,42 @@ async function generateNext(
   return { success: true, chapterNumber, generatedWordCount: (draft?.body || '').length };
 }
 
-// ─── inventory-status (库存报告) ───
+// ─── inventory-status (库存报告, mode=fast 跳过 Playwright 直接查 Gateway) ───
 
 async function inventoryStatus(
   scan: RemoteScanService,
   database: DataBasePublicationClient,
   input: InventoryQuery,
+  mode: string,
 ) {
   const { books } = input;
   if (!Array.isArray(books) || books.length === 0) {
     throw new FanqieServiceError('invalid_input', 'books array required', 400);
   }
+
+  if (mode === 'fast') {
+    const results = await Promise.all(books.map(async (book) => {
+      try {
+        const url = `${DATABASE_GATEWAY_URL}/content/publication/stock-depth?work_id=${book.workId}`;
+        const resp = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        if (!resp.ok) throw new Error(`Gateway ${resp.status}`);
+        const data: any = await resp.json();
+        return {
+          workId: book.workId,
+          bookId: book.bookId,
+          remoteLatest: data.remoteLatest ?? data.remote_latest ?? 0,
+          stockDepth: data.stockDepth ?? data.stock_depth ?? 0,
+          stock: (data.stockDepth ?? data.stock_depth ?? 0) > 0 ? 'has_next' : 'empty',
+          mode: 'fast',
+        };
+      } catch (e: any) {
+        return { workId: book.workId, bookId: book.bookId, stock: 'error', error: e.message, mode: 'fast' };
+      }
+    }));
+    const needsGeneration = results.filter(r => r.stock === 'empty');
+    return { books: results, needsGeneration: needsGeneration.length, total: results.length, mode: 'fast' };
+  }
+
   const results = await Promise.all(books.map(async (book) => {
     try {
       const plan = await planNext(scan, database, book);
@@ -180,4 +213,104 @@ async function inventoryStatus(
   }));
   const needsGeneration = results.filter(r => r.stock === 'empty');
   return { books: results, needsGeneration: needsGeneration.length, total: results.length };
+}
+
+// ─── auto-generate-next (自动补货：获取上下文后调用 ContentBase 生成) ───
+
+interface AutoGenerateInput {
+  workId: number;
+}
+
+async function autoGenerateNext(input: AutoGenerateInput) {
+  const { workId } = input;
+  if (!workId) {
+    throw new FanqieServiceError('invalid_input', 'workId required', 400);
+  }
+
+  // 1. Get stock-depth from DataBase Gateway
+  const stockUrl = `${DATABASE_GATEWAY_URL}/content/publication/stock-depth?work_id=${workId}`;
+  const stockResp = await fetch(stockUrl, { signal: AbortSignal.timeout(10000) });
+  if (!stockResp.ok) {
+    const text = await stockResp.text().catch(() => '');
+    throw new FanqieServiceError('gateway_error', `stock-depth failed ${stockResp.status}: ${text.slice(0, 200)}`, 502);
+  }
+  const stockData: any = await stockResp.json();
+  const remoteLatest: number = stockData.remoteLatest ?? stockData.remote_latest ?? 0;
+  const stockDepth: number = stockData.stockDepth ?? stockData.stock_depth ?? 0;
+
+  if (remoteLatest <= 0) {
+    throw new FanqieServiceError('no_remote_data', 'Cannot determine remoteLatest from Gateway', 500);
+  }
+
+  const nextChapterToGenerate = remoteLatest + stockDepth + 1;
+
+  // 2. Fetch chapter list to find recent chapters
+  const chaptersUrl = `${DATABASE_GATEWAY_URL}/content/works/${workId}/chapters?limit=500`;
+  const chapResp = await fetch(chaptersUrl, { signal: AbortSignal.timeout(15000) });
+  let recentSummaries: string[] = [];
+
+  if (chapResp.ok) {
+    const chapData: any = await chapResp.json();
+    const chapters: any[] = Array.isArray(chapData) ? chapData : (chapData.chapters || chapData.data || []);
+    // Sort by chapter_number descending, take last 3
+    const sorted = chapters
+      .filter((c: any) => c.chapter_number || c.chapterNumber)
+      .sort((a: any, b: any) => (b.chapter_number || b.chapterNumber) - (a.chapter_number || a.chapterNumber))
+      .slice(0, 3);
+
+    // 3. Fetch plot_summary for each recent chapter
+    for (const ch of sorted) {
+      const chNum = ch.chapter_number || ch.chapterNumber;
+      try {
+        const pUrl = `${DATABASE_GATEWAY_URL}/content/publication/publish-chapter?local_work_id=${workId}&chapter_number=${chNum}`;
+        const pResp = await fetch(pUrl, { signal: AbortSignal.timeout(8000) });
+        if (pResp.ok) {
+          const pData: any = await pResp.json();
+          const summary = pData.plot_summary || pData.plotSummary || pData.chapter?.plot_summary || '';
+          if (summary) recentSummaries.push(`第${chNum}章: ${summary}`);
+        }
+      } catch { /* skip individual failures */ }
+    }
+  }
+
+  // 4. Construct topic
+  const summaryText = recentSummaries.length > 0
+    ? recentSummaries.join('；')
+    : '无可用摘要';
+  const topic = `接续前文。最近章节摘要：${summaryText}。请生成第${nextChapterToGenerate}章。`;
+
+  // 5. Call ContentBase generate-chapter
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${CONTENTBASE_API_KEY}`,
+  };
+  const body = JSON.stringify({
+    action: 'generate-chapter',
+    workId: Number(workId),
+    chapterNumber: nextChapterToGenerate,
+    topic,
+    settings: { persist: true },
+  });
+
+  const cbResp = await fetch(
+    `${CONTENTBASE_URL}/api/novel/runtime/actions/generate-chapter`,
+    { method: 'POST', headers, body, signal: AbortSignal.timeout(300000) },
+  );
+  if (!cbResp.ok) {
+    const text = await cbResp.text().catch(() => '');
+    throw new FanqieServiceError('generate_failed', `ContentBase ${cbResp.status}: ${text.slice(0, 200)}`, 502);
+  }
+
+  const result: any = await cbResp.json();
+  const draft = result?.data?.draft || result?.draft;
+  return {
+    success: true,
+    workId,
+    chapterNumber: nextChapterToGenerate,
+    remoteLatest,
+    stockDepth,
+    topicUsed: topic,
+    generatedWordCount: (draft?.body || '').length,
+    contentBaseResponse: result,
+  };
 }

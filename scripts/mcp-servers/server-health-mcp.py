@@ -1,19 +1,29 @@
-"""MCP Server for Server Health — exposes system health monitoring via stdio."""
+"""Server Health MCP - runs INSIDE AstrBot Docker container (stdio transport).
+Calls host-health-api on 127.0.0.1:19999 (container uses --network host).
+Does NOT use tccli directly.
+"""
+
 import asyncio
-import subprocess
+import json
+import urllib.request
+
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
 app = Server("server-health-mcp")
 
+HOST_API = "http://127.0.0.1:19999"
+TOKEN = "hh-9Xm4wPqR7vJ2nLs5"
 
-def run_cmd(cmd):
-    try:
-        r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
-        return r.stdout.strip()
-    except Exception as e:
-        return f"ERROR: {e}"
+
+def _fetch(path):
+    req = urllib.request.Request(
+        f"{HOST_API}{path}",
+        headers={"X-Health-Token": TOKEN},
+    )
+    resp = urllib.request.urlopen(req, timeout=10)
+    return json.loads(resp.read())
 
 
 @app.list_tools()
@@ -21,7 +31,7 @@ async def list_tools():
     return [
         Tool(
             name="server_health",
-            description="获取服务器健康状态（CPU/内存/磁盘/Docker容器/关键服务）",
+            description="自动发现并汇报所有云服务器状态",
             inputSchema={"type": "object", "properties": {}, "required": []},
         ),
     ]
@@ -29,30 +39,53 @@ async def list_tools():
 
 @app.call_tool()
 async def call_tool(name: str, arguments: dict):
-    if name == "server_health":
-        mem = run_cmd("free -h | head -3")
-        disk = run_cmd("df -h / | tail -1")
-        load = run_cmd("cat /proc/loadavg")
-        docker = run_cmd("docker ps --format '{{.Names}} {{.Status}}'")
-        services = run_cmd(
-            "systemctl is-active contentbase database-gateway 2>/dev/null"
-            " || echo 'systemd not available'"
-        )
-        report = (
-            f"=== 内存 ===\n{mem}\n\n"
-            f"=== 磁盘 ===\n{disk}\n\n"
-            f"=== 负载 ===\n{load}\n\n"
-            f"=== Docker 容器 ===\n{docker}\n\n"
-            f"=== 服务状态 ===\n{services}"
-        )
-        return [TextContent(type="text", text=report)]
+    if name != "server_health":
+        return [TextContent(type="text", text=f"unknown tool: {name}")]
 
-    return [TextContent(type="text", text=f"未知工具: {name}")]
+    # Step 1: get cloud inventory from host-health-api
+    try:
+        cloud = _fetch("/cloud")
+    except Exception as e:
+        return [TextContent(type="text", text=f"ERROR fetching /cloud: {e}")]
+
+    instances = cloud.get("instances", [])
+    if not instances:
+        return [TextContent(type="text", text="No instances discovered.")]
+
+    # Step 2: fetch live metrics from each instance
+    parts = []
+    for inst in instances:
+        ip = inst.get("ip", "N/A")
+        section = (
+            f"## {inst.get('name', '?')} ({ip})\n"
+            f"Region: {inst.get('region')} | State: {inst.get('state')}\n"
+            f"Spec: {inst.get('cpu', '?')}C / {inst.get('mem_gb', '?')}GB\n"
+        )
+        try:
+            req = urllib.request.Request(
+                f"http://{ip}:19999/",
+                headers={"X-Health-Token": TOKEN},
+            )
+            raw = urllib.request.urlopen(req, timeout=5).read()
+            live = json.loads(raw)
+            section += (
+                f"Mem:\n{live.get('mem', 'N/A')}\n"
+                f"Disk: {live.get('disk', 'N/A')}\n"
+                f"Load: {live.get('load', 'N/A')}\n"
+                f"Docker:\n{live.get('docker', 'N/A')}\n"
+                f"RAGFlow: {live.get('ragflow', 'N/A')}\n"
+            )
+        except Exception:
+            section += "Live metrics: unavailable\n"
+        parts.append(section)
+
+    return [TextContent(type="text", text="\n".join(parts))]
 
 
 async def main():
     async with stdio_server() as (read_stream, write_stream):
         await app.run(read_stream, write_stream, app.create_initialization_options())
+
 
 if __name__ == "__main__":
     asyncio.run(main())
