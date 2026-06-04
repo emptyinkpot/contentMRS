@@ -2,7 +2,8 @@
 param(
   [string]$RemoteHost = "ubuntu@124.220.233.126",
   [string]$GatewayRuntime = "/srv/database-gateway",
-  [string]$WebRuntime = "/srv/web-evidence-provider"
+  [string]$WebRuntime = "/srv/web-evidence-provider",
+  [string]$ComposeRoot = "/srv/contentmrs-docker"
 )
 
 $ErrorActionPreference = "Stop"
@@ -73,9 +74,16 @@ Group=ubuntu
 WantedBy=multi-user.target
 "@
 $unit | ssh $RemoteHost "sudo tee /etc/systemd/system/web-evidence-provider.service > /dev/null"
-ssh $RemoteHost "sudo systemctl daemon-reload && sudo systemctl enable web-evidence-provider && sudo systemctl restart web-evidence-provider && sudo systemctl restart database-gateway"
+ssh $RemoteHost "sudo systemctl daemon-reload && sudo systemctl enable web-evidence-provider && sudo systemctl restart web-evidence-provider"
+ssh $RemoteHost "test -f $ComposeRoot/docker-compose.yml && cd $ComposeRoot && sudo -n docker compose up -d --force-recreate database-gateway"
 
 Write-Host "Smoke on server..."
-ssh $RemoteHost "curl -sS http://127.0.0.1:19091/health; echo; curl -sS 'http://127.0.0.1:18090/evidence/search?q=test&includeWeb=true&limit=2' | head -c 400; echo"
+$smoke = @'
+set -eu
+curl -sS http://127.0.0.1:19091/health
+echo
+sudo -n docker exec contentmrs-docker-database-gateway-1 sh -lc 'HEADER="${DATABASE_GATEWAY_HEADER:-X-DataBase-Api-Key}"; curl -sS -H "$HEADER: $DATABASE_GATEWAY_API_KEY" "http://127.0.0.1:18090/evidence/search?q=test&includeWeb=false&includeRagflow=false&limit=2" | head -c 400; echo'
+'@
+$smoke | ssh $RemoteHost "bash -s"
 
 Write-Host "Deploy finished."

@@ -317,9 +317,7 @@ async function getJson(
   try {
     const response = await fetch(`${gatewayUrl}${path}?${urlParams.toString()}`, {
       signal: controller.signal,
-      headers: process.env.DATABASE_GATEWAY_API_KEY
-        ? { authorization: `Bearer ${process.env.DATABASE_GATEWAY_API_KEY}` }
-        : undefined,
+      headers: databaseGatewayHeaders(),
     });
     const text = await response.text();
     let payload: Record<string, any> = {};
@@ -342,6 +340,13 @@ async function getJson(
   } finally {
     clearTimeout(timeout);
   }
+}
+
+function databaseGatewayHeaders(): Record<string, string> | undefined {
+  const apiKey = String(process.env.DATABASE_GATEWAY_API_KEY || '').trim();
+  if (!apiKey) return undefined;
+  const header = String(process.env.DATABASE_GATEWAY_HEADER || 'X-DataBase-Api-Key').trim() || 'X-DataBase-Api-Key';
+  return { [header]: apiKey };
 }
 
 function assertEvidencePack(pack: Record<string, any>) {

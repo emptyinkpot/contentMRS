@@ -388,7 +388,7 @@ async function corpusDiagnostics() {
     return { error: 'DATABASE_GATEWAY_URL not configured', channels: {} };
   }
 
-  const headers = apiKey ? { authorization: `Bearer ${apiKey}` } : {};
+  const headers = databaseGatewayHeaders(apiKey);
 
   async function gw(path, label, timeoutMs = 15000) {
     try {
@@ -547,6 +547,13 @@ async function corpusDiagnostics() {
       apiKey: process.env.CONTENTBASE_LLM_API_KEY ? '***configured***' : 'not configured',
     },
   };
+}
+
+function databaseGatewayHeaders(apiKey) {
+  const key = String(apiKey || '').trim();
+  if (!key) return {};
+  const header = String(process.env.DATABASE_GATEWAY_HEADER || 'X-DataBase-Api-Key').trim() || 'X-DataBase-Api-Key';
+  return { [header]: key };
 }
 
 async function readJson(req) {

@@ -2,6 +2,7 @@
 param(
   [string]$RemoteHost = "ubuntu@124.220.233.126",
   [string]$RuntimeRoot = "/srv/contentbase",
+  [string]$ComposeRoot = "/srv/contentmrs-docker",
   [int]$Port = 5111,
   [switch]$UseSystemd
 )
@@ -58,8 +59,7 @@ $remoteCommands = @(
   "cd $remoteRelease && tar -xzf contentbase-deploy.tgz && rm -f contentbase-deploy.tgz",
   "cd $remoteRelease && export CI=1 && (command -v pnpm >/dev/null 2>&1 && pnpm install --frozen-lockfile || npm install)",
   "cd $remoteRelease && export CI=1 && npm run ci",
-  "ln -sfn $remoteRelease $RuntimeRoot/current",
-  "PID=`$(pgrep -f 'server.mjs --port $Port' | head -1); if [ -n `"`$PID`" ]; then kill `$PID; sleep 2; fi"
+  "ln -sfn $remoteRelease $RuntimeRoot/current"
 )
 if ($UseSystemd) {
   $remoteCommands += @(
@@ -70,9 +70,14 @@ if ($UseSystemd) {
   )
 } else {
   $remoteCommands += @(
-    "mkdir -p $RuntimeRoot/logs",
-    "cd $RuntimeRoot/current && nohup node server.mjs --port $Port > $RuntimeRoot/logs/contentbase-runtime.log 2>&1 &",
-    "sleep 3 && curl -fsS http://127.0.0.1:$Port/api/health | head -c 200 && echo && echo DEPLOY_OK"
+    "test -f $ComposeRoot/docker-compose.yml",
+    "cp $ComposeRoot/docker-compose.yml $ComposeRoot/docker-compose.yml.bak.$releaseId",
+    "sed -i 's#working_dir: $RuntimeRoot/releases/[^[:space:]]*#working_dir: $RuntimeRoot/current#' $ComposeRoot/docker-compose.yml",
+    "sed -i 's#CONTENTBASE_WORKSPACE_ROOT=$RuntimeRoot/releases/[^[:space:]]*#CONTENTBASE_WORKSPACE_ROOT=$RuntimeRoot/current#' $ComposeRoot/docker-compose.yml",
+    "cd $ComposeRoot && sudo -n docker compose up -d --force-recreate contentbase",
+    "sleep 8",
+    "cd $ComposeRoot && sudo -n docker compose ps contentbase",
+    "curl -fsS http://127.0.0.1:$Port/api/health | head -c 200 && echo && echo DEPLOY_OK"
   )
 }
 foreach ($command in $remoteCommands) {

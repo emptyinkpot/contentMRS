@@ -522,7 +522,7 @@ async function searchRagflowEvidence(input: {
       use_kg: input.config.useKg,
       toc_enhance: input.config.tocEnhance,
     }),
-    signal: AbortSignal.timeout(20000),
+    signal: AbortSignal.timeout(input.config.timeoutMs),
   });
   if (!response.ok) {
     throw new HttpError(503, "ragflow_evidence_search_failed", `RAGFlow evidence provider failed: HTTP ${response.status}`);
