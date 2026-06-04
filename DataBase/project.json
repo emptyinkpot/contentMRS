@@ -33,7 +33,10 @@
   "verificationCommands": [
     ".\\scripts\\project\\check-project-standard.ps1 -Root \"E:\\My Project\\MRS\\DataBase\"",
     ".\\scripts\\project\\project-standards.ps1 show",
-    ".\\scripts\\memory\\database-memory.ps1 status"
+    ".\\scripts\\memory\\database-memory.ps1 status",
+    ".\\tests\\ops\\validate-runtime-matrix.ps1",
+    "cd .\\apps\\gateway; npm run smoke:readiness; npm run smoke:openlist",
+    "cd .\\services\\openlist-adapter; npm run smoke"
   ],
   "documentation": [
     "README.md",
@@ -86,6 +89,7 @@
     "fileAccessGateway": "OpenList",
     "fileObjectTruth": [
       "Quark Drive",
+      "Tencent COS bucket myblog-media-1410041307 via OpenList mount /cos-myblog-media",
       "server file roots",
       "explicit OpenList-mounted storage backends"
     ],
@@ -110,6 +114,37 @@
       "rule": "DataBase records object metadata, references, ownership, recovery knowledge, and API policy; it must not implement object storage primitives."
     },
     "operatorServer": "server-124 / 124.220.233.126",
+    "openListRuntime": {
+      "server": "server-124 / 124.220.233.126",
+      "url": "http://124.220.233.126:5244",
+      "container": "openlist",
+      "image": "openlistteam/openlist:latest",
+      "version": "v4.2.2",
+      "runtimeDataRoot": "/srv/openlist-data",
+      "mounts": [
+        {
+          "mount": "/quark",
+          "backend": "Quark Drive",
+          "objectTruth": "Quark account storage"
+        },
+        {
+          "mount": "/cos-myblog-media",
+          "backend": "Tencent COS S3-compatible bucket myblog-media-1410041307 in ap-shanghai",
+          "objectTruth": "Tencent COS bucket",
+          "provisionEntrypoint": "services/openlist-adapter/scripts/provision-s3-storage.mjs",
+          "smokeEntrypoint": "tests/smoke/smoke-openlist.mjs"
+        }
+      ]
+    },
+    "rainYunRagflowRuntime": {
+      "server": "RainYun Chongqing NAT / 183.66.27.20 / WG 10.100.0.2",
+      "status": "primary-observation",
+      "webUrl": "http://10.100.0.2:9080",
+      "apiUrl": "http://10.100.0.2:9380",
+      "backupPath": "/srv/backups/ragflow/20260604-162629-cold",
+      "verificationEntrypoint": "tests/ops/validate-runtime-matrix.ps1",
+      "rule": "Do not delete server-124 RAGFlow data until RainYun cutover is explicitly accepted."
+    },
     "localMysqlConfig": "C:\\Users\\ASUS-KL\\.codex-secrets\\mysql\\myblog.cnf"
   },
   "inventories": {

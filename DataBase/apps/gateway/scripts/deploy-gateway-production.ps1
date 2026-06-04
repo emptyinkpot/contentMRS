@@ -28,6 +28,9 @@ New-Item -ItemType Directory -Path $staging | Out-Null
 
 Copy-Item -Recurse (Join-Path $gatewayRoot "dist") (Join-Path $staging "dist")
 Copy-Item -Recurse (Join-Path $gatewayRoot "config") (Join-Path $staging "config")
+$gatewayScriptsStaging = Join-Path $staging "scripts"
+New-Item -ItemType Directory -Path $gatewayScriptsStaging | Out-Null
+Copy-Item (Join-Path $repoRoot "tests\smoke\smoke*.mjs") $gatewayScriptsStaging
 
 $webStaging = Join-Path $env:TEMP "web-evidence-provider-deploy"
 if (Test-Path $webStaging) { Remove-Item $webStaging -Recurse -Force }
@@ -40,6 +43,7 @@ Write-Host "Uploading gateway to ${RemoteHost}:${GatewayRuntime} ..."
 ssh $RemoteHost "mkdir -p $GatewayRuntime/.backups && cp -a $GatewayRuntime/dist $GatewayRuntime/.backups/dist-`$(date +%Y%m%d%H%M%S) 2>/dev/null || true"
 scp -r "$staging/dist" "${RemoteHost}:${GatewayRuntime}/"
 scp -r "$staging/config" "${RemoteHost}:${GatewayRuntime}/"
+scp -r "$staging/scripts" "${RemoteHost}:${GatewayRuntime}/"
 
 Write-Host "Uploading web-evidence-provider to ${RemoteHost}:${WebRuntime} ..."
 ssh $RemoteHost "sudo mkdir -p $WebRuntime && sudo chown ubuntu:ubuntu $WebRuntime"
@@ -82,8 +86,14 @@ $smoke = @'
 set -eu
 curl -sS http://127.0.0.1:19091/health
 echo
-sudo -n docker exec contentmrs-docker-database-gateway-1 sh -lc 'HEADER="${DATABASE_GATEWAY_HEADER:-X-DataBase-Api-Key}"; curl -sS -H "$HEADER: $DATABASE_GATEWAY_API_KEY" "http://127.0.0.1:18090/evidence/search?q=test&includeWeb=false&includeRagflow=false&limit=2" | head -c 400; echo'
+sudo -n docker exec contentmrs-docker-database-gateway-1 sh -lc '
+  set -eu
+  node scripts/smoke-gateway-readiness.mjs
+  DATABASE_OPENLIST_EXPECT_MOUNT=/cos-myblog-media node scripts/smoke-openlist.mjs
+'
+echo
 '@
-$smoke | ssh $RemoteHost "bash -s"
+$smoke = $smoke -replace "`r`n", "`n"
+$smoke | ssh $RemoteHost "tr -d '\r' | bash -s"
 
 Write-Host "Deploy finished."

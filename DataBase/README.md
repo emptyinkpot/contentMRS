@@ -42,6 +42,7 @@ GitHub 仓库顶部标签栏不能自定义新增 `API`、`ARCHITECTURE` 这类�
 | 内容系统合同 | [schemas/content](./schemas/content) / [gateway/sql/005_canonical_content_schema.sql](./gateway/sql/005_canonical_content_schema.sql) | `content_works`、`content_parts`、`content_blocks`、`content_assets`、`publication_targets`、`author_profiles` 等统一内容和作者模型结构。 |
 | 文明语义 API | [gateway/API.md](./gateway/API.md) | `semantic_units`、`semantic_tag_taxonomy`、`semantic_unit_tags`、`semantic_relations` 的只读入口在 `GET /semantic/units`、`GET /semantic/tags`、`GET /semantic/relations`。 |
 | 运行服务地址 | [docs/runtime/service-addresses.md](./docs/runtime/service-addresses.md) | 当前各服务地址和入口。 |
+| 运行验证矩阵 | [tests/ops/validate-runtime-matrix.ps1](./tests/ops/validate-runtime-matrix.ps1) | Gateway/OpenList/COS/RainYun RAGFlow 备份的一次性可复跑验收入口。 |
 | 搜索与分类运行时 | [docs/runtime/search-and-classification-runtime.md](./docs/runtime/search-and-classification-runtime.md) | search_documents/search_chunks 等检索投影说明。 |
 | 本地大书资料库导入 | [docs/runtime/search-and-classification-runtime.md](./docs/runtime/search-and-classification-runtime.md#local-book-corpus-import) | 将 Obsidian/OpenList 中的大书 Markdown 正规化为 DataBase-owned literature、search chunks 和 semantic material，供 ContentBase EvidencePack 检索。 |
 | Corpus Ops 模块 | [apps/gateway/ops/corpus/README.md](./apps/gateway/ops/corpus/README.md) | 语料导入、OCR、RAGFlow 索引、检索 smoke、baseline 回灌的可复用操作模块。 |

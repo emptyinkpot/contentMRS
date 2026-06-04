@@ -34,6 +34,43 @@ The mounted backend is the file object truth. OpenList is the access projection 
 - Screenshots and generated artifacts
 - Long-term media storage
 
+## Current Runtime
+
+Observed on server-124:
+
+```text
+OpenList URL: http://124.220.233.126:5244
+container: openlist
+image: openlistteam/openlist:latest
+version: v4.2.2
+runtime data: /srv/openlist-data -> /opt/openlist/data
+```
+
+Current mounts:
+
+| OpenList mount | Backend | Object truth |
+| --- | --- | --- |
+| `/quark` | Quark Drive | Quark account storage |
+| `/cos-myblog-media` | Tencent COS S3-compatible bucket `myblog-media-1410041307` in `ap-shanghai` | Tencent COS bucket |
+
+The COS mount is managed through OpenList's supported admin API as an `S3`
+storage. Do not edit OpenList SQLite directly. Tencent COS requires virtual-host
+style access, so `OPENLIST_S3_FORCE_PATH_STYLE=false`.
+
+Stable entrypoints:
+
+```powershell
+cd "E:\My Project\ContentMRS\DataBase\services\openlist-adapter"
+npm run provision:s3-storage
+npm run smoke
+
+cd "E:\My Project\ContentMRS\DataBase\apps\gateway"
+npm run smoke:openlist
+```
+
+The Gateway smoke verifies `/openlist/health`, lists OpenList storages, checks
+the expected mount, and asserts that sensitive storage fields are redacted.
+
 ## SeaweedFS Pilot Projection
 
 SeaweedFS pilot currently exists as a loopback-only S3-compatible backend on
@@ -45,32 +82,22 @@ bucket: database-lab-artifacts
 credential surface: /srv/database-object-store/seaweedfs/rclone.conf
 ```
 
-OpenList projection is still pending. Add it through OpenList's supported admin
-or API path using S3-compatible storage settings. Do not edit OpenList's SQLite
+SeaweedFS projection is still pending. Add it through OpenList's supported
+admin API using S3-compatible storage settings. Do not edit OpenList's SQLite
 database directly as a repair layer.
 
 Observed OpenList runtime:
 
 ```text
-version: v4.2.1
+version: v4.2.2
 container binary: /opt/openlist/openlist
-supported CLI surface: openlist storage list/delete/disable
+supported CLI surface: openlist storage list/delete/disable; admin token
+admin API surface: /api/admin/storage/create|update|load_all
 ```
 
-The CLI exposes storage inspection and removal, but not a confirmed storage-add
-flow in the current runtime. SeaweedFS S3 projection therefore remains pending
-until an OpenList admin/API credential path is available.
-
-API probe note:
-
-```text
-GET /openlist/api/admin/storage/list
-```
-
-The endpoint exists, but using the token output from
-`openlist admin token --data /opt/openlist/data` returned JSON with
-`code: 401` and `token is invalidated`. Do not continue by guessing token
-formats or editing the SQLite database directly.
+The confirmed storage-add/update flow is
+`services/openlist-adapter/scripts/provision-s3-storage.mjs`. It calls the
+OpenList admin API and redacts credentials in output.
 
 ## Not Recommended
 

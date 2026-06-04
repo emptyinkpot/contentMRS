@@ -19,6 +19,8 @@
     "corpus:import:baseline-articles": "node scripts/import-baseline-articles-as-corpus.mjs",
     "prepare:ragflow-evidence": "tsx scripts/prepare-ragflow-evidence.mjs",
     "smoke": "node scripts/smoke.mjs",
+    "smoke:readiness": "node ../../tests/smoke/smoke-gateway-readiness.mjs",
+    "smoke:openlist": "node ../../tests/smoke/smoke-openlist.mjs",
     "smoke:ragflow-evidence": "tsx scripts/smoke-ragflow-evidence.mjs",
     "smoke:research-query": "node scripts/smoke-research-query.mjs",
     "sync:topic-corpus": "node scripts/sync-topic-corpus.mjs",

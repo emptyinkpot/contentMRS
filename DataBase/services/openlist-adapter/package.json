@@ -20,6 +20,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "start": "node dist/src/api/server.js",
+    "provision:s3-storage": "node scripts/provision-s3-storage.mjs",
     "smoke": "node --check dist/src/api/server.js && node scripts/smoke.mjs"
   },
   "dependencies": {

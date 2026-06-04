@@ -69,6 +69,37 @@ function toRecord(value: unknown): Record<string, unknown> {
   return {};
 }
 
+const sensitiveOpenListKeys = new Set([
+  "access_key_id",
+  "cookie",
+  "password",
+  "secret_access_key",
+  "session_token",
+  "token"
+]);
+
+function redactOpenListValue(value: unknown): unknown {
+  if (typeof value === "string") {
+    const parsed = parseJsonValue(value);
+    if (parsed && typeof parsed === "object") {
+      return JSON.stringify(redactOpenListValue(parsed));
+    }
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => redactOpenListValue(item));
+  }
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    const redacted: Record<string, unknown> = {};
+    for (const [key, item] of Object.entries(record)) {
+      redacted[key] = sensitiveOpenListKeys.has(key.toLowerCase()) ? "[redacted]" : redactOpenListValue(item);
+    }
+    return redacted;
+  }
+  return value;
+}
+
 function normalizeOpenListPath(value: string): string {
   const normalized = `/${String(value || "").trim().replace(/\\/g, "/").replace(/^\/+/, "")}`;
   return normalized.replace(/\/{2,}/g, "/").replace(/\/+$/g, "") || "/";
@@ -189,7 +220,7 @@ export function openlistRoutes({ pool, openlistClient }: RouteDependencies) {
     const data = await client.listStorages(page, perPage);
     return c.json({
       count: data.total,
-      storages: data.content,
+      storages: redactOpenListValue(data.content),
       requestId: c.get("requestId")
     });
   });
@@ -202,7 +233,7 @@ export function openlistRoutes({ pool, openlistClient }: RouteDependencies) {
     }
     const data = await client.getStorage(id);
     return c.json({
-      storage: data,
+      storage: redactOpenListValue(data),
       requestId: c.get("requestId")
     });
   });

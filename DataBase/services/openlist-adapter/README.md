@@ -64,3 +64,37 @@ GET  /api/admin/storage/get?id=
 POST /api/fs/list
 POST /api/fs/get
 ```
+
+## S3-Compatible Storage Provisioning
+
+Use the package-owned provisioning entrypoint instead of editing OpenList SQLite
+state or hand-writing one-off curl commands:
+
+```powershell
+npm run provision:s3-storage
+```
+
+Required environment:
+
+```text
+OPENLIST_BASE_URL=http://124.220.233.126:5244
+OPENLIST_TOKEN=<admin token>
+OPENLIST_S3_MOUNT_PATH=/cos-myblog-media
+OPENLIST_S3_BUCKET=myblog-media-1410041307
+OPENLIST_S3_ENDPOINT=https://cos.ap-shanghai.myqcloud.com
+OPENLIST_S3_REGION=ap-shanghai
+OPENLIST_S3_ACCESS_KEY_ID=<secret id>
+OPENLIST_S3_SECRET_ACCESS_KEY=<secret key>
+```
+
+Optional:
+
+```text
+OPENLIST_S3_ROOT_PATH=/
+OPENLIST_PROVISION_DRY_RUN=true
+OPENLIST_PROVISION_UPDATE_EXISTING=true
+```
+
+The script creates or updates an OpenList `S3` storage through
+`POST /api/admin/storage/create|update` and then calls
+`POST /api/admin/storage/load_all`. It redacts S3 credentials in its output.
