@@ -70,6 +70,7 @@ const MODEL_CONTEXT_WINDOWS: Record<string, number> = {
   'gpt-4.1-mini': 1000000,
   'gpt-4.1-nano': 1000000,
   'gpt-5.5': 200000,
+  'claude-sonnet-4-6': 200000,
   'claude-sonnet-4-5-20250514': 200000,
   'claude-opus-4-7': 200000,
   'deepseek-chat': 64000,
@@ -754,66 +755,90 @@ function composeByBudget(input: {
   charBudget: number;
   genre: Genre;
 }) {
+  const hardBudget = Math.max(1000, Math.floor(input.charBudget));
   const budgetPct = GENRE_BUDGETS[input.genre];
   const channels: ContextItem['channel'][] = ['reality', 'literary', 'semantic', 'lexicon', 'structure', 'author'];
   const channelBudgets = Object.fromEntries(
-    channels.map((ch) => [ch, Math.floor(input.charBudget * (budgetPct[ch] || 10) / 100)])
+    channels.map((ch) => [ch, Math.floor(hardBudget * (budgetPct[ch] || 10) / 100)])
   );
   const channelItems = Object.fromEntries(channels.map((ch) => [ch, [] as ContextItem[]]));
   const channelUsed = Object.fromEntries(channels.map((ch) => [ch, 0]));
+  const packedKeys = new Set<string>();
+  let totalUsed = 0;
 
-  // Pass 1: guarantee minimum items per channel regardless of budget
+  const pushPackedItem = (item: ContextItem, itemBudget: number): boolean => {
+    const ch = item.channel;
+    const normalized = { ...item, text: normalizeText(item.text) };
+    if (!normalized.text) return false;
+    const key = dedupeKey(normalized);
+    if (packedKeys.has(key)) return false;
+    const remainingTotal = hardBudget - totalUsed;
+    if (remainingTotal <= 0) return false;
+    const fitted = fitItemToBudget(normalized, Math.min(itemBudget, remainingTotal));
+    if (!fitted) return false;
+    const serialized = serializeItem(fitted, 1);
+    if (serialized.length > remainingTotal) return false;
+    channelItems[ch].push(fitted);
+    channelUsed[ch] += serialized.length;
+    totalUsed += serialized.length;
+    packedKeys.add(key);
+    return true;
+  };
+
+  // Pass 1: keep channel diversity without letting oversized items exceed the request budget.
   const itemsByChannel = Object.fromEntries(channels.map((ch) => [ch, [] as ContextItem[]]));
   for (const item of input.items) {
     const normalized = { ...item, text: normalizeText(item.text) };
     if (!normalized.text) continue;
     itemsByChannel[item.channel]?.push(normalized);
   }
-  const guaranteedSet = new Set<ContextItem>();
   for (const ch of channels) {
     const minItems = CHANNEL_MIN_ITEMS[ch] || 2;
     const available = itemsByChannel[ch];
     for (let i = 0; i < Math.min(minItems, available.length); i++) {
       const item = available[i];
-      const serialized = serializeItem(item, 1);
-      channelItems[ch].push(item);
-      channelUsed[ch] += serialized.length;
-      guaranteedSet.add(item);
+      const perItemBudget = Math.max(240, Math.floor((channelBudgets[ch] || hardBudget) / Math.max(minItems, 1)));
+      pushPackedItem(item, perItemBudget);
     }
   }
 
   // Pass 2: fill remaining budget per channel
   for (const item of input.items) {
-    if (guaranteedSet.has(item)) continue;
     const ch = item.channel;
-    const normalized = { ...item, text: normalizeText(item.text) };
-    if (!normalized.text) continue;
-    const serialized = serializeItem(normalized, 1);
-    if (channelUsed[ch] + serialized.length > channelBudgets[ch] && channelUsed[ch] > 0) continue;
-    channelItems[ch].push(normalized);
-    channelUsed[ch] += serialized.length;
+    const remainingChannel = (channelBudgets[ch] || 0) - (channelUsed[ch] || 0);
+    if (remainingChannel <= 0) continue;
+    pushPackedItem(item, remainingChannel);
   }
 
-  const packed = channels.flatMap((ch) => channelItems[ch]);
-  let totalUsed = packed.reduce((sum, item, i) => sum + serializeItem(item, i + 1).length, 0);
+  let packed = channels.flatMap((ch) => channelItems[ch]);
 
   // Pass 3: fill remaining budget with overflow from any channel
-  if (totalUsed < input.charBudget * 0.85) {
+  if (totalUsed < hardBudget * 0.85) {
     for (const item of input.items) {
-      if (packed.includes(item)) continue;
-      const normalized = { ...item, text: normalizeText(item.text) };
-      if (!normalized.text) continue;
-      const serialized = serializeItem(normalized, packed.length + 1);
-      if (totalUsed + serialized.length > input.charBudget) continue;
-      packed.push(normalized);
-      totalUsed += serialized.length;
+      pushPackedItem(item, hardBudget - totalUsed);
     }
+    packed = channels.flatMap((ch) => channelItems[ch]);
   }
 
   return {
     items: packed,
     contextChars: packed.reduce((sum, item, index) => sum + serializeItem(item, index + 1).length, 0),
     sections: buildSections(packed),
+  };
+}
+
+function fitItemToBudget(item: ContextItem, charBudget: number): ContextItem | null {
+  const normalized = { ...item, text: normalizeText(item.text) };
+  if (!normalized.text) return null;
+  if (serializeItem(normalized, 1).length <= charBudget) return normalized;
+
+  const marker = '\n[...truncated by context budget...]';
+  const headerChars = serializeItem({ ...normalized, text: '' }, 1).length;
+  const textBudget = Math.floor(charBudget - headerChars - marker.length);
+  if (textBudget < 80) return null;
+  return {
+    ...normalized,
+    text: `${normalized.text.slice(0, textBudget).trimEnd()}${marker}`,
   };
 }
 
