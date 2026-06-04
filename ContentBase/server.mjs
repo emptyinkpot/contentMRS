@@ -283,19 +283,10 @@ function deterministicDeAI(text) {
 }
 
 async function callSingleWriter(prompt, settings) {
-  // Model routing: fiction/narrative uses Qwen, everything else uses Claude
-  const isNarrative = String(settings?.genre || settings?.routeHint || '').match(/narrative|fiction|小说|章节/i);
-  let baseUrl, apiKey, model;
-
-  if (isNarrative && process.env.CONTENTBASE_QWEN_BASE_URL) {
-    baseUrl = String(process.env.CONTENTBASE_QWEN_BASE_URL || '').trim().replace(/\/+$/, '');
-    apiKey = String(process.env.CONTENTBASE_QWEN_API_KEY || '').trim();
-    model = String(settings?.model || process.env.CONTENTBASE_QWEN_MODEL || 'qwen-max').trim();
-  } else {
-    baseUrl = String(process.env.CONTENTBASE_LLM_BASE_URL || '').trim().replace(/\/+$/, '');
-    apiKey = String(process.env.CONTENTBASE_LLM_API_KEY || '').trim();
-    model = String(settings?.model || process.env.CONTENTBASE_LLM_MODEL || '').trim();
-  }
+  // Article Writer is pinned to the Claude/sub2api route; Qwen env stays available for other callers.
+  const baseUrl = String(process.env.CONTENTBASE_LLM_BASE_URL || '').trim().replace(/\/+$/, '');
+  const apiKey = String(process.env.CONTENTBASE_LLM_API_KEY || '').trim();
+  const model = String(process.env.CONTENTBASE_LLM_MODEL || settings?.model || '').trim();
   if (!baseUrl) {
     throw new Error('CONTENTBASE_LLM_BASE_URL is required');
   }

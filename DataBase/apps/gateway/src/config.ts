@@ -125,7 +125,7 @@ export function loadConfig(): GatewayConfig {
           apiKey: ragflowApiKey || "",
           datasetIds: ragflowDatasetIds,
           documentIds: listEnv("DATABASE_EVIDENCE_RAGFLOW_DOCUMENT_IDS"),
-          timeoutMs: numberEnv("DATABASE_EVIDENCE_RAGFLOW_TIMEOUT_MS", 90000),
+          timeoutMs: numberEnv("DATABASE_EVIDENCE_RAGFLOW_TIMEOUT_MS", 240000),
           similarityThreshold: numberEnv("DATABASE_EVIDENCE_RAGFLOW_SIMILARITY_THRESHOLD", 0.2),
           vectorSimilarityWeight: numberEnv("DATABASE_EVIDENCE_RAGFLOW_VECTOR_WEIGHT", 0.3),
           topK: numberEnv("DATABASE_EVIDENCE_RAGFLOW_TOP_K", 1024),
