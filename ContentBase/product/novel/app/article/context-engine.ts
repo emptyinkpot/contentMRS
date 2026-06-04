@@ -372,6 +372,10 @@ function assertEvidencePack(pack: Record<string, any>) {
 
 function normalizeEvidencePackChunks(payload: Record<string, any>): ContextItem[] {
   const sources = new Map<string, Record<string, any>>();
+  const packProviders = readEvidencePackProviders(payload);
+  const packProvider = packProviders.find((provider) => provider === 'ragflow.retrieval')
+    || packProviders.find((provider) => provider)
+    || '';
   for (const source of Array.isArray(payload.sources) ? payload.sources : []) {
     if (source && typeof source === 'object') {
       const id = String(source.id || source.sourceId || '').trim();
@@ -387,6 +391,13 @@ function normalizeEvidencePackChunks(payload: Record<string, any>): ContextItem[
       ...readObject(source.metadata),
       ...readObject(chunk.metadata),
     };
+    const provider = String(
+      metadata.provider
+      || chunk.provider
+      || source.provider
+      || packProvider
+      || '',
+    ).trim();
     const title = String(source.title || chunk.title || chunk.sourceTitle || '').trim() || undefined;
     const sourceId = String(chunk.sourceId || source.sourceId || source.id || '').trim() || undefined;
     const url = String(
@@ -400,7 +411,11 @@ function normalizeEvidencePackChunks(payload: Record<string, any>): ContextItem[
       channel: classifyCorpusChannel({
         chunk,
         source,
-        metadata,
+        metadata: {
+          ...metadata,
+          provider,
+          evidencePackProviders: packProviders,
+        },
         text,
         title,
         sourceId,
@@ -412,7 +427,8 @@ function normalizeEvidencePackChunks(payload: Record<string, any>): ContextItem[
       priority: Number(chunk.relevanceScore || metadata.sourceQualityScore || 0) || undefined,
       metadata: {
         ...metadata,
-        provider: metadata.provider || 'database.evidence_pack',
+        provider: provider || 'database.evidence_pack',
+        evidencePackProviders: packProviders,
         sourceType: source.sourceType,
         sourceTable: source.sourceTable,
         sourceId: source.sourceId || sourceId,
@@ -420,6 +436,22 @@ function normalizeEvidencePackChunks(payload: Record<string, any>): ContextItem[
       },
     };
   }).filter(Boolean) as ContextItem[];
+}
+
+function readEvidencePackProviders(payload: Record<string, any>): string[] {
+  const providers = new Set<string>();
+  const queryRun = readObject(payload.queryRun);
+  const addProvider = (value: unknown) => {
+    const provider = String(value || '').trim().toLowerCase();
+    if (provider) providers.add(provider);
+  };
+  addProvider(queryRun.provider);
+  for (const round of Array.isArray(queryRun.rounds) ? queryRun.rounds : []) {
+    if (round && typeof round === 'object') {
+      addProvider((round as Record<string, any>).provider);
+    }
+  }
+  return [...providers];
 }
 
 function normalizeSemanticUnits(payload: Record<string, any>): ContextItem[] {

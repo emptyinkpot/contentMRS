@@ -286,6 +286,9 @@ Allowed tools:
 ```text
 product/novel/tools/evidence-pack-smoke.mjs
 product/novel/tools/generate-article-mvp.mjs
+tests/acceptance/validate-writer-contract.mjs
+tests/acceptance/validate-novel-action-contract.mjs
+tests/acceptance/generate-article-through-runtime.ps1
 ```
 
 `evidence-pack-smoke.mjs` validates DataBase EvidencePack only.
@@ -293,6 +296,16 @@ product/novel/tools/generate-article-mvp.mjs
 `generate-article-mvp.mjs` calls the runtime and fails if model invocation, article body, or EvidencePack is missing.
 
 RAGFlow belongs to Retrieval through DataBase Gateway. ContentBase must not call RAGFlow directly. When a run requires RAGFlow, DataBase EvidencePack must contain RAGFlow-backed sources, chunks and citations before Composition.
+
+Acceptance entrypoints:
+
+```text
+pnpm run acceptance:writer-contract
+pnpm run acceptance:novel-action-contract
+pnpm run acceptance:article-runtime
+```
+
+`acceptance:writer-contract` is a cheap contract check: the Writer must be pinned by `CONTENTBASE_LLM_MODEL` and must not accept request-provided or fallback models. `acceptance:novel-action-contract` is a fail-closed ownership check for `POST /api/novel/runtime/actions/generate-chapter`; it must stay red until ContentBase owns a real chapter action instead of forcing novel-factory through the article endpoint. `acceptance:article-runtime` is the live check: it calls `POST /api/content/runtime/generate/article`, requires a real model invocation, requires DataBase EvidencePack with RAGFlow evidence, and fails if the returned Writer model is not `claude-sonnet-4-6`.
 
 ## Retrieval Architecture
 

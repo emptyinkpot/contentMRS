@@ -43,6 +43,10 @@ GitHub 仓库顶部标签栏不能自定义新增 `API`、`ARCHITECTURE` 这类�
 | 文明语义 API | [gateway/API.md](./gateway/API.md) | `semantic_units`、`semantic_tag_taxonomy`、`semantic_unit_tags`、`semantic_relations` 的只读入口在 `GET /semantic/units`、`GET /semantic/tags`、`GET /semantic/relations`。 |
 | 运行服务地址 | [docs/runtime/service-addresses.md](./docs/runtime/service-addresses.md) | 当前各服务地址和入口。 |
 | 运行验证矩阵 | [tests/ops/validate-runtime-matrix.ps1](./tests/ops/validate-runtime-matrix.ps1) | Gateway/OpenList/COS/RainYun RAGFlow 备份的一次性可复跑验收入口。 |
+| RainYun RAGFlow 数据完整性验收 | [tests/acceptance/validate-rainyun-ragflow-integrity.ps1](./tests/acceptance/validate-rainyun-ragflow-integrity.ps1) | 清理 124 旧 RAGFlow 前必须通过：容器、ES 158396 docs、MySQL 5KB/148 docs/148 tasks、MinIO 271 对象、冷备 SHA256。 |
+| RAGFlow 迁移并排对账 | [tests/acceptance/compare-ragflow-cutover-parity.ps1](./tests/acceptance/compare-ragflow-cutover-parity.ps1) | 清理 124 旧 RAGFlow 前必须通过：只读对比 `server-124` standby 与 RainYun primary 的 ES/MySQL/MinIO 指标，要求 RainYun 不低于旧侧，并且冷备 SHA256 通过。 |
+| OpenList 存储合同验收 | [tests/acceptance/validate-openlist-storage-contract.mjs](./tests/acceptance/validate-openlist-storage-contract.mjs) | 验证 `/quark`、`/cos-myblog-media`、COS 目录和 secret redaction；OpenList 是文件对象投影，不承载 MySQL。 |
+| RAGFlow EvidencePack 验收 | [tests/acceptance/validate-ragflow-evidence.ps1](./tests/acceptance/validate-ragflow-evidence.ps1) | 复用 Gateway 的 EvidencePack 路由，要求 RAGFlow 返回真实 text-bearing chunk；迁移后还要证明 Gateway 指向 RainYun `http://10.100.0.2:9380`，不能继续指向 124 本机旧 RAGFlow。 |
 | 搜索与分类运行时 | [docs/runtime/search-and-classification-runtime.md](./docs/runtime/search-and-classification-runtime.md) | search_documents/search_chunks 等检索投影说明。 |
 | 本地大书资料库导入 | [docs/runtime/search-and-classification-runtime.md](./docs/runtime/search-and-classification-runtime.md#local-book-corpus-import) | 将 Obsidian/OpenList 中的大书 Markdown 正规化为 DataBase-owned literature、search chunks 和 semantic material，供 ContentBase EvidencePack 检索。 |
 | Corpus Ops 模块 | [apps/gateway/ops/corpus/README.md](./apps/gateway/ops/corpus/README.md) | 语料导入、OCR、RAGFlow 索引、检索 smoke、baseline 回灌的可复用操作模块。 |
@@ -166,9 +170,17 @@ cd "E:\My Project\DataBase\apps\gateway"
 npm run smoke:ragflow-evidence -- --envFile "C:\Users\ASUS-KL\.codex-secrets\database-gateway\database_gateway.env" --query "新地主阶级 通道租"
 ```
 
+迁移后的生产验收应通过 Gateway 的真实 HTTP EvidencePack 路由执行，并锁定 RainYun RAGFlow URL：
+
+```powershell
+$env:DATABASE_RAGFLOW_EVIDENCE_REMOTE_SSH='server-124'
+$env:DATABASE_RAGFLOW_EVIDENCE_EXPECTED_URL='http://10.100.0.2:9380'
+.\tests\acceptance\validate-ragflow-evidence.ps1
+```
+
 该 smoke 会检查 RAGFlow URL、API key、dataset 可见性、dataset embedding 配置和 retrieval chunk 数量。失败时应修 RAGFlow embedding/provider 或数据集索引，不允许在 ContentBase 里做本地兜底。
 
-当前 RAGFlow 吸收进度是“DataBase 原生接入完成，真实检索仍被 embedding provider 阻塞”：工作区不再保留 `_upstreams/ragflow` 本地镜像；DataBase Gateway 只消费官方 `/api/v1/retrieval` 契约与运行中的 RAGFlow 服务，ContentBase 不直连。`127.0.0.1:9380/api/v1/datasets` 已验证可达，`/healthz` 在当前 RAGFlow 版本返回 404，不能作为 readiness 真相。已创建的最小 dataset 已写入 Gateway secret env，dataset 可见且已尝试绑定 embedding；但非 TEI 模式下 RAGFlow 的 Builtin embedding 不能实际执行，现有 `sub2api.tengokukk.com` 也未暴露 `/v1/embeddings`。下一步必须先提供一个 RAGFlow 可真实调用的 embedding provider，再运行：
+当前 RAGFlow 迁移后的完成标准是“RainYun 侧数据完整 + DataBase Gateway EvidencePack 能从 RainYun RAGFlow 取到真实 chunk”。工作区不再保留 `_upstreams/ragflow` 本地镜像；DataBase Gateway 只消费官方 `/api/v1/retrieval` 契约与运行中的 RAGFlow 服务，ContentBase 不直连。`server-124` 上的 `127.0.0.1:9380` 只属于旧/standby RAGFlow 运行时；切流后生产 Gateway 的 `DATABASE_EVIDENCE_RAGFLOW_URL` 必须指向 `http://10.100.0.2:9380`，否则 `validate-ragflow-evidence.ps1` 会 fail-closed。真正进入 124 清理讨论前还必须跑 `tests/acceptance/compare-ragflow-cutover-parity.ps1`，只读并排对比旧侧和 RainYun 侧的 ES/MySQL/MinIO 指标，确认 RainYun 不低于 124 standby，且 RainYun 冷备 SHA256 通过。下一步若 EvidencePack 不通过，应修 Gateway RAGFlow URL、RAGFlow embedding/provider 或数据集索引，不允许在 ContentBase 里做本地兜底。
 
 ```powershell
 cd "E:\My Project\DataBase\apps\gateway"

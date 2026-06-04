@@ -35,6 +35,10 @@
     ".\\scripts\\project\\project-standards.ps1 show",
     ".\\scripts\\memory\\database-memory.ps1 status",
     ".\\tests\\ops\\validate-runtime-matrix.ps1",
+    ".\\tests\\acceptance\\validate-rainyun-ragflow-integrity.ps1",
+    ".\\tests\\acceptance\\compare-ragflow-cutover-parity.ps1",
+    "$env:DATABASE_OPENLIST_REMOTE_SSH='server-124'; node .\\tests\\acceptance\\validate-openlist-storage-contract.mjs",
+    "$env:DATABASE_RAGFLOW_EVIDENCE_REMOTE_SSH='server-124'; $env:DATABASE_RAGFLOW_EVIDENCE_EXPECTED_URL='http://10.100.0.2:9380'; .\\tests\\acceptance\\validate-ragflow-evidence.ps1",
     "cd .\\apps\\gateway; npm run smoke:readiness; npm run smoke:openlist",
     "cd .\\services\\openlist-adapter; npm run smoke"
   ],

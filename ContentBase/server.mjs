@@ -286,7 +286,7 @@ async function callSingleWriter(prompt, settings) {
   // Article Writer is pinned to the Claude/sub2api route; Qwen env stays available for other callers.
   const baseUrl = String(process.env.CONTENTBASE_LLM_BASE_URL || '').trim().replace(/\/+$/, '');
   const apiKey = String(process.env.CONTENTBASE_LLM_API_KEY || '').trim();
-  const model = String(process.env.CONTENTBASE_LLM_MODEL || settings?.model || '').trim();
+  const model = String(process.env.CONTENTBASE_LLM_MODEL || '').trim();
   if (!baseUrl) {
     throw new Error('CONTENTBASE_LLM_BASE_URL is required');
   }
