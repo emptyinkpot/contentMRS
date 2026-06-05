@@ -596,6 +596,11 @@ async function loadFixedStyleSamples(gatewayUrl: string): Promise<ContextItem[]>
     '北一辉 国家改造 锐利论断',
     '希特勒 我的奋斗 修辞节奏',
     '墨索里尼 法西斯主义 国家论述',
+    '戈培尔 宣传论 煽动修辞',
+    '太宰治 人间失格 自毁叙事',
+    '坂口安吾 堕落论 反道德判断',
+    '川端康成 雪国 感官静止',
+    '夏目漱石 心 知识人困境',
   ];
   const envQueries = String(process.env.CONTENTBASE_STYLE_QUERIES || '').trim();
   const residentQueries = envQueries ? envQueries.split('|').map((q: string) => q.trim()).filter(Boolean) : defaultQueries;
