@@ -146,25 +146,29 @@ function saveArticle(id, topic, content) {
 }
 
 async function runTest(test) {
-  if (test.check === "health") {
-    const t0 = Date.now()
-    const result = await runHealth()
-    const elapsed = (Date.now() - t0) / 1000
-    const pass = result === true
-    return { id: test.id, group: test.group, pass, reason: pass ? null : String(result), elapsed, bodyLen: 0 }
-  }
-  if (test.check === "deterministic") return { id: test.id, group: test.group, ...(await runDeterministic(test)) }
+  try {
+    if (test.check === "health") {
+      const t0 = Date.now()
+      const result = await runHealth()
+      const elapsed = (Date.now() - t0) / 1000
+      const pass = result === true
+      return { id: test.id, group: test.group, pass, reason: pass ? null : String(result), elapsed, bodyLen: 0 }
+    }
+    if (test.check === "deterministic") return { id: test.id, group: test.group, ...(await runDeterministic(test)) }
 
-  const t0 = Date.now()
-  const r = await generate(test.topic, { wordCount: test.wordCount })
-  const elapsed = (Date.now() - t0) / 1000
-  if (!test.allowFail && r.status !== 200) {
-    return { id: test.id, group: test.group, pass: false, reason: `HTTP ${r.status}: ${r.json?.error || "unknown"}`, elapsed, bodyLen: 0 }
+    const t0 = Date.now()
+    const r = await generate(test.topic, { wordCount: test.wordCount })
+    const elapsed = (Date.now() - t0) / 1000
+    if (!test.allowFail && r.status !== 200) {
+      return { id: test.id, group: test.group, pass: false, reason: `HTTP ${r.status}: ${r.json?.error || "unknown"}`, elapsed, bodyLen: 0 }
+    }
+    const result = test.check(r)
+    const pass = result === true
+    saveArticle(test.id, test.topic, body(r))
+    return { id: test.id, group: test.group, pass, reason: pass ? null : String(result), elapsed, bodyLen: bodyLen(r) }
+  } catch (e) {
+    return { id: test.id, group: test.group, pass: false, reason: `EXCEPTION: ${e.message}`, elapsed: 0, bodyLen: 0 }
   }
-  const result = test.check(r)
-  const pass = result === true
-  saveArticle(test.id, test.topic, body(r))
-  return { id: test.id, group: test.group, pass, reason: pass ? null : String(result), elapsed, bodyLen: bodyLen(r) }
 }
 
 async function main() {
