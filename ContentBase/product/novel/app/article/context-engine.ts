@@ -1244,7 +1244,7 @@ function dedupeStrings(values: string[]): string[] {
 async function associationExpand(topic: string, gatewayUrl: string): Promise<ContextItem[]> {
   const baseUrl = String(process.env.CONTENTBASE_LLM_BASE_URL || process.env.DATABASE_RESEARCH_LLM_BASE_URL || '').trim().replace(/\/+$/, '');
   const apiKey = String(process.env.CONTENTBASE_LLM_API_KEY || process.env.DATABASE_RESEARCH_LLM_API_KEY || '').trim();
-  const model = String(process.env.CONTENTBASE_ASSOC_MODEL || 'claude-sonnet-4-5-20250514').trim();
+  const model = String(process.env.CONTENTBASE_ASSOC_MODEL || 'claude-sonnet-4-6').trim();
   if (!baseUrl || !apiKey) return [];
 
   let terms: string[] = [];
@@ -1255,7 +1255,7 @@ async function associationExpand(topic: string, gatewayUrl: string): Promise<Con
       body: JSON.stringify({
         model,
         messages: [
-          { role: 'system', content: '你是联想引擎。给定一个写作主题，输出5-8个意外但有智识价值的关联词/概念/事件。要求跳跃式联想——不是同义词扩展，而是隐藏的历史/制度/文化/地缘连接。只输出JSON数组，每项一个短语。' },
+          { role: 'system', content: '输出一个JSON字符串数组，5-8项。每项是一个短语（2-6个中文字）。要求：给定主题的跳跃式联想——隐藏的历史/制度/文化/地缘连接，不是同义词。只输出["词1","词2",...]，不要任何解释。' },
           { role: 'user', content: topic },
         ],
         temperature: 0.7,
