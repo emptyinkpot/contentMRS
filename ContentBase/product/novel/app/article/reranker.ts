@@ -7,6 +7,7 @@ const DEFAULT_KEEP_RATIO = 0.65;
 const TIMEOUT_MS = 30_000;
 const DEFAULT_TOPIC_WEIGHT = 0.6;
 const DEFAULT_AUTHOR_WEIGHT = 0.4;
+const REALITY_SIMILARITY_MIN = 0.35;
 
 export type RerankerConfig = {
   apiKey: string;
@@ -39,11 +40,10 @@ export async function rerankByEmbedding(
 ): Promise<ContextItem[]> {
   if (items.length <= 3) return items;
 
-  // Reality items are exempt from reranker elimination — factual backbone must survive
   const realityItems = items.filter(item => item.channel === 'reality');
   const rerankable = items.filter(item => item.channel !== 'reality');
 
-  if (rerankable.length <= 3) return items;
+  if (rerankable.length <= 3 && realityItems.length === 0) return items;
 
   const keepCount = Math.max(3, Math.ceil(rerankable.length * (config.keepRatio || DEFAULT_KEEP_RATIO)));
   const queryEmbedding = await embedSingle(query, config);
@@ -53,13 +53,15 @@ export async function rerankByEmbedding(
     ? await embedSingle(authorStateText.slice(0, MAX_TEXT_CHARS), config)
     : null;
 
-  const texts = rerankable.map(item => truncateForEmbedding(item.text, item.title));
-  const embeddings = await embedBatch(texts, config);
-  if (!embeddings || embeddings.length !== rerankable.length) return items;
-
   const topicWeight = config.topicWeight ?? DEFAULT_TOPIC_WEIGHT;
   const authorWeight = authorEmbedding ? (config.authorWeight ?? DEFAULT_AUTHOR_WEIGHT) : 0;
   const totalWeight = authorEmbedding ? topicWeight + authorWeight : 1;
+
+  const filteredReality = await filterRealityBySimilarity(realityItems, queryEmbedding, authorEmbedding, topicWeight, authorWeight, totalWeight, config);
+
+  const texts = rerankable.map(item => truncateForEmbedding(item.text, item.title));
+  const embeddings = await embedBatch(texts, config);
+  if (!embeddings || embeddings.length !== rerankable.length) return [...filteredReality, ...rerankable];
 
   const scored = rerankable.map((item, i) => {
     const topicSim = cosineSimilarity(queryEmbedding, embeddings[i]);
@@ -69,7 +71,32 @@ export async function rerankByEmbedding(
   });
 
   scored.sort((a, b) => b.similarity - a.similarity);
-  return [...realityItems, ...scored.slice(0, keepCount).map(s => s.item)];
+  return [...filteredReality, ...scored.slice(0, keepCount).map(s => s.item)];
+}
+
+async function filterRealityBySimilarity(
+  realityItems: ContextItem[],
+  queryEmbedding: number[],
+  authorEmbedding: number[] | null,
+  topicWeight: number,
+  authorWeight: number,
+  totalWeight: number,
+  config: RerankerConfig,
+): Promise<ContextItem[]> {
+  if (realityItems.length === 0) return [];
+  const texts = realityItems.map(item => truncateForEmbedding(item.text, item.title));
+  const embeddings = await embedBatch(texts, config);
+  if (!embeddings || embeddings.length !== realityItems.length) return realityItems;
+
+  return realityItems.filter((_, i) => {
+    const topicSim = cosineSimilarity(queryEmbedding, embeddings[i]);
+    const authorSim = authorEmbedding ? cosineSimilarity(authorEmbedding, embeddings[i]) : 0;
+    const blended = (topicSim * topicWeight + authorSim * authorWeight) / totalWeight;
+    if (blended < REALITY_SIMILARITY_MIN) {
+      console.log(`[reranker] dropped reality item (sim=${blended.toFixed(3)}): ${realityItems[i].title?.slice(0, 40)}`);
+    }
+    return blended >= REALITY_SIMILARITY_MIN;
+  });
 }
 
 export async function loadAuthorStateText(gatewayUrl: string): Promise<string> {

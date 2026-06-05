@@ -233,6 +233,7 @@ export async function buildArticleContextEngine(input: {
         title: item.title,
         url: item.url,
         source: item.source,
+        metadata: item.metadata,
         preview: item.text.slice(0, 300),
       })),
     },

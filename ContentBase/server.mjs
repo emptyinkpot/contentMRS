@@ -361,7 +361,24 @@ function deterministicDeAI(text) {
     return ellipsisCount <= 2 ? '……' : '。';
   });
 
-  // 9d. Rule D: Paragraph uniformity detection (quality gate)
+  // 9d. Rule D: "这是/这个/这种" sentence starter deduplication
+  // If 2+ consecutive sentences start with "这", rewrite the 2nd+ to remove it
+  const deaiSentences = result.split(/(?<=[。！？])/);
+  let zheStripped = 0;
+  for (let i = 1; i < deaiSentences.length; i++) {
+    const prev = deaiSentences[i - 1].trim();
+    const cur = deaiSentences[i].trim();
+    if (/^这[是个种套意不一]/.test(prev) && /^这[是个种套意不一]/.test(cur)) {
+      deaiSentences[i] = deaiSentences[i].replace(/^(\s*)这[是个种套]/, '$1');
+      zheStripped++;
+    }
+  }
+  if (zheStripped > 0) {
+    result = deaiSentences.join('');
+    console.warn(`[deAI] stripped ${zheStripped} consecutive "这" sentence starters`);
+  }
+
+  // 9e. Rule E: Paragraph uniformity detection (quality gate)
   const deaiParas = result.split('\n\n').filter(p => p.trim().length > 0);
   if (deaiParas.length > 5) {
     const lengths = deaiParas.map(p => p.trim().length);
