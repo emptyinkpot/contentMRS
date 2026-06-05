@@ -590,9 +590,12 @@ async function loadFixedStyleSamples(gatewayUrl: string): Promise<ContextItem[]>
     '内藤湖南 东洋史 学者从容',
     '石黑一雄 小说 克制叙事',
     '安德森 想象的共同体 民族主义',
-    '鲍鹏山 评点 短锐',
-    '余英时 思想史 节制',
-    '钱穆 史论 平稳承接',
+    '白鸟库吉 东洋史 实证密度',
+    '桑原骘藏 文化史 严密考据',
+    '宫崎市定 中国制度史 缜密',
+    '北一辉 国家改造 锐利论断',
+    '希特勒 我的奋斗 修辞节奏',
+    '墨索里尼 法西斯主义 国家论述',
   ];
   const envQueries = String(process.env.CONTENTBASE_STYLE_QUERIES || '').trim();
   const residentQueries = envQueries ? envQueries.split('|').map((q: string) => q.trim()).filter(Boolean) : defaultQueries;
