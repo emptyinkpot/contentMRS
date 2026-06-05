@@ -125,11 +125,16 @@ export async function buildArticleContextEngine(input: {
   if (associationItems.length) {
     warnings.push(`association: expanded ${associationItems.length} items from LLM-generated terms`);
   }
+  const vectorBoostItems = await realityVectorBoost(input.topic, gatewayUrl);
+  if (vectorBoostItems.length) {
+    warnings.push(`vector-boost: ${vectorBoostItems.length} items from direct vector search`);
+  }
   const evidenceItems = normalizeEvidencePackChunks(evidencePack);
   const contextItems = [
     ...evidenceItems,
     ...corpusItems,
     ...associationItems,
+    ...vectorBoostItems,
   ];
   if (!contextItems.length) {
     throw new Error('Reality required: EvidencePack returned zero usable Reality chunks');
@@ -1211,6 +1216,27 @@ function normalizeText(value: string): string {
 
 function dedupeStrings(values: string[]): string[] {
   return Array.from(new Set(values.map((item) => String(item || '').trim()).filter(Boolean)));
+}
+
+async function realityVectorBoost(topic: string, gatewayUrl: string): Promise<ContextItem[]> {
+  const items: ContextItem[] = [];
+  try {
+    const payload = await getJson(gatewayUrl, '/search/vector', { q: topic, limit: '8' }, 'vector-boost', [], 8000);
+    const results = Array.isArray(payload.results) ? payload.results : [];
+    for (const item of results) {
+      const text = String(item.snippet || item.chunk_text || item.content || '').trim();
+      if (!text || text.length < 60) continue;
+      items.push({
+        channel: 'reality',
+        title: String(item.title || item.document_name || '').trim() || 'vector-boost',
+        source: `vector-boost/${String(item.document_id || item.id || '').trim()}`,
+        text: text.slice(0, 1200),
+        priority: 180,
+        metadata: { provider: 'database.vector_boost', vectorSimilarity: item.similarity },
+      });
+    }
+  } catch {}
+  return items;
 }
 
 async function associationExpand(topic: string, gatewayUrl: string): Promise<ContextItem[]> {
