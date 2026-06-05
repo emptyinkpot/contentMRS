@@ -584,9 +584,18 @@ async function loadFixedStyleSamples(gatewayUrl: string): Promise<ContextItem[]>
   // Layer 1: Resident authors (always injected, env configurable)
   // Layer 2: Genre-matched style samples (from style_tag in literature)
   // Layer 3: Random discovery (unpredictable fragments from the full library)
-  const defaultQueries = ['鲁迅 杂文', '三岛由纪夫 散文', '内藤湖南 东洋史'];
+  const defaultQueries = [
+    '鲁迅 杂文 短判断',
+    '三岛由纪夫 散文 感官精确',
+    '内藤湖南 东洋史 学者从容',
+    '石黑一雄 小说 克制叙事',
+    '安德森 想象的共同体 民族主义',
+    '鲍鹏山 评点 短锐',
+    '余英时 思想史 节制',
+    '钱穆 史论 平稳承接',
+  ];
   const envQueries = String(process.env.CONTENTBASE_STYLE_QUERIES || '').trim();
-  const residentQueries = envQueries ? envQueries.split(',').map((q: string) => q.trim()).filter(Boolean) : defaultQueries;
+  const residentQueries = envQueries ? envQueries.split('|').map((q: string) => q.trim()).filter(Boolean) : defaultQueries;
   const items: ContextItem[] = [];
 
   // Layer 1: Resident authors (4-6 items)
