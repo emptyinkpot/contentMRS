@@ -1220,10 +1220,13 @@ function dedupeStrings(values: string[]): string[] {
 
 async function realityVectorBoost(topic: string, gatewayUrl: string): Promise<ContextItem[]> {
   const items: ContextItem[] = [];
+  const minScore = Number(process.env.CONTENTBASE_VECTOR_BOOST_MIN_SCORE || '0.38');
   try {
     const payload = await getJson(gatewayUrl, '/search/vector', { q: topic, limit: '8' }, 'vector-boost', [], 8000);
     const results = Array.isArray(payload.results) ? payload.results : [];
     for (const item of results) {
+      const score = Number(item.score || item.similarity || 0);
+      if (score < minScore) continue;
       const text = String(item.snippet || item.chunk_text || item.content || '').trim();
       if (!text || text.length < 60) continue;
       items.push({
@@ -1232,7 +1235,7 @@ async function realityVectorBoost(topic: string, gatewayUrl: string): Promise<Co
         source: `vector-boost/${String(item.document_id || item.id || '').trim()}`,
         text: text.slice(0, 1200),
         priority: 180,
-        metadata: { provider: 'database.vector_boost', vectorSimilarity: item.similarity },
+        metadata: { provider: 'database.vector_boost', vectorScore: score },
       });
     }
   } catch {}
