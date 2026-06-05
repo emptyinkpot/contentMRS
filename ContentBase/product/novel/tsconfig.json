@@ -24,6 +24,7 @@
   },
   "include": [
     "app/article/config.ts",
+    "app/article/env.ts",
     "app/article/gateway-client.ts",
     "app/article/reranker.ts",
     "app/article/model-runtime.ts",
