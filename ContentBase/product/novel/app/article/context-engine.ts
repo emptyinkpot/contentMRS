@@ -1,11 +1,12 @@
 import { getRerankerConfig, rerankByEmbedding, loadAuthorStateText } from './reranker';
+import { callStormResearch } from './storm-client';
 import { GatewayClient } from './gateway-client';
 import {
   MODEL_CONTEXT_WINDOWS, DEFAULT_MODEL_CONTEXT_WINDOW,
   CONTEXT_UTILIZATION_RATIO, SYSTEM_PROMPT_RESERVE, OUTPUT_TOKEN_RESERVE,
   DEFAULT_CONTEXT_TOKEN_BUDGET, DEFAULT_CONTEXT_CHAR_BUDGET,
   DEFAULT_REALITY_LIMIT, DEFAULT_DURABLE_LIMIT, DEFAULT_EVIDENCE_TIMEOUT_MS,
-  RAGFLOW_DATASETS, GENRE_RAGFLOW_DATASETS, GENRE_RETRIEVAL_LIMITS, GENRE_BUDGETS,
+  RAGFLOW_DATASET_IDS, GENRE_RETRIEVAL_LIMITS, GENRE_BUDGETS,
   CHANNEL_MIN_ITEMS, DEFAULT_STYLE_QUERIES, RANDOM_DISCOVERY_SEEDS, GENRE_STYLE_QUERIES,
   type Genre, type RetrievalLimits,
 } from './config';
@@ -95,10 +96,13 @@ export async function buildArticleContextEngine(input: {
   const genre = detectGenre(input.request);
   const retrievalLimits = GENRE_RETRIEVAL_LIMITS[genre];
 
-  // Pre-research: expand topic into multiple specific search queries via lightweight LLM
-  const expandedQueries = await expandResearchQueries(input.topic, input.request.target || input.request.goal || '', genre);
+  // STORM Research Planner: multi-perspective research + outline
+  const stormResult = await callStormResearch(input.topic, input.request.target || input.request.goal || '', genre);
+  const expandedQueries = stormResult?.questions?.length
+    ? stormResult.questions.map(q => q.question).slice(0, 12)
+    : await expandResearchQueries(input.topic, input.request.target || input.request.goal || '', genre);
   if (expandedQueries.length) {
-    warnings.push(`pre-research: expanded into ${expandedQueries.length} queries`);
+    warnings.push(stormResult ? `storm: ${stormResult.perspectives.length} perspectives, ${expandedQueries.length} queries, outline ${stormResult.outline.length}chars` : `pre-research: expanded into ${expandedQueries.length} queries`);
   }
 
   const evidencePack = await loadEvidencePack({
@@ -125,16 +129,23 @@ export async function buildArticleContextEngine(input: {
   if (associationItems.length) {
     warnings.push(`association: expanded ${associationItems.length} items from LLM-generated terms`);
   }
-  const vectorBoostItems = await realityVectorBoost(input.topic, gatewayUrl);
-  if (vectorBoostItems.length) {
-    warnings.push(`vector-boost: ${vectorBoostItems.length} items from direct vector search`);
-  }
   const evidenceItems = normalizeEvidencePackChunks(evidencePack);
+  const stormItems: ContextItem[] = [];
+  if (stormResult) {
+    if (stormResult.outline) {
+      stormItems.push({ channel: 'structure', title: 'STORM Research Outline', text: stormResult.outline.slice(0, 2000), priority: 200, metadata: { provider: 'storm.outline' } });
+    }
+    for (const cite of (stormResult.citations || []).slice(0, 8)) {
+      if (cite.snippet && cite.snippet.length >= 60) {
+        stormItems.push({ channel: 'reality', title: cite.title, source: `storm-citation/${cite.url || ''}`, text: cite.snippet.slice(0, 1200), priority: 170, metadata: { provider: 'storm.citation', score: cite.score } });
+      }
+    }
+  }
   const contextItems = [
     ...evidenceItems,
     ...corpusItems,
     ...associationItems,
-    ...vectorBoostItems,
+    ...stormItems,
   ];
   if (!contextItems.length) {
     throw new Error('Reality required: EvidencePack returned zero usable Reality chunks');
@@ -231,25 +242,67 @@ async function loadCorpusItems(input: {
   if (evidenceQuery.requireCorpus === false || input.request.requireCorpus === false) {
     return [];
   }
-  const [semantic, vocabulary, corpusContract, literature, authorProfile] = await Promise.all([
-    getJson(input.gatewayUrl, '/semantic/units', { search: input.query, limit: String(input.limits.semantic) }, 'semantic corpus', [], DEFAULT_EVIDENCE_TIMEOUT_MS),
+  const [vocabulary, corpusContract, authorProfile] = await Promise.all([
     getJson(input.gatewayUrl, '/vocabulary/search', { q: input.query, limit: String(input.limits.lexicon) }, 'lexicon corpus', [], DEFAULT_EVIDENCE_TIMEOUT_MS),
     getJson(input.gatewayUrl, '/creative/style-contract', { protocol: String(evidenceQuery.protocol || input.request.protocol || 'immersive_historical_synthetic_narrative') }, 'corpus contract', [], DEFAULT_EVIDENCE_TIMEOUT_MS),
-    getJson(input.gatewayUrl, '/content/literature', { search: input.query, limit: String(input.limits.literary) }, 'literary corpus', [], DEFAULT_EVIDENCE_TIMEOUT_MS),
     getJson(input.gatewayUrl, '/creative/author-profile', {}, 'author corpus', [], DEFAULT_EVIDENCE_TIMEOUT_MS),
   ]);
-  // Literary style samples: always inject regardless of topic (teaches HOW to write, not WHAT)
-  const literaryCorpusItems = await loadLiteraryCorpusSearch(input.gatewayUrl, input.query);
-  const fixedStyleSamples = await loadFixedStyleSamples(input.gatewayUrl, input.genre);
+  const batchItems = await loadBatchVectorSearch(input.gatewayUrl, input.query, input.genre);
   return [
-    ...normalizeSemanticUnits(semantic),
     ...normalizeVocabularyItems(vocabulary),
     ...normalizeCorpusContract(corpusContract),
-    ...normalizeLiteratureItems(literature),
     ...normalizeAuthorProfile(authorProfile),
-    ...literaryCorpusItems,
-    ...fixedStyleSamples,
+    ...batchItems,
   ];
+}
+
+function classifyByDocName(docName: string): ContextItem['channel'] {
+  if (docName.startsWith('S_')) return 'semantic';
+  if (docName.startsWith('B_') || docName.startsWith('C_') || docName.startsWith('D_')) return 'reality';
+  return 'literary';
+}
+
+async function loadBatchVectorSearch(gatewayUrl: string, query: string, genre: Genre): Promise<ContextItem[]> {
+  const envQueries = String(process.env.CONTENTBASE_STYLE_QUERIES || '').trim();
+  const residentQueries = envQueries
+    ? envQueries.split('|').map((q: string) => q.trim()).filter(Boolean)
+    : DEFAULT_STYLE_QUERIES;
+  const genreQueries = GENRE_STYLE_QUERIES[genre] || GENRE_STYLE_QUERIES.essay;
+  const seed = RANDOM_DISCOVERY_SEEDS[Math.floor(Math.random() * RANDOM_DISCOVERY_SEEDS.length)];
+
+  const queries: { q: string; limit: number; tag: string }[] = [
+    ...residentQueries.slice(0, 8).map(q => ({ q, limit: 2, tag: 'resident' })),
+    ...genreQueries.map(q => ({ q, limit: 2, tag: 'genre' })),
+    { q: seed, limit: 3, tag: 'discovery' },
+    { q: query, limit: 8, tag: 'topic' },
+  ];
+
+  try {
+    const resp = await fetch(`${gatewayUrl}/search/vector/batch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-DataBase-Api-Key': process.env.DATABASE_GATEWAY_API_KEY || '' },
+      body: JSON.stringify({ queries }),
+      signal: AbortSignal.timeout(DEFAULT_EVIDENCE_TIMEOUT_MS),
+    });
+    if (!resp.ok) return [];
+    const data = await resp.json() as { results: { query: string; tag?: string; items: { document_name: string; chunk_text: string; score: number; document_id: string }[] }[] };
+    const items: ContextItem[] = [];
+    for (const group of data.results || []) {
+      for (const item of group.items || []) {
+        if (!item.chunk_text || item.chunk_text.length < 60) continue;
+        const channel = classifyByDocName(item.document_name);
+        items.push({
+          channel,
+          title: item.document_name || undefined,
+          source: `batch-vector/${group.tag || 'unknown'}/${item.document_id}`,
+          text: item.chunk_text.slice(0, 800),
+          priority: group.tag === 'topic' ? 130 : group.tag === 'resident' ? 145 : group.tag === 'genre' ? 135 : 120,
+          metadata: { provider: `database.batch_vector.${group.tag}`, score: item.score },
+        });
+      }
+    }
+    return items;
+  } catch { return []; }
 }
 
 async function loadEvidencePack(input: {
@@ -263,7 +316,7 @@ async function loadEvidencePack(input: {
   const evidenceQuery = readObject(input.request.evidenceQuery);
   const datasetIds = Array.isArray(evidenceQuery.ragflowDatasetIds)
     ? evidenceQuery.ragflowDatasetIds.map(String).filter(Boolean)
-    : GENRE_RAGFLOW_DATASETS[input.genre] || [];
+    : [...RAGFLOW_DATASET_IDS];
   const params: Record<string, string> = {
     q: input.query,
     query: input.query,
@@ -441,29 +494,6 @@ function readEvidencePackProviders(payload: Record<string, any>): string[] {
   return [...providers];
 }
 
-function normalizeSemanticUnits(payload: Record<string, any>): ContextItem[] {
-  const units = Array.isArray(payload.units) ? payload.units : [];
-  return units.map((unit: any): ContextItem | undefined => {
-    const text = [unit.summary, unit.excerpt].map((item) => String(item || '').trim()).filter(Boolean).join('\n');
-    if (!text) return undefined;
-    const materialKind = String(unit.materialKind || unit.material_kind || readSemanticMaterialKind(unit.tags) || '').trim();
-    return {
-      channel: classifyMaterialKind(materialKind) || 'semantic',
-      title: String(unit.source_title || unit.id || '').trim() || undefined,
-      source: String(unit.source_id || unit.id || '').trim() || undefined,
-      text,
-      priority: 90,
-      metadata: {
-        provider: 'database.semantic_units',
-        semanticUnitId: unit.id,
-        materialKind,
-        sourceAuthor: unit.source_author,
-        sourceLocator: unit.source_locator,
-      },
-    };
-  }).filter(Boolean) as ContextItem[];
-}
-
 function normalizeVocabularyItems(payload: Record<string, any>): ContextItem[] {
   const items = Array.isArray(payload.items) ? payload.items : [];
   return items.map((item: any): ContextItem | undefined => {
@@ -548,149 +578,6 @@ function normalizeAuthorProfile(payload: Record<string, any>): ContextItem[] {
     priority: 115,
     metadata: { provider: 'database.author_profile' },
   }];
-}
-
-function normalizeLiteratureItems(payload: Record<string, any>): ContextItem[] {
-  const items = Array.isArray(payload.items) ? payload.items : Array.isArray(payload.literature) ? payload.literature : [];
-  return items.map((item: any): ContextItem | undefined => {
-    const text = String(item.excerpt || item.summary || item.content || item.description || item.title || '').trim();
-    if (!text) return undefined;
-    return {
-      channel: 'literary',
-      title: String(item.title || item.name || item.id || '').trim() || undefined,
-      source: String(item.id || item.source_id || '').trim() || undefined,
-      text,
-      priority: 100,
-      metadata: { provider: 'database.literature', id: item.id },
-    };
-  }).filter(Boolean) as ContextItem[];
-}
-
-async function loadFixedStyleSamples(gatewayUrl: string, genre: Genre): Promise<ContextItem[]> {
-  // Three-layer literary injection:
-  // Layer 1: Resident authors (always injected, env configurable)
-  // Layer 2: Genre-matched style samples (from style_tag in literature)
-  // Layer 3: Random discovery (unpredictable fragments from the full library)
-  const defaultQueries = [
-    '鲁迅 杂文 短判断',
-    '三岛由纪夫 散文 感官精确',
-    '内藤湖南 东洋史 学者从容',
-    '石黑一雄 小说 克制叙事',
-    '安德森 想象的共同体 民族主义',
-    '白鸟库吉 东洋史 实证密度',
-    '桑原骘藏 文化史 严密考据',
-    '宫崎市定 中国制度史 缜密',
-    '北一辉 国家改造 锐利论断',
-    '希特勒 我的奋斗 修辞节奏',
-    '墨索里尼 法西斯主义 国家论述',
-    '戈培尔 宣传论 煽动修辞',
-    '太宰治 人间失格 自毁叙事',
-    '坂口安吾 堕落论 反道德判断',
-    '川端康成 雪国 感官静止',
-    '夏目漱石 心 知识人困境',
-  ];
-  const envQueries = String(process.env.CONTENTBASE_STYLE_QUERIES || '').trim();
-  const residentQueries = envQueries ? envQueries.split('|').map((q: string) => q.trim()).filter(Boolean) : defaultQueries;
-  const items: ContextItem[] = [];
-
-  // Layer 1: Resident authors (4-6 items)
-  for (const q of residentQueries) {
-    try {
-      const payload = await getJson(gatewayUrl, '/search/vector', { q, limit: '2' }, 'resident style', [], 8000);
-      const results = Array.isArray(payload.results) ? payload.results : [];
-      for (const item of results) {
-        const text = String(item.snippet || item.chunk_text || item.content || '').trim();
-        if (!text || text.length < 100) continue;
-        items.push({
-          channel: 'literary',
-          title: String(item.title || item.source || '').trim() || '常驻范本',
-          source: `resident-style/${String(item.document_id || '').trim()}`,
-          text: text.slice(0, 800),
-          priority: 145,
-          metadata: { provider: 'database.resident_style', layer: 'resident' },
-        });
-      }
-    } catch { /* skip */ }
-  }
-
-  // Layer 2: Genre-matched style samples (2-4 items, by writing genre not topic)
-  const genreQueries = GENRE_STYLE_QUERIES[genre] || GENRE_STYLE_QUERIES.essay;
-  for (const q of genreQueries) {
-    try {
-      const payload = await getJson(gatewayUrl, '/search/vector', { q, limit: '2' }, 'genre style', [], 8000);
-      const results = Array.isArray(payload.results) ? payload.results : [];
-      for (const item of results) {
-        const text = String(item.snippet || item.chunk_text || item.content || '').trim();
-        if (!text || text.length < 100) continue;
-        items.push({
-          channel: 'literary',
-          title: String(item.title || item.source || '').trim() || '体裁范本',
-          source: `genre-style/${String(item.document_id || '').trim()}`,
-          text: text.slice(0, 800),
-          priority: 135,
-          metadata: { provider: 'database.genre_style', layer: 'genre', genre },
-        });
-      }
-    } catch { /* skip */ }
-  }
-
-  // Layer 3: Random discovery (2-3 items from random parts of the library)
-  const randomSeeds = ['散文 节奏', '历史 判断', '人物 描写', '制度 批评', '战争 细节'];
-  const seed = randomSeeds[Math.floor(Math.random() * randomSeeds.length)];
-  try {
-    const payload = await getJson(gatewayUrl, '/search/vector', { q: seed, limit: '3' }, 'random discovery', [], 8000);
-    const results = Array.isArray(payload.results) ? payload.results : [];
-    for (const item of results.slice(0, 2)) {
-      const text = String(item.snippet || item.chunk_text || item.content || '').trim();
-      if (!text || text.length < 100) continue;
-      items.push({
-        channel: 'literary',
-        title: String(item.title || item.source || '').trim() || '随机发现',
-        source: `random-discovery/${String(item.document_id || '').trim()}`,
-        text: text.slice(0, 600),
-        priority: 120,
-        metadata: { provider: 'database.random_discovery', layer: 'discovery' },
-      });
-    }
-  } catch { /* skip */ }
-
-  return items.slice(0, 12);
-}
-
-async function loadLiteraryCorpusSearch(gatewayUrl: string, query: string): Promise<ContextItem[]> {
-  const vectorQuery = String(query || '').trim();
-  if (!vectorQuery) return [];
-
-  // Style pool: vector search only, capped at 5 items as topic-aware supplement.
-  // The main literary material comes from /content/literature and style-contract.
-  const payload = await getJson(
-    gatewayUrl,
-    '/search/vector',
-    { q: vectorQuery, limit: '5' },
-    'literary corpus vector search',
-    [],
-    DEFAULT_EVIDENCE_TIMEOUT_MS,
-  );
-
-  const results = Array.isArray(payload.results) ? payload.results : [];
-  const items: ContextItem[] = [];
-  for (const item of results) {
-    const text = String(item.snippet || item.chunk_text || item.content || '').trim();
-    if (!text || text.length < 80) continue;
-    items.push({
-      channel: 'literary',
-      title: String(item.title || item.source || '').trim() || undefined,
-      source: `search/vector/${String(item.document_id || item.documentId || '').trim()}`,
-      text,
-      priority: 125,
-      metadata: {
-        provider: 'database.literary_corpus_vector',
-        documentId: item.document_id || item.documentId,
-        score: item.score,
-      },
-    });
-  }
-  return items;
 }
 
 
