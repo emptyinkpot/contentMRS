@@ -1,5 +1,13 @@
 import { loadConfig as loadOpenListAdapterConfig } from "@emptyinkpot/database-openlist-adapter";
 
+export interface CosConfig {
+  secretId: string;
+  secretKey: string;
+  bucket: string;
+  region: string;
+  cdnDomain?: string;
+}
+
 export interface GatewayConfig {
   host: string;
   port: number;
@@ -40,6 +48,7 @@ export interface GatewayConfig {
     username?: string;
     passwordHash?: string;
   };
+  cos?: CosConfig;
 }
 
 function requireEnv(name: string): string {
@@ -134,6 +143,16 @@ export function loadConfig(): GatewayConfig {
         }
       : undefined,
     openlistHealthUrl,
-    openlist: openlistEnabled ? openlistConfig : undefined
+    openlist: openlistEnabled ? openlistConfig : undefined,
+    cos: (() => {
+      const cosSecretId = optionalEnv("COS_SECRET_ID");
+      const cosSecretKey = optionalEnv("COS_SECRET_KEY");
+      const cosBucket = optionalEnv("COS_BUCKET");
+      const cosRegion = optionalEnv("COS_REGION");
+      if (cosSecretId && cosSecretKey && cosBucket && cosRegion) {
+        return { secretId: cosSecretId, secretKey: cosSecretKey, bucket: cosBucket, region: cosRegion, cdnDomain: optionalEnv("COS_CDN_DOMAIN") };
+      }
+      return undefined;
+    })()
   };
 }

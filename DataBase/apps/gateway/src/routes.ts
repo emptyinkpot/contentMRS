@@ -15,6 +15,7 @@ import { storyMemoryRoutes } from "./routes/story-memory.js";
 import { openlistRoutes } from "./routes/openlist.js";
 import { myblogRoutes } from "./routes/myblog.js";
 import { writeRoutes } from "./routes/writes.js";
+import { storageRoutes } from "./routes/storage.js";
 import { registerResearchRoutes } from "./routes/research.js";
 
 export function createRoutes(deps: RouteDependencies) {
@@ -61,6 +62,9 @@ export function createRoutes(deps: RouteDependencies) {
 
   app.use("/writes/*", apiKeyMiddleware(deps.config));
   app.route("/", writeRoutes(deps));
+
+  app.use("/storage/*", apiKeyMiddleware(deps.config));
+  app.route("/", storageRoutes(deps));
 
   app.notFound((c) =>
     c.json(errorBody(c, "not_found", "Route not found"), 404)

@@ -36,6 +36,7 @@
     "@emptyinkpot/database-semantic-contracts": "file:../../packages/schemas/semantic",
     "@hono/node-server": "^1.14.4",
     "adm-zip": "^0.5.17",
+    "cos-nodejs-sdk-v5": "2.15.4",
     "hono": "^4.7.11",
     "mysql2": "^3.14.1",
     "zod": "^4.0.0"

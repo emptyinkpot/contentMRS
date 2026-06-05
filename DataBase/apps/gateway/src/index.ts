@@ -1,5 +1,6 @@
 import { serve } from "@hono/node-server";
 import { OpenListClient } from "@emptyinkpot/database-openlist-adapter";
+import COS from "cos-nodejs-sdk-v5";
 import { loadLocalEnvFiles } from "./load-local-env.js";
 import { loadConfig } from "./config.js";
 import { createPool, createWritePool } from "./db.js";
@@ -11,7 +12,8 @@ const config = loadConfig();
 const pool = createPool(config);
 const writePool = createWritePool(config);
 const openlistClient = config.openlist ? new OpenListClient(config.openlist) : null;
-const app = createRoutes({ config, pool, writePool, openlistClient });
+const cosClient = config.cos ? new COS({ SecretId: config.cos.secretId, SecretKey: config.cos.secretKey }) : null;
+const app = createRoutes({ config, pool, writePool, openlistClient, cosClient });
 
 const server = serve(
   {
