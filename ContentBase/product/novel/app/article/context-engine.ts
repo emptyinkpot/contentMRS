@@ -6,7 +6,7 @@ import {
   DEFAULT_CONTEXT_TOKEN_BUDGET, DEFAULT_CONTEXT_CHAR_BUDGET,
   DEFAULT_REALITY_LIMIT, DEFAULT_DURABLE_LIMIT, DEFAULT_EVIDENCE_TIMEOUT_MS,
   RAGFLOW_DATASETS, GENRE_RAGFLOW_DATASETS, GENRE_RETRIEVAL_LIMITS, GENRE_BUDGETS,
-  CHANNEL_MIN_ITEMS, DEFAULT_STYLE_QUERIES, RANDOM_DISCOVERY_SEEDS,
+  CHANNEL_MIN_ITEMS, DEFAULT_STYLE_QUERIES, RANDOM_DISCOVERY_SEEDS, GENRE_STYLE_QUERIES,
   type Genre, type RetrievalLimits,
 } from './config';
 
@@ -560,13 +560,6 @@ function normalizeLiteratureItems(payload: Record<string, any>): ContextItem[] {
     };
   }).filter(Boolean) as ContextItem[];
 }
-
-const GENRE_STYLE_QUERIES: Record<Genre, string[]> = {
-  historical_commentary: ['史论 制度 冷峻判断', '历史叙事 细节 克制'],
-  reality_commentary: ['时评 锐利 短句', '现实批评 反讽 节制'],
-  narrative: ['叙事 场景 感官细节', '人物 动作 白描'],
-  essay: ['散文 节奏 意象', '随笔 沉思 转折'],
-};
 
 async function loadFixedStyleSamples(gatewayUrl: string, genre: Genre): Promise<ContextItem[]> {
   // Three-layer literary injection:

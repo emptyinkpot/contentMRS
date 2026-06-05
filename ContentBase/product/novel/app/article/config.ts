@@ -60,6 +60,14 @@ export const GENRE_BUDGETS: Record<Genre, Record<string, number>> = {
   essay:                 { reality: 35, literary: 25, semantic: 10, lexicon: 12, structure: 8, author: 10 },
 };
 
+// Layer 2 体裁范本检索: 按写作体裁(非主题)调取风格范本。Literary 教"怎么写"不教"写什么"。
+export const GENRE_STYLE_QUERIES: Record<Genre, string[]> = {
+  historical_commentary: ['史论 制度 冷峻判断', '历史叙事 细节 克制'],
+  reality_commentary:    ['时评 锐利 短句', '现实批评 反讽 节制'],
+  narrative:             ['叙事 场景 感官细节', '人物 动作 白描'],
+  essay:                 ['散文 节奏 意象', '随笔 沉思 转折'],
+};
+
 export const CHANNEL_MIN_ITEMS: Record<string, number> = {
   reality: 3,
   literary: 3,
