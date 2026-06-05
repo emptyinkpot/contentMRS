@@ -23,6 +23,9 @@
     "ignoreDeprecations": "6.0"
   },
   "include": [
+    "app/article/config.ts",
+    "app/article/gateway-client.ts",
+    "app/article/reranker.ts",
     "app/article/context-engine.ts"
   ],
   "exclude": [

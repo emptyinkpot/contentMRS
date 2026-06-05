@@ -1,4 +1,14 @@
 import { getRerankerConfig, rerankByEmbedding, loadAuthorStateText } from './reranker';
+import { GatewayClient } from './gateway-client';
+import {
+  MODEL_CONTEXT_WINDOWS, DEFAULT_MODEL_CONTEXT_WINDOW,
+  CONTEXT_UTILIZATION_RATIO, SYSTEM_PROMPT_RESERVE, OUTPUT_TOKEN_RESERVE,
+  DEFAULT_CONTEXT_TOKEN_BUDGET, DEFAULT_CONTEXT_CHAR_BUDGET,
+  DEFAULT_REALITY_LIMIT, DEFAULT_DURABLE_LIMIT, DEFAULT_EVIDENCE_TIMEOUT_MS,
+  RAGFLOW_DATASETS, GENRE_RAGFLOW_DATASETS, GENRE_RETRIEVAL_LIMITS, GENRE_BUDGETS,
+  CHANNEL_MIN_ITEMS, DEFAULT_STYLE_QUERIES, RANDOM_DISCOVERY_SEEDS,
+  type Genre, type RetrievalLimits,
+} from './config';
 
 export type ContextEngineRequest = Record<string, any>;
 
@@ -63,42 +73,6 @@ export type ContextEngineResult = {
   };
 };
 
-const MODEL_CONTEXT_WINDOWS: Record<string, number> = {
-  'gpt-4o': 128000,
-  'gpt-4o-mini': 128000,
-  'gpt-4.1': 1000000,
-  'gpt-4.1-mini': 1000000,
-  'gpt-4.1-nano': 1000000,
-  'gpt-5.5': 200000,
-  'claude-sonnet-4-6': 200000,
-  'claude-sonnet-4-5-20250514': 200000,
-  'claude-opus-4-7': 200000,
-  'deepseek-chat': 64000,
-  'deepseek-reasoner': 64000,
-};
-const DEFAULT_MODEL_CONTEXT_WINDOW = 128000;
-const CONTEXT_UTILIZATION_RATIO = 0.25;
-const SYSTEM_PROMPT_RESERVE = 3000;
-const OUTPUT_TOKEN_RESERVE = 8000;
-
-const DEFAULT_CONTEXT_TOKEN_BUDGET = 57000;
-const DEFAULT_CONTEXT_CHAR_BUDGET = 50000;
-const DEFAULT_REALITY_LIMIT = 160;
-const DEFAULT_EVIDENCE_TIMEOUT_MS = 240000;
-
-const RAGFLOW_DATASETS = {
-  literaryCorpus: 'bdcc99c658f111f18aecb3d695a2553d',
-  essay: 'eb927cf6550211f1b2958f4a76330bcc',
-  film: 'eb7df254550211f1b2958f4a76330bcc',
-  xingwang: 'eb8a1250550211f1b2958f4a76330bcc',
-} as const;
-
-const GENRE_RAGFLOW_DATASETS: Record<Genre, string[]> = {
-  historical_commentary: [RAGFLOW_DATASETS.literaryCorpus, RAGFLOW_DATASETS.essay],
-  reality_commentary:    [RAGFLOW_DATASETS.literaryCorpus, RAGFLOW_DATASETS.essay],
-  narrative:             [RAGFLOW_DATASETS.literaryCorpus, RAGFLOW_DATASETS.film],
-  essay:                 [RAGFLOW_DATASETS.literaryCorpus, RAGFLOW_DATASETS.essay],
-};
 
 export async function buildArticleContextEngine(input: {
   request: ContextEngineRequest;
@@ -145,6 +119,7 @@ export async function buildArticleContextEngine(input: {
     query,
     request: input.request,
     limits: retrievalLimits,
+    genre,
   });
   const associationItems = await associationExpand(input.topic, gatewayUrl);
   if (associationItems.length) {
@@ -245,6 +220,7 @@ async function loadCorpusItems(input: {
   query: string;
   request: ContextEngineRequest;
   limits: RetrievalLimits;
+  genre: Genre;
 }): Promise<ContextItem[]> {
   const evidenceQuery = readObject(input.request.evidenceQuery);
   if (evidenceQuery.requireCorpus === false || input.request.requireCorpus === false) {
@@ -259,7 +235,7 @@ async function loadCorpusItems(input: {
   ]);
   // Literary style samples: always inject regardless of topic (teaches HOW to write, not WHAT)
   const literaryCorpusItems = await loadLiteraryCorpusSearch(input.gatewayUrl, input.query);
-  const fixedStyleSamples = await loadFixedStyleSamples(input.gatewayUrl);
+  const fixedStyleSamples = await loadFixedStyleSamples(input.gatewayUrl, input.genre);
   return [
     ...normalizeSemanticUnits(semantic),
     ...normalizeVocabularyItems(vocabulary),
@@ -585,7 +561,14 @@ function normalizeLiteratureItems(payload: Record<string, any>): ContextItem[] {
   }).filter(Boolean) as ContextItem[];
 }
 
-async function loadFixedStyleSamples(gatewayUrl: string): Promise<ContextItem[]> {
+const GENRE_STYLE_QUERIES: Record<Genre, string[]> = {
+  historical_commentary: ['史论 制度 冷峻判断', '历史叙事 细节 克制'],
+  reality_commentary: ['时评 锐利 短句', '现实批评 反讽 节制'],
+  narrative: ['叙事 场景 感官细节', '人物 动作 白描'],
+  essay: ['散文 节奏 意象', '随笔 沉思 转折'],
+};
+
+async function loadFixedStyleSamples(gatewayUrl: string, genre: Genre): Promise<ContextItem[]> {
   // Three-layer literary injection:
   // Layer 1: Resident authors (always injected, env configurable)
   // Layer 2: Genre-matched style samples (from style_tag in literature)
@@ -627,6 +610,27 @@ async function loadFixedStyleSamples(gatewayUrl: string): Promise<ContextItem[]>
           text: text.slice(0, 800),
           priority: 145,
           metadata: { provider: 'database.resident_style', layer: 'resident' },
+        });
+      }
+    } catch { /* skip */ }
+  }
+
+  // Layer 2: Genre-matched style samples (2-4 items, by writing genre not topic)
+  const genreQueries = GENRE_STYLE_QUERIES[genre] || GENRE_STYLE_QUERIES.essay;
+  for (const q of genreQueries) {
+    try {
+      const payload = await getJson(gatewayUrl, '/search/vector', { q, limit: '2' }, 'genre style', [], 8000);
+      const results = Array.isArray(payload.results) ? payload.results : [];
+      for (const item of results) {
+        const text = String(item.snippet || item.chunk_text || item.content || '').trim();
+        if (!text || text.length < 100) continue;
+        items.push({
+          channel: 'literary',
+          title: String(item.title || item.source || '').trim() || '体裁范本',
+          source: `genre-style/${String(item.document_id || '').trim()}`,
+          text: text.slice(0, 800),
+          priority: 135,
+          metadata: { provider: 'database.genre_style', layer: 'genre', genre },
         });
       }
     } catch { /* skip */ }
@@ -735,29 +739,9 @@ function formatUnknownRecord(value: unknown): string {
   return String(value || '').trim();
 }
 
-type Genre = 'historical_commentary' | 'reality_commentary' | 'narrative' | 'essay';
 
-type RetrievalLimits = {
-  reality: number;
-  semantic: number;
-  lexicon: number;
-  literary: number;
-  structure: number;
-};
 
-const GENRE_RETRIEVAL_LIMITS: Record<Genre, RetrievalLimits> = {
-  historical_commentary: { reality: 80,  semantic: 30, lexicon: 40,  literary: 20, structure: 20 },
-  reality_commentary:    { reality: 160, semantic: 20, lexicon: 50,  literary: 10, structure: 15 },
-  narrative:             { reality: 40,  semantic: 30, lexicon: 40,  literary: 30, structure: 25 },
-  essay:                 { reality: 100, semantic: 30, lexicon: 50,  literary: 20, structure: 20 },
-};
 
-const GENRE_BUDGETS: Record<Genre, Record<string, number>> = {
-  historical_commentary: { reality: 35, literary: 25, semantic: 10, lexicon: 12, structure: 8, author: 10 },
-  reality_commentary:    { reality: 40, literary: 20, semantic: 10, lexicon: 12, structure: 8, author: 10 },
-  narrative:             { reality: 20, literary: 30, semantic: 15, lexicon: 12, structure: 13, author: 10 },
-  essay:                 { reality: 35, literary: 25, semantic: 10, lexicon: 12, structure: 8, author: 10 },
-};
 
 function detectGenre(request: ContextEngineRequest): Genre {
   const hint = String(request.genre || request.genreHint || request.type || '').toLowerCase();
@@ -801,14 +785,8 @@ function injectDiversity(items: ContextItem[]): ContextItem[] {
   return result;
 }
 
-const CHANNEL_MIN_ITEMS: Record<string, number> = {
-  reality: 3,
-  literary: 3,
-  semantic: 2,
-  lexicon: 5,
-  structure: 2,
-  author: 2,
-};
+
+
 
 function composeByBudget(input: {
   items: ContextItem[];

@@ -60,7 +60,8 @@ export function buildDiagnosticsBlock(r, testResult) {
   const rhythmDeviant = paraLens.length ? (paraLens.filter(l => Math.abs(l - meanParaLen) > meanParaLen * 0.4).length / paraLens.length * 100).toFixed(1) : "0"
   const uniformPct = paraLens.length ? (paraLens.filter(l => Math.abs(l - meanParaLen) <= meanParaLen * 0.2).length / paraLens.length * 100).toFixed(1) : "0"
 
-  // 化用率: 从 Reality preview 提取事实(年份/数字/机构名词)→ 正文命中率。
+  // 事实接地率: 从 Reality preview 提取事实(年份/数字/机构名词)→ 正文命中率。
+  // 注意: 这测的是"事实有没有落进正文",不是文学化用。文学化用见"文体特征"段。
   // 不用 source title 匹配(title 是文件名,正文不会原样出现 → 恒为 0)。
   const facts = []
   realityItems.forEach(item => {
@@ -88,6 +89,22 @@ export function buildDiagnosticsBlock(r, testResult) {
   const selfParaphrase = (b.match(/换个说法|换句话说|也就是说/g) || []).length
   const zheSentences = sentences.filter(s => /^这[是个种套意不一]/.test(s.trim()))
   const zheRatio = sentences.length ? (zheSentences.length / sentences.length * 100).toFixed(1) : "0"
+
+  // 文体特征(代理指标): 测文体纹理,不测"是否借了三岛的句式"。字面统计无法证明化用,
+  // 化用是"改头换面用人家的方式说自己的话",字面重叠越低越成功。真·化用见 --judge LLM 评委。
+  const imageryChars = (b.match(/[光影雪血铁灰雾烟霜火水风夜骨石木花草木山河海星月云雨雷电泥沙尘土锈刃]/g) || []).length
+  const imageryDensity = b.length ? (imageryChars / (b.length / 1000)).toFixed(1) : "0"
+  const sentLens = sentences.map(s => s.length)
+  const sentMean = sentLens.length ? sentLens.reduce((a, c) => a + c, 0) / sentLens.length : 0
+  const sentStd = sentLens.length ? Math.sqrt(sentLens.reduce((a, c) => a + (c - sentMean) ** 2, 0) / sentLens.length) : 0
+  const sentCV = sentMean ? (sentStd / sentMean).toFixed(2) : "0"
+  const metaphorHits = (b.match(/仿佛|像[^.。，,]{2,12}(一样|那样|似的)|如同|好比|宛若/g) || []).length
+  let alternations = 0
+  for (let i = 1; i < sentLens.length; i++) {
+    const a = sentLens[i - 1], c = sentLens[i]
+    if ((a < 20 && c > 40) || (a > 40 && c < 20)) alternations++
+  }
+  const alternRatio = sentLens.length > 1 ? (alternations / (sentLens.length - 1) * 100).toFixed(1) : "0"
 
   const seen = {}
   for (let len = 4; len <= 8; len++) {
@@ -131,10 +148,10 @@ export function buildDiagnosticsBlock(r, testResult) {
     lines.push(`  ${i+1}. ${(item.title || item.source || "?").slice(0, 60)}`)
   })
 
-  lines.push("", "### 2. 化用率",
-    `- 提取事实: ${uniqueFacts.length}`,
+  lines.push("", "### 2. 事实接地率",
+    `- 提取事实(Reality年份/数字/机构): ${uniqueFacts.length}`,
     `- 正文命中: ${matchedFacts.length}`,
-    `- **化用率: ${evidenceRate}%**`)
+    `- **事实接地率: ${evidenceRate}%** (测事实落地,非文学化用)`)
 
   lines.push("", "### 3. 文章结构",
     `- 总字数: ${b.length} | 段落: ${paragraphs.length} | 句子: ${sentences.length}`,
@@ -148,19 +165,77 @@ export function buildDiagnosticsBlock(r, testResult) {
     `- 自我复述: ${selfParaphrase}次`,
     `- "这"字句开头: ${zheRatio}% (${zheSentences.length}/${sentences.length})`)
 
-  lines.push("", "### 5. 过拟合风险",
+  lines.push("", "### 5. 文体特征 (代理指标·非化用证明)",
+    `- 意象词密度: ${imageryDensity}/千字 (光影雪血铁雾等具象字)`,
+    `- 句长变异系数CV: ${sentCV} (越高=长短句越错落,单调文体趋近0)`,
+    `- 比喻结构数: ${metaphorHits} (仿佛/如同/像…一样)`,
+    `- 长短句交替率: ${alternRatio}% (相邻句跨越短↔长的占比)`,
+    `- ⚠️ 字面统计测不出"是否借了三岛的句式"。真·文学化用需 --judge LLM评委。`)
+
+  lines.push("", "### 6. 过拟合风险",
     `- 重复短语(4-8字≥3次): ${repeatedPhrases.length ? repeatedPhrases.join(" | ") : "无"}`,
     `- 段落均匀度(±20%均值内): ${uniformPct}%${parseFloat(uniformPct) > 60 ? " ⚠️模板风险" : ""}`)
 
-  lines.push("", "### 6. 风格违规",
+  lines.push("", "### 7. 风格违规",
     `- 作家名泄漏: ${nameHits.length}${nameHits.length ? " (" + nameHits.join("、") + ")" : ""}`,
     `- 禁忌套话: ${phraseHits.length}${phraseHits.length ? " (" + phraseHits.join("、") + ")" : ""}`,
     `- 转折/平衡词: ${transHits.length}${transHits.length ? " (" + transHits.join("、") + ")" : ""}`)
 
-  lines.push("", `### 7. 综合评分: ${score}/100`)
+  lines.push("", `### 8. 综合评分: ${score}/100`)
 
   if (testResult) {
-    lines.push("", `### 8. Test verdict: ${testResult.pass ? "✅" : "❌"} ${testResult.id || ""} ${testResult.pass ? "PASS" : "FAIL"}${testResult.reason ? " — " + testResult.reason : ""}`)
+    lines.push("", `### 9. Test verdict: ${testResult.pass ? "✅" : "❌"} ${testResult.id || ""} ${testResult.pass ? "PASS" : "FAIL"}${testResult.reason ? " — " + testResult.reason : ""}`)
   }
   return lines.join("\n")
+}
+
+/**
+ * 可选 LLM 文学化用评委 (--judge)。默认不跑。
+ * 喂 Literary 范本 + 正文,让模型判"文体迁移"0-10。这是唯一能真测"是否借了三岛句式"的路。
+ * 代价: 花钱 + 不确定(故必须排除出 POS_020 确定性测试) + 给网关加一次负载。
+ * 失败一律返回 null,调用方据此跳过,绝不让评委失败影响主判定。
+ */
+export async function judgeLiteraryReuse(r) {
+  const b = body(r)
+  if (!b || b.length < 200) return null
+  const baseUrl = String(process.env.CONTENTBASE_LLM_BASE_URL || "").trim().replace(/\/+$/, "")
+  const apiKey = String(process.env.CONTENTBASE_LLM_API_KEY || "").trim()
+  const model = String(process.env.CONTENTBASE_JUDGE_MODEL || "claude-sonnet-4-6").trim()
+  if (!baseUrl || !apiKey) return null
+
+  const its = (r?.json?.data?.context?.diagnostics?.items) || []
+  const litSamples = its
+    .filter(i => i.channel === "literary")
+    .map(i => String(i.text || i.preview || "").trim())
+    .filter(t => t.length >= 80)
+    .slice(0, 4)
+  if (!litSamples.length) return null
+
+  const samplesText = litSamples.map((s, i) => `范本${i + 1}：${s.slice(0, 400)}`).join("\n\n")
+  const sys = "你是文体批评家。给你几段文学范本和一篇成品文章。判断文章是否真的吸收了范本的文体(句式节奏/意象方式/语气温度),不是抄词句,是用那种方式说自己的话。只输出JSON：{\"transfer\":0-10整数,\"evidence\":\"一句话举证正文里哪处体现了范本文体,或指出毫无迁移\"}。0=毫无文体迁移纯AI腔,10=明显吸收范本文体。"
+  const usr = `${samplesText}\n\n=== 成品文章(前1500字) ===\n${b.slice(0, 1500)}`
+
+  try {
+    const resp = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({ model, messages: [{ role: "system", content: sys }, { role: "user", content: usr }], temperature: 0, max_tokens: 300 }),
+      signal: AbortSignal.timeout(30000),
+    })
+    if (!resp.ok) return null
+    const payload = await resp.json()
+    const text = String(payload?.choices?.[0]?.message?.content || "").trim()
+    const match = text.match(/\{[\s\S]*\}/)
+    if (!match) return null
+    const parsed = JSON.parse(match[0])
+    const transfer = Math.max(0, Math.min(10, Number(parsed.transfer) || 0))
+    return { transfer, evidence: String(parsed.evidence || "").slice(0, 200), model, samples: litSamples.length }
+  } catch {
+    return null
+  }
+}
+
+export function judgeBlock(judge) {
+  if (!judge) return "\n\n### 文学化用评委 (--judge): 未运行或评委不可用"
+  return `\n\n### 文学化用评委 (--judge · ${judge.model} · ${judge.samples}范本)\n- **文体迁移分: ${judge.transfer}/10**\n- 举证: ${judge.evidence}`
 }
