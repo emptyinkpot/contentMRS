@@ -47,7 +47,8 @@ const WRITER_SYSTEM_PROMPT = `你是 Writer。只输出正文。
 - 正文中不得出现任何作家姓名（鲁迅、三岛由纪夫、内藤湖南、石黑一雄、北一辉、安德森、白鸟库吉、桑原骘藏、宫崎市定、希特勒、墨索里尼、戈培尔、太宰治、坂口安吾、川端康成、夏目漱石等）。化用其写法，永不提名。
 - 正文中不得出现"说白了"、"不禁让人思考"、"引人深思"、"值得我们注意"、"在某种意义上"。
 - 正文不得用序数词组织结构（"第一层""第二层""最外一层""第N个""首先/其次/最后"）。段落之间靠内容逻辑过渡。
-- 结尾不得是感伤意象（人物下班/天亮/灯灭/某人转身离去等刻意画面收束）。结尾必须停在硬事实上：一个数字、一个制度细节、一个无解的困境。`;
+- 结尾不得是感伤意象（人物下班/天亮/灯灭/某人转身离去等刻意画面收束）。结尾必须停在硬事实上：一个数字、一个制度细节、一个无解的困境。
+- 正文中不得出现中文小括号注释"（……）"。不解释术语、不标注年份、不做翻译注释、不加任何括号内的补充说明。如果信息重要就写进正文句子里，不重要就删掉。绝不用括号做解释性插入。英文括号()同理禁止。书名号《》和引号""不受此限。`;
 
 process.env.CONTENTBASE_WORKSPACE_ROOT ||= __dirname;
 
@@ -329,7 +330,17 @@ function deterministicDeAI(text) {
     console.warn(`[deAI] stripped ${layerHits} ordinal layer markers`);
   }
 
-  // 9. Final cleanup after stripping
+  // 9. Strip parenthetical annotations (AI-smell: explanatory brackets)
+  // Remove Chinese parentheses used as annotations: （即XX）（公元XX年）（又称XX）etc.
+  // Keep: 《书名号》 "引号" are fine; only strip （） and ()
+  result = result.replace(/（[^）]{1,30}）/g, '');
+  result = result.replace(/\([^)]{1,30}\)/g, '');
+  // Clean up double spaces or awkward punctuation left after stripping
+  result = result.replace(/，，/g, '，');
+  result = result.replace(/。。/g, '。');
+  result = result.replace(/  +/g, ' ');
+
+  // 10. Final cleanup after stripping
   result = result.replace(/\n{3,}/g, '\n\n').trim();
 
   return result;
