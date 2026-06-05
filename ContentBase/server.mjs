@@ -340,6 +340,38 @@ function deterministicDeAI(text) {
   result = result.replace(/。。/g, '。');
   result = result.replace(/  +/g, ' ');
 
+  // 9a. Rule A: Explanatory dash pattern (——即/——也就是说/——换句话说)
+  result = result.replace(/——即[^，。\n]{1,20}[，。]/g, '');
+  result = result.replace(/——也就是说[^，。\n]{1,30}[，。]/g, '');
+  result = result.replace(/——换句话说[^，。\n]{1,30}[，。]/g, '');
+
+  // 9b. Rule B: Colon-enumeration pattern
+  result = result.replace(/主要体现在以下几个方面[：:]/g, '');
+  result = result.replace(/具体表现为[：:]/g, '');
+  result = result.replace(/包括以下几点[：:]/g, '');
+  result = result.replace(/([：:])\s*(?:一是|二是|三是|四是)/g, '$1');
+
+  // 9c. Rule C: Ellipsis reduction
+  // English ellipsis → remove all
+  result = result.replace(/\.\.\./g, '');
+  // Chinese ellipsis: keep max 2 occurrences, replace the rest with 。
+  let ellipsisCount = 0;
+  result = result.replace(/……/g, () => {
+    ellipsisCount++;
+    return ellipsisCount <= 2 ? '……' : '。';
+  });
+
+  // 9d. Rule D: Paragraph uniformity detection (quality gate)
+  const deaiParas = result.split('\n\n').filter(p => p.trim().length > 0);
+  if (deaiParas.length > 5) {
+    const lengths = deaiParas.map(p => p.trim().length);
+    const mean = lengths.reduce((a, b) => a + b, 0) / lengths.length;
+    const allUniform = lengths.every(l => Math.abs(l - mean) / mean <= 0.2);
+    if (allUniform) {
+      console.warn('[deAI] WARNING: paragraph lengths too uniform, possible AI pattern');
+    }
+  }
+
   // 10. Final cleanup after stripping
   result = result.replace(/\n{3,}/g, '\n\n').trim();
 

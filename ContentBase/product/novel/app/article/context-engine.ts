@@ -1135,6 +1135,12 @@ function classifyCorpusChannel(input: {
   if (provider === 'web.search' || sourceId.startsWith('web__')) return 'reality';
   if (provider.startsWith('ragflow') || sourceTable === 'search_chunks') return 'reality';
 
+  // Items from the evidence pack endpoint should default to reality before literary/semantic matching
+  const packProviders = Array.isArray(input.metadata.evidencePackProviders) ? input.metadata.evidencePackProviders : [];
+  if (packProviders.length > 0 && !provider.includes('literature') && !provider.includes('literary')) {
+    return 'reality';
+  }
+
   const hay = [
     input.chunk.sourceProvider,
     input.chunk.sourceType,
@@ -1238,7 +1244,7 @@ function dedupeStrings(values: string[]): string[] {
 async function associationExpand(topic: string, gatewayUrl: string): Promise<ContextItem[]> {
   const baseUrl = String(process.env.CONTENTBASE_LLM_BASE_URL || process.env.DATABASE_RESEARCH_LLM_BASE_URL || '').trim().replace(/\/+$/, '');
   const apiKey = String(process.env.CONTENTBASE_LLM_API_KEY || process.env.DATABASE_RESEARCH_LLM_API_KEY || '').trim();
-  const model = String(process.env.CONTENTBASE_ASSOC_MODEL || 'claude-haiku-4-5-20251001').trim();
+  const model = String(process.env.CONTENTBASE_ASSOC_MODEL || 'claude-sonnet-4-5-20250514').trim();
   if (!baseUrl || !apiKey) return [];
 
   let terms: string[] = [];
