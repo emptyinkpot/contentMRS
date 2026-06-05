@@ -307,6 +307,39 @@ pnpm run acceptance:article-runtime
 
 `acceptance:writer-contract` is a cheap contract check: the Writer must be pinned by `CONTENTBASE_LLM_MODEL` and must not accept request-provided or fallback models. `acceptance:novel-action-contract` is a fail-closed ownership check for `POST /api/novel/runtime/actions/generate-chapter`; it must stay red until ContentBase owns a real chapter action instead of forcing novel-factory through the article endpoint. `acceptance:article-runtime` is the live check: it calls `POST /api/content/runtime/generate/article`, requires a real model invocation, requires DataBase EvidencePack with RAGFlow evidence, and fails if the returned Writer model is not `claude-sonnet-4-6`.
 
+## Writer Test Suite
+
+Shared diagnostic source: `tests/e2e/diagnostics.mjs`. Both runners import it; banned-word lists, response accessors, product-naming and split rules, and the 8-section diagnostics block live there only.
+
+### Two run paths
+
+```text
+Full suite : pnpm test:e2e            (tests/e2e/contentbase-writer-e2e.mjs)
+             20 cases / 6 groups. INFRA runs first; if it fails the whole suite aborts.
+             Writes baseline/last-run.json, diffs against the previous run for
+             regressions / fixes / new cases.
+             Exit codes: 0 all pass / 1 any fail / 2 any regression.
+
+Single re-run : node tests/e2e/regenerate-with-diagnostics.mjs "<topic>" [wordCount]
+                One topic, full diagnostics block, no pass/fail gate.
+```
+
+Both call `POST /api/content/runtime/generate/article` with `authorization: Bearer <cb-key>` and write articles to `C:/Users/ASUS-KL/Downloads/`.
+
+### Product naming and split
+
+```text
+Full suite    -> {ID}_{safeName(topic)}.md   e.g. STYLE_001_日本战后宪法第九条的实际约束力.md
+Single re-run -> REGEN_{safeName(topic)}.md
+
+ID 001-020 is a global continuous sequence (order cases were added), prefix = group
+(STYLE / TOPIC / EDGE / INFRA / ASSOC / POS).
+safeName = strip non-CJK / non-\w chars, keep first 30 chars.
+
+File body = article + diagnostics block. The block starts with "---\n## 质量评估"
+(markdown horizontal rule + H2) as the split anchor; article above, metrics below.
+```
+
 ## Retrieval Architecture
 
 ### Current Retrieval Layers
