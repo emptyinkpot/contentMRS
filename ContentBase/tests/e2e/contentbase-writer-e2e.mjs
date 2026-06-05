@@ -128,21 +128,88 @@ async function runDeterministic(test) {
   const b1 = body(r1), b2 = body(r2)
   const wc1 = b1.length, wc2 = b2.length
   const diff = Math.abs(wc1 - wc2) / Math.max(wc1, wc2, 1)
-  if (diff > 0.3) return { pass: false, reason: `字数差${(diff*100).toFixed(0)}%(>30%)`, elapsed, bodyLen: wc1 }
-  const countTrans = s => BANNED_TRANSITIONS.filter(t => s.includes(t)).length
-  if (countTrans(b1) > 0 || countTrans(b2) > 0) return { pass: false, reason: "AI转折词非零", elapsed, bodyLen: wc1 }
-  const pc1 = b1.split(/\n{2,}/).length, pc2 = b2.split(/\n{2,}/).length
-  if (Math.abs(pc1 - pc2) > 3) return { pass: false, reason: `段落数差${Math.abs(pc1-pc2)}(>3)`, elapsed, bodyLen: wc1 }
-  saveArticle(test.id, test.topic, b1)
-  return { pass: true, reason: null, elapsed, bodyLen: wc1 }
+  let pass = true, reason = null
+  if (diff > 0.3) { pass = false; reason = `字数差${(diff*100).toFixed(0)}%(>30%)` }
+  if (pass) {
+    const countTrans = s => BANNED_TRANSITIONS.filter(t => s.includes(t)).length
+    if (countTrans(b1) > 0 || countTrans(b2) > 0) { pass = false; reason = "AI转折词非零" }
+  }
+  if (pass) {
+    const pc1 = b1.split(/\n{2,}/).length, pc2 = b2.split(/\n{2,}/).length
+    if (Math.abs(pc1 - pc2) > 3) { pass = false; reason = `段落数差${Math.abs(pc1-pc2)}(>3)` }
+  }
+  const testResult = { id: test.id, group: test.group, pass, reason, elapsed, bodyLen: wc1 }
+  saveArticle(test.id, test.topic, b1, r1, testResult)
+  return { pass, reason, elapsed, bodyLen: wc1 }
 }
 
 function safeName(topic) { return topic.replace(/[^一-鿿\w]/g, "").slice(0, 30) }
 
-function saveArticle(id, topic, content) {
+function buildDiagnosticsBlock(r, testResult) {
+  const b = body(r)
+  const diag = r?.json?.data?.context?.diagnostics || {}
+  const its = diag.items || []
+  const pc = diag.packedCounts || {}
+  const counts = diag.counts || {}
+
+  const realityItems = its.filter(i => i.channel === "reality")
+  const assocItems = its.filter(i => (i.source || "").startsWith("association/"))
+  const litItems = its.filter(i => i.channel === "literary" && !(i.source || "").startsWith("association/"))
+
+  const usedSources = realityItems.filter(item => {
+    const title = (item.title || "").trim()
+    return title.length >= 2 && b.includes(title)
+  })
+  const usageRate = realityItems.length ? (usedSources.length / realityItems.length * 100).toFixed(0) : "N/A"
+
+  const transHits = BANNED_TRANSITIONS.filter(t => b.includes(t))
+  const nameHits = BANNED_NAMES.filter(n => b.includes(n))
+  const phraseHits = BANNED_PHRASES.filter(p => b.includes(p))
+
+  const lines = [
+    "", "---", "## 召回与化用诊断", "",
+    "### 召回总量 (raw counts)", `reality=${counts.reality||0} semantic=${counts.semantic||0} literary=${counts.literary||0} lexicon=${counts.lexicon||0} structure=${counts.structure||0} author=${counts.author||0}`, "",
+    "### 入 prompt (packed counts)", `reality=${pc.reality||0} literary=${pc.literary||0} semantic=${pc.semantic||0} lexicon=${pc.lexicon||0} structure=${pc.structure||0} author=${pc.author||0}`, "",
+    "### Reality items (top 10)",
+  ]
+  realityItems.slice(0, 10).forEach((item, i) => {
+    const title = (item.title || item.source || "unknown").slice(0, 60)
+    const len = (item.preview || "").length
+    lines.push(`${i+1}. ${title} (${len}字)`)
+  })
+
+  lines.push("", "### Association Engine 联想词")
+  if (assocItems.length) {
+    const terms = [...new Set(assocItems.map(i => i.metadata?.associationTerm).filter(Boolean))]
+    if (terms.length) terms.forEach(t => lines.push(`- ${t}`))
+    else lines.push(`- (${assocItems.length} items, 无 metadata.associationTerm)`)
+  } else { lines.push("- (无联想items)") }
+
+  lines.push("", "### Literary Style 来源 (top 5)")
+  litItems.slice(0, 5).forEach((item, i) => {
+    lines.push(`${i+1}. ${(item.title || item.source || "unknown").slice(0, 60)}`)
+  })
+
+  lines.push("", "### Reality 来源 → 正文化用率")
+  lines.push(`- Reality items: ${realityItems.length}`)
+  lines.push(`- 正文中出现 source title 的: ${usedSources.length}`)
+  lines.push(`- **化用率: ${usageRate}%**`)
+
+  lines.push("", "### 风格违规命中")
+  lines.push(`- 作家名泄漏: ${nameHits.length}${nameHits.length ? " ("+nameHits.join("、")+")" : ""}`)
+  lines.push(`- 禁忌套话: ${phraseHits.length}${phraseHits.length ? " ("+phraseHits.join("、")+")" : ""}`)
+  lines.push(`- 转折/平衡词: ${transHits.length}${transHits.length ? " ("+transHits.join("、")+")" : ""}`)
+  lines.push(`- 字数: ${b.length}`)
+
+  lines.push("", `### Test verdict: ${testResult.pass ? "✅" : "❌"} ${testResult.id} ${testResult.pass ? "PASS" : "FAIL"}${testResult.reason ? " — " + testResult.reason : ""}`)
+  return lines.join("\n")
+}
+
+function saveArticle(id, topic, content, r, testResult) {
   if (!content) return
   const fname = `${id}_${safeName(topic)}.md`
-  fs.writeFileSync(path.join(DOWNLOADS, fname), content, "utf8")
+  const diag = r ? buildDiagnosticsBlock(r, testResult || { id, pass: true }) : ""
+  fs.writeFileSync(path.join(DOWNLOADS, fname), content + diag, "utf8")
 }
 
 async function runTest(test) {
@@ -164,8 +231,9 @@ async function runTest(test) {
     }
     const result = test.check(r)
     const pass = result === true
-    saveArticle(test.id, test.topic, body(r))
-    return { id: test.id, group: test.group, pass, reason: pass ? null : String(result), elapsed, bodyLen: bodyLen(r) }
+    const testResult = { id: test.id, group: test.group, pass, reason: pass ? null : String(result), elapsed, bodyLen: bodyLen(r) }
+    saveArticle(test.id, test.topic, body(r), r, testResult)
+    return testResult
   } catch (e) {
     return { id: test.id, group: test.group, pass: false, reason: `EXCEPTION: ${e.message}`, elapsed: 0, bodyLen: 0 }
   }
