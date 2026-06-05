@@ -146,10 +146,15 @@ export async function buildArticleContextEngine(input: {
     request: input.request,
     limits: retrievalLimits,
   });
+  const associationItems = await associationExpand(input.topic, gatewayUrl);
+  if (associationItems.length) {
+    warnings.push(`association: expanded ${associationItems.length} items from LLM-generated terms`);
+  }
   const evidenceItems = normalizeEvidencePackChunks(evidencePack);
   const contextItems = [
     ...evidenceItems,
     ...corpusItems,
+    ...associationItems,
   ];
   if (!contextItems.length) {
     throw new Error('Reality required: EvidencePack returned zero usable Reality chunks');
@@ -1228,6 +1233,64 @@ function normalizeText(value: string): string {
 
 function dedupeStrings(values: string[]): string[] {
   return Array.from(new Set(values.map((item) => String(item || '').trim()).filter(Boolean)));
+}
+
+async function associationExpand(topic: string, gatewayUrl: string): Promise<ContextItem[]> {
+  const baseUrl = String(process.env.CONTENTBASE_LLM_BASE_URL || process.env.DATABASE_RESEARCH_LLM_BASE_URL || '').trim().replace(/\/+$/, '');
+  const apiKey = String(process.env.CONTENTBASE_LLM_API_KEY || process.env.DATABASE_RESEARCH_LLM_API_KEY || '').trim();
+  const model = String(process.env.CONTENTBASE_ASSOC_MODEL || 'claude-haiku-4-5-20251001').trim();
+  if (!baseUrl || !apiKey) return [];
+
+  let terms: string[] = [];
+  try {
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: '你是联想引擎。给定一个写作主题，输出5-8个意外但有智识价值的关联词/概念/事件。要求跳跃式联想——不是同义词扩展，而是隐藏的历史/制度/文化/地缘连接。只输出JSON数组，每项一个短语。' },
+          { role: 'user', content: topic },
+        ],
+        temperature: 0.7,
+        max_tokens: 300,
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!response.ok) return [];
+    const payload = await response.json() as Record<string, any>;
+    const text = String(payload?.choices?.[0]?.message?.content || '').trim();
+    const match = text.match(/\[[\s\S]*\]/);
+    if (!match) return [];
+    const parsed = JSON.parse(match[0]);
+    if (!Array.isArray(parsed)) return [];
+    terms = parsed.map(String).filter((t: string) => t.length >= 2 && t.length <= 40).slice(0, 8);
+  } catch {
+    return [];
+  }
+  if (!terms.length) return [];
+
+  const items: ContextItem[] = [];
+  const fetches = terms.map(async (term) => {
+    try {
+      const payload = await getJson(gatewayUrl, '/search/vector', { q: term, limit: '2' }, 'association expand', [], 8000);
+      const results = Array.isArray(payload.results) ? payload.results : [];
+      for (const result of results) {
+        const text = String(result.snippet || result.chunk_text || result.content || '').trim();
+        if (!text || text.length < 80) continue;
+        items.push({
+          channel: 'literary',
+          title: String(result.title || result.source || '').trim() || undefined,
+          source: `association/${String(result.document_id || '').trim()}`,
+          text: text.slice(0, 800),
+          priority: 130,
+          metadata: { provider: 'association_engine', layer: 'association', associationTerm: term },
+        });
+      }
+    } catch { /* skip */ }
+  });
+  await Promise.all(fetches);
+  return items;
 }
 
 async function expandResearchQueries(topic: string, target: string, genre: Genre): Promise<string[]> {
