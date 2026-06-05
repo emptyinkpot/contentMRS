@@ -1073,5 +1073,34 @@ export function evidenceRoutes({ pool, config }: RouteDependencies) {
     }));
   });
 
+  app.post("/evidence/ingest", async (c) => {
+    const ragflow = config.evidenceRagflow;
+    if (!ragflow?.baseUrl || !ragflow?.apiKey || !ragflow.datasetIds.length) {
+      throw new HttpError(503, "ragflow_ingest_not_configured", "RAGFlow evidence config is required for ingest");
+    }
+    const form = await c.req.formData();
+    const file = form.get("file");
+    if (!file || !(file instanceof File)) {
+      throw new HttpError(400, "missing_file", "multipart field 'file' is required");
+    }
+    const datasetId = String(form.get("dataset_id") || ragflow.datasetIds[0]);
+    const filename = String(form.get("filename") || file.name || "unnamed.md");
+    const endpoint = `${ragflow.baseUrl.replace(/\/+$/, "")}/api/v1/datasets/${datasetId}/documents`;
+    const uploadForm = new FormData();
+    uploadForm.append("file", file, filename);
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { authorization: `Bearer ${ragflow.apiKey}`, "X-Request-Id": c.get("requestId") },
+      body: uploadForm,
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new HttpError(res.status === 401 ? 401 : 500, "ragflow_ingest_failed", `RAGFlow upload failed: ${res.status} ${text.slice(0, 200)}`);
+    }
+    const payload = await res.json().catch(() => ({})) as Record<string, unknown>;
+    const data = (payload.data ?? payload) as Record<string, unknown>;
+    return c.json({ ok: true, document_id: data.id || data.document_id || null, filename, dataset_id: datasetId, requestId: c.get("requestId") });
+  });
+
   return app;
 }
