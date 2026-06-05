@@ -48,6 +48,7 @@ const WRITER_SYSTEM_PROMPT = `你是 Writer。只输出正文。
 - 正文中不得出现"说白了"、"不禁让人思考"、"引人深思"、"值得我们注意"、"在某种意义上"。
 - 正文不得用序数词组织结构（"第一层""第二层""最外一层""第N个""首先/其次/最后"）。段落之间靠内容逻辑过渡。
 - 结尾不得是感伤意象（人物下班/天亮/灯灭/某人转身离去等刻意画面收束）。结尾必须停在硬事实上：一个数字、一个制度细节、一个无解的困境。
+- 连续两句不得以同一个字开头。尤其禁止连续"这是""这个""这种""这意味着"——你有别的方式衔接判断：直接陈述事实，或者把主语换成具体的名词。
 - 正文中不得出现中文小括号注释"（……）"。不解释术语、不标注年份、不做翻译注释、不加任何括号内的补充说明。如果信息重要就写进正文句子里，不重要就删掉。绝不用括号做解释性插入。英文括号()同理禁止。书名号《》和引号""不受此限。`;
 
 process.env.CONTENTBASE_WORKSPACE_ROOT ||= __dirname;
@@ -361,24 +362,7 @@ function deterministicDeAI(text) {
     return ellipsisCount <= 2 ? '……' : '。';
   });
 
-  // 9d. Rule D: "这是/这个/这种" sentence starter deduplication
-  // If 2+ consecutive sentences start with "这", rewrite the 2nd+ to remove it
-  const deaiSentences = result.split(/(?<=[。！？])/);
-  let zheStripped = 0;
-  for (let i = 1; i < deaiSentences.length; i++) {
-    const prev = deaiSentences[i - 1].trim();
-    const cur = deaiSentences[i].trim();
-    if (/^这[是个种套意不一]/.test(prev) && /^这[是个种套意不一]/.test(cur)) {
-      deaiSentences[i] = deaiSentences[i].replace(/^(\s*)这[是个种套]/, '$1');
-      zheStripped++;
-    }
-  }
-  if (zheStripped > 0) {
-    result = deaiSentences.join('');
-    console.warn(`[deAI] stripped ${zheStripped} consecutive "这" sentence starters`);
-  }
-
-  // 9e. Rule E: Paragraph uniformity detection (quality gate)
+  // 9d. Rule D: Paragraph uniformity detection (quality gate)
   const deaiParas = result.split('\n\n').filter(p => p.trim().length > 0);
   if (deaiParas.length > 5) {
     const lengths = deaiParas.map(p => p.trim().length);
